@@ -43,6 +43,7 @@ const DEFAULT_CONFIG = {
     fontFile: '',
     titleStyle: 'blob',      // blob | bar | plain
     pattern: 'dots',         // none | dots | confetti
+    rotation: 0,             // 0 | 90 | 180 | 270
     displayId: '',           // leer = Hauptbildschirm
     transition: 'fade',      // fade | cut | logo | wipe
     transitionMs: 900,

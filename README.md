@@ -44,6 +44,8 @@ Getränkepreise im Festival-Design.
 - **Jedes Bildschirmformat** – 16:9, 16:10, 4:3, Ultrawide und Hochformat.
 - **Robust im Dauerbetrieb** – defekte Dateien werden übersprungen, hängende Wiedergabe
   wird erkannt, nicht abspielbare Videoformate lassen sich automatisch umwandeln.
+- **Anzeige drehbar** — 90, 180 oder 270 Grad, direkt im Programm. Für hochkant
+  montierte Bildschirme, ohne am Betriebssystem etwas einzustellen.
 
 ---
 
@@ -251,6 +253,10 @@ sonst passt.
 - **Stil & Übergänge**: Fläche hinter dem Seitentitel (Blob, Balken oder ohne),
   Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang.
 - **Farben & Schrift**: Hintergrund-, Akzent- und Signalfarbe, zwei Voreinstellungen,
+- **Anzeige drehen**: 90, 180 oder 270 Grad. Gedacht für senkrecht montierte
+  Bildschirme — der Fernseher wird gedreht aufgehängt, die Anzeige dreht mit.
+  Wirkt sofort und gilt auf jedem System gleich, auch auf dem Raspberry Pi,
+  wo die Drehung über das Betriebssystem umständlich ist.
   optional eine eigene Schriftdatei.
 
 ### System

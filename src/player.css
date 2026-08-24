@@ -58,6 +58,31 @@ html, body {
 
 body.showCursor { cursor: default; }
 
+/* ------------------------------------------------------------------ */
+/* Drehung der ganzen Anzeige, fuer hochkant montierte Bildschirme.      */
+/* Passiert im Programm, damit es auf jedem System gleich funktioniert - */
+/* auch auf dem Pi, wo die Systemeinstellung dafuer umstaendlich ist.    */
+/* ------------------------------------------------------------------ */
+#dreh { position: fixed; inset: 0; }
+
+/* Bei Vierteldrehungen tauschen Breite und Hoehe die Rollen. */
+body[data-rotation="90"] #dreh,
+body[data-rotation="270"] #dreh {
+  inset: auto;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  height: 100vw;
+}
+body[data-rotation="90"] #dreh  { transform: translateX(100vw) rotate(90deg); transform-origin: top left; }
+body[data-rotation="270"] #dreh { transform: translateY(100vh) rotate(-90deg); transform-origin: top left; }
+body[data-rotation="180"] #dreh { transform: rotate(180deg); }
+
+/* Das Grundmass richtet sich sonst nach dem Fenster. Nach einer
+   Vierteldrehung ist die Hoehe des Fensters die Breite des Inhalts. */
+body[data-rotation="90"],
+body[data-rotation="270"] { --u: min(1vh, 1.85vw); }
+
 #stage { position: fixed; inset: 0; background: #000; }
 
 .layer {

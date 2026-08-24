@@ -310,7 +310,7 @@ const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'price
                     'timetableMaxNext', 'fadeMs', 'logoHeight', 'transitionMs', 'imageDuration'];
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
                      'timetableTitle', 'timetableSubtitle', 'pricesTitle', 'pricesSubtitle',
-                     'titleStyle', 'pattern', 'transition'];
+                     'titleStyle', 'pattern', 'transition', 'rotation'];
 
 function fillSettingsFields() {
   const s = state.settings;

@@ -60,6 +60,8 @@ function applyTheme() {
   root.setProperty('--muted', 'color-mix(in srgb, ' + (s.bgColor || '#450b6f') + ' 32%, #ffffff 68%)');
   root.setProperty('--fade', (s.transition === 'cut' ? 0 : (s.fadeMs || 700)) + 'ms');
   document.body.dataset.pattern = s.pattern || 'dots';
+  document.body.dataset.rotation = String([0, 90, 180, 270].includes(Number(s.rotation))
+                                          ? Number(s.rotation) : 0);
   document.body.dataset.title = s.titleStyle || 'blob';
   applyFont(s.fontFile);
 }

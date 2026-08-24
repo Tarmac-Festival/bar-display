@@ -8,6 +8,11 @@
   <link rel="stylesheet" href="player.css">
 </head>
 <body>
+  <!-- Alles Sichtbare steckt in dieser Hülle. Wird sie gedreht, dreht sich die
+       Anzeige mitsamt Übergängen und Bedienelementen. Weil die Hülle eine
+       Transformation trägt, beziehen sich die fest positionierten Ebenen darin
+       auf sie statt auf das Fenster - genau was wir brauchen. -->
+  <div id="dreh">
   <div id="stage">
     <video id="vidA" class="layer video" muted playsinline preload="auto"></video>
     <video id="vidB" class="layer video" muted playsinline preload="auto"></video>
@@ -34,6 +39,7 @@
       <button id="pinCancel" class="pinCancel">Abbrechen</button>
     </div>
   </div>
+  </div><!-- #dreh -->
 
   <script src="api-http.js"></script>
   <script src="common.js"></script>

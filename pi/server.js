@@ -64,7 +64,7 @@ const STANDARD = {
     barName: 'TARMAC BAR', subtitle: 'Planetenweide',
     bgColor: '#450b6f', accent: '#74ff40', accent2: '#f04e23',
     logo: '', logoHeight: 9, fontFile: '',
-    titleStyle: 'blob', pattern: 'dots', displayId: '',
+    titleStyle: 'blob', pattern: 'dots', displayId: '', rotation: 0,
     transition: 'fade', transitionMs: 900,
     timetableTitle: 'TIMETABLE', timetableSubtitle: 'line up',
     pricesTitle: 'GETRÄNKE', pricesSubtitle: 'preise',
