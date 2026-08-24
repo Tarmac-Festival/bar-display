@@ -376,12 +376,25 @@ ipcMain.handle('media:openFolder', () => shell.openPath(MEDIA_DIR));
 
 // --- Videos umwandeln, die Windows nicht direkt abspielen kann --------------
 function ffmpegPath() {
-  let p;
-  try { p = require('ffmpeg-static'); } catch (e) { return null; }
-  if (!p) return null;
-  // im gepackten Programm liegt die Datei außerhalb des asar-Archivs
-  p = p.replace('app.asar', 'app.asar.unpacked');
-  return fs.existsSync(p) ? p : null;
+  const name = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+
+  // 1) im gepackten Programm: neben den Ressourcen (siehe extraResources)
+  if (process.resourcesPath) {
+    const p = path.join(process.resourcesPath, 'ffmpeg', name);
+    if (fs.existsSync(p)) return p;
+  }
+  // 2) in der Entwicklung: vendor-Ordner, siehe scripts/fetch-ffmpeg.js
+  const lokal = path.join(__dirname, 'vendor', 'ffmpeg',
+                          process.platform + '-' + process.arch, name);
+  if (fs.existsSync(lokal)) return lokal;
+
+  // 3) systemweit installiertes ffmpeg (unter Linux der Normalfall)
+  if (process.platform !== 'win32') {
+    for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/snap/bin/ffmpeg']) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return null;
 }
 
 ipcMain.handle('media:canConvert', () => !!ffmpegPath());
@@ -611,16 +624,44 @@ ipcMain.handle('displays:identify', () => {
   return fenster.length;
 });
 
-ipcMain.handle('autostart:get', () => app.getLoginItemSettings().openAtLogin);
+// Linux kennt kein setLoginItemSettings - dort legt man eine .desktop-Datei
+// in ~/.config/autostart ab.
+function autostartDatei() {
+  return path.join(app.getPath('home'), '.config', 'autostart', 'bar-display.desktop');
+}
 
-ipcMain.handle('autostart:set', (_e, enabled) => {
-  app.setLoginItemSettings({
-    openAtLogin: !!enabled,
-    path: process.execPath,
-    args: []
-  });
+function autostartLesen() {
+  if (process.platform === 'linux') return fs.existsSync(autostartDatei());
   return app.getLoginItemSettings().openAtLogin;
-});
+}
+
+function autostartSetzen(an) {
+  if (process.platform === 'linux') {
+    const datei = autostartDatei();
+    if (!an) {
+      try { fs.unlinkSync(datei); } catch (e) { /* war schon weg */ }
+      return false;
+    }
+    // Bei einem AppImage steht der echte Pfad in APPIMAGE, nicht in execPath
+    const start = process.env.APPIMAGE || process.execPath;
+    fs.mkdirSync(path.dirname(datei), { recursive: true });
+    fs.writeFileSync(datei,
+      '[Desktop Entry]\n' +
+      'Type=Application\n' +
+      'Name=Bar Display\n' +
+      'Comment=Anzeige fuer die Bar\n' +
+      'Exec=\"' + start + '\"\n' +
+      'Terminal=false\n' +
+      'X-GNOME-Autostart-enabled=true\n', 'utf8');
+    return fs.existsSync(datei);
+  }
+
+  app.setLoginItemSettings({ openAtLogin: !!an, path: process.execPath, args: [] });
+  return app.getLoginItemSettings().openAtLogin;
+}
+
+ipcMain.handle('autostart:get', () => autostartLesen());
+ipcMain.handle('autostart:set', (_e, enabled) => autostartSetzen(enabled));
 
 ipcMain.handle('config:export', async () => {
   const res = await dialog.showSaveDialog(settingsWin, {

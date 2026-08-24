@@ -1,0 +1,79 @@
+name: Pakete bauen
+
+# Bei einem Tag wie v1.0.0 entstehen alle Pakete und werden an ein Release gehaengt.
+# Ueber "Run workflow" laesst sich der Lauf auch ohne Tag anstossen; die Dateien
+# haengen dann als Artefakte am Lauf.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux (AppImage, deb, tar.gz)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: ffmpeg holen
+        run: npm run vendor:ffmpeg
+
+      - name: Bauen
+        run: npx electron-builder --linux AppImage deb tar.gz --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+
+      - name: An das Release haengen
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/*.AppImage dist/*.deb dist/*.tar.gz --clobber
+
+  windows:
+    name: Windows (Installer, portable)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: ffmpeg holen
+        run: npm run vendor:ffmpeg
+
+      - name: Bauen
+        run: npx electron-builder --win nsis portable --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.exe
+
+      - name: An das Release haengen
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh release upload "${GITHUB_REF_NAME}" dist/*.exe --clobber

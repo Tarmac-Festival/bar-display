@@ -46,14 +46,49 @@ Getränkepreise im Festival-Design.
 
 ## Einrichten an der Bar
 
-1. `Bar Display Setup 1.0.0.exe` ausführen. Wer nichts installieren will, nimmt
-   `BarDisplay-portable-1.0.0.exe` und legt sie in einen Ordner auf der Platte.
-2. Programm starten. Es geht sofort im Vollbild auf.
-3. **ESC** drücken, um in die Einstellungen zu kommen.
-4. Unter *System* den Haken bei **Automatisch mit Windows starten** setzen.
-5. Unter *Videos* die Clips und Plakate hinzufügen, unter *Timetable* das Programm
+Es gibt das Programm für Windows und für Linux. Beide Fassungen sind funktionsgleich.
+
+| System | Datei | Anmerkung |
+|---|---|---|
+| Windows | `Bar Display Setup 1.0.0.exe` | Installer mit Startmenü- und Desktop-Eintrag |
+| Windows | `BarDisplay-portable-1.0.0.exe` | ohne Installation, einfach in einen Ordner legen |
+| Linux | `BarDisplay-1.0.0-x86_64.AppImage` | ohne Installation, läuft auf jeder Distribution |
+| Linux | `bar-display_1.0.0_amd64.deb` | für Debian, Ubuntu, Mint und Verwandte |
+| Linux | `bar-display-1.0.0.tar.gz` | einfaches Archiv, falls die anderen beiden nicht passen |
+
+### Windows
+
+Installer ausführen oder die portable `.exe` in einen Ordner legen und starten.
+
+### Linux
+
+AppImage einmalig ausführbar machen und starten:
+
+```bash
+chmod +x BarDisplay-1.0.0-x86_64.AppImage && ./BarDisplay-1.0.0-x86_64.AppImage
+```
+
+Oder das Debian-Paket installieren:
+
+```bash
+sudo apt install ./bar-display_1.0.0_amd64.deb
+```
+
+Beim `tar.gz` müssen Programm und ffmpeg von Hand ausführbar gemacht werden, weil das
+Archiv unter Windows gepackt wurde und dabei keine Dateirechte mitkommen:
+
+```bash
+tar -xzf bar-display-1.0.0.tar.gz && chmod +x bar-display-1.0.0/bar-display bar-display-1.0.0/resources/ffmpeg/ffmpeg
+```
+
+### Danach überall gleich
+
+1. Programm starten. Es geht sofort im Vollbild auf.
+2. **ESC** drücken, um in die Einstellungen zu kommen.
+3. Unter *System* den Haken bei **Automatisch mit dem System starten** setzen.
+4. Unter *Videos* die Clips und Plakate hinzufügen, unter *Timetable* das Programm
    eintragen, unter *Getränkepreise* die Karte pflegen.
-6. **Speichern** – die Anzeige übernimmt die Änderungen sofort.
+5. **Speichern** – die Anzeige übernimmt die Änderungen sofort.
 
 > Der Bar-PC braucht kein Node.js und keine Internetverbindung. Alles Nötige – auch die
 > Schrift und ffmpeg – steckt im Programm.
@@ -242,16 +277,22 @@ dem Motiv in der Mitte sieht am besten aus, ab ungefähr 400 px Kantenlänge.
 
 ## Wo die Daten liegen
 
-| Was | Pfad |
+Unter Windows liegt alles in `%APPDATA%\Bar Display\`, unter Linux in
+`~/.config/Bar Display/`.
+
+| Was | Datei bzw. Ordner |
 |---|---|
-| Einstellungen | `%APPDATA%\Bar Display\config.json` |
-| Sicherungskopie | `%APPDATA%\Bar Display\config.backup.json` |
-| Videos und Bilder | `%APPDATA%\Bar Display\media\` |
-| Act-Fotos | `%APPDATA%\Bar Display\photos\` |
-| Eigenes Logo | `%APPDATA%\Bar Display\branding\` |
-| Eigene Schrift | `%APPDATA%\Bar Display\fonts\` |
+| Einstellungen | `config.json` |
+| Sicherungskopie | `config.backup.json` |
+| Videos und Bilder | `media/` |
+| Act-Fotos | `photos/` |
+| Eigenes Logo | `branding/` |
+| Eigene Schrift | `fonts/` |
 
 Vor jedem Speichern legt das Programm eine Sicherungskopie der letzten Fassung an.
+
+Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux als
+`~/.config/autostart/bar-display.desktop`.
 
 ---
 
@@ -264,7 +305,9 @@ Vor jedem Speichern legt das Programm eine Sicherungskopie der letzten Fassung a
 | Anzeige auf dem falschen Monitor | *System → Bildschirm*, vorher *Bildschirme nummerieren* |
 | Preise/Timetable erscheinen nie | Im Reiter *Anzeige* steht die Häufigkeit auf `0` |
 | Ein Clip läuft nie | Fähnchen im Reiter *Videos* prüfen: deaktiviert oder kein Zeitfenster gesetzt |
-| Nach einem Windows-Update startet nichts mehr | Autostart unter *System* neu setzen |
+| Nach einem System-Update startet nichts mehr | Autostart unter *System* neu setzen |
+| Linux: Programm startet nicht | Ausführbar-Bit fehlt – `chmod +x` auf die AppImage bzw. auf `bar-display` und `resources/ffmpeg/ffmpeg` |
+| Linux: Umwandlung nicht verfügbar | Sollte nicht vorkommen, ffmpeg liegt bei. Notfalls `sudo apt install ffmpeg` – das Programm nimmt auch ein systemweit installiertes |
 
 ---
 
@@ -288,10 +331,31 @@ Tests für die Zeitfenster- und Timetable-Logik:
 npm test
 ```
 
-Windows-Pakete bauen (Installer und portable `.exe` landen in `dist/`):
+Pakete bauen – die Ergebnisse landen in `dist/`:
 
 ```bash
 npm run dist
+```
+
+```bash
+npm run dist:linux
+```
+
+Beim ersten Bauen holt das Projekt die ffmpeg-Binärdateien für beide Plattformen nach
+`vendor/` (zusammen rund 155 MB, absichtlich nicht im Repository). Einzeln anstoßen:
+
+```bash
+npm run vendor:ffmpeg
+```
+
+**AppImage und `.deb` lassen sich nur auf einem Linux-System bauen** – electron-builder
+braucht dafür Linux-Werkzeuge. Unter Windows entsteht nur ein `tar.gz`, dem außerdem die
+Ausführungsrechte fehlen. Der bequeme Weg ist der Ablauf in
+`.github/workflows/release.yml`: einen Tag anlegen und schieben, dann baut GitHub alle
+Pakete für Windows und Linux und hängt sie an das Release.
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
 ```
 
 ### Aufbau
@@ -306,6 +370,9 @@ npm run dist
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
 | `src/branding/` | das mitgelieferte L300-Standardlogo |
 | `test/schedule.test.js` | Tests |
+| `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows und Linux nach `vendor/` |
+| `build/` | Programmsymbole, aus dem L300-Logo erzeugt |
+| `.github/workflows/release.yml` | baut auf GitHub alle Pakete und hängt sie an ein Release |
 
 ### Mitgelieferte Fremdbestandteile
 

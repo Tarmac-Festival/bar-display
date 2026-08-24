@@ -2,6 +2,9 @@
 node_modules/
 dist/
 
+# per npm run vendor:ffmpeg geholt, rund 155 MB
+vendor/
+
 # Betriebssystem und Editor
 Thumbs.db
 Desktop.ini

@@ -4,12 +4,16 @@
   "description": "Werbe- und Infodisplay fuer die Bar auf der Planetenweide (Tarmac)",
   "productName": "Bar Display",
   "main": "main.js",
-  "author": "Planetenweide",
+  "author": "Tarmac Festival",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
     "test": "node test/schedule.test.js",
-    "dist": "electron-builder --win nsis portable"
+    "vendor:ffmpeg": "node scripts/fetch-ffmpeg.js",
+    "dist": "node scripts/fetch-ffmpeg.js && electron-builder --win nsis portable",
+    "dist:linux": "node scripts/fetch-ffmpeg.js && electron-builder --linux AppImage deb tar.gz",
+    "dist:all": "node scripts/fetch-ffmpeg.js && electron-builder --win nsis portable --linux AppImage deb tar.gz",
+    "dist:linux-portable": "node scripts/fetch-ffmpeg.js && electron-builder --linux tar.gz"
   },
   "devDependencies": {
     "electron": "^31.3.1",
@@ -25,8 +29,7 @@
       "main.js",
       "preload.js",
       "src/**/*",
-      "package.json",
-      "node_modules/ffmpeg-static/**/*"
+      "package.json"
     ],
     "win": {
       "target": [
@@ -42,6 +45,13 @@
             "x64"
           ]
         }
+      ],
+      "icon": "build/icon.ico",
+      "extraResources": [
+        {
+          "from": "vendor/ffmpeg/win32-x64",
+          "to": "ffmpeg"
+        }
       ]
     },
     "nsis": {
@@ -53,11 +63,50 @@
     "portable": {
       "artifactName": "BarDisplay-portable-${version}.exe"
     },
-    "asarUnpack": [
-      "node_modules/ffmpeg-static/**"
-    ]
-  },
-  "dependencies": {
-    "ffmpeg-static": "^5.3.0"
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icons",
+      "category": "AudioVideo",
+      "executableName": "bar-display",
+      "maintainer": "Tarmac Festival <mn.beermann@gmail.com>",
+      "synopsis": "Anzeige für die Bars des Tarmac Festivals",
+      "description": "Werbeclips in Endlosschleife, dazwischen Timetable und Getränkepreise.",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "Bar Display"
+        }
+      },
+      "extraResources": [
+        {
+          "from": "vendor/ffmpeg/linux-x64",
+          "to": "ffmpeg"
+        }
+      ]
+    },
+    "appImage": {
+      "artifactName": "BarDisplay-${version}-x86_64.AppImage"
+    },
+    "deb": {
+      "artifactName": "bar-display_${version}_amd64.deb"
+    }
   }
 }
