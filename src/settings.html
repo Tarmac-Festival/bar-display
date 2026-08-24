@@ -36,6 +36,18 @@
            direkt &ndash; ohne den Knopf oben rechts.</p>
       </div></div>
 
+      <div class="card" id="vorschauKarte" style="display:none">
+        <h2>Vorschau</h2>
+        <p class="hint" style="margin-bottom:0.9rem">So sehen Timetable und Preise
+           gerade aus. Videos werden hier weggelassen, damit die Vorschau den Pi
+           nicht zus&auml;tzlich belastet.</p>
+        <div class="vorschauRahmen"><iframe id="vorschauBild" title="Vorschau"></iframe></div>
+        <div class="btnRow" style="margin-top:0.7rem">
+          <button id="vorschauAn">Vorschau anzeigen</button>
+          <button id="vorschauNeu" style="display:none">Aktualisieren</button>
+        </div>
+      </div>
+
       <div class="card">
         <div id="an_status" class="anStatus">Keine Durchsage aktiv</div>
 
@@ -252,6 +264,17 @@
             <label class="field">
               <span>Unterzeile</span>
               <input type="text" id="s_pricesSubtitle" maxlength="24">
+            </label>
+          </div>
+          <div class="twoCol">
+            <label class="field">
+              <span>QR-Code auf dem Timetable (Adresse)</span>
+              <input type="text" id="s_qrUrl" maxlength="200" placeholder="https://tarmac-festival.de">
+              <em>Leer lassen = kein QR-Code.</em>
+            </label>
+            <label class="field">
+              <span>Beschriftung daneben</span>
+              <input type="text" id="s_qrLabel" maxlength="40" placeholder="Programm &amp; Infos">
             </label>
           </div>
           <label class="field">

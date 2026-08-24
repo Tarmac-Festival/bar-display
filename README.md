@@ -46,6 +46,12 @@ Getränkepreise im Festival-Design.
   wird erkannt, nicht abspielbare Videoformate lassen sich automatisch umwandeln.
 - **Anzeige drehbar** — 90, 180 oder 270 Grad, direkt im Programm. Für hochkant
   montierte Bildschirme, ohne am Betriebssystem etwas einzustellen.
+- **Durchsage** — ein Balken über die ganze Breite, vom Handy in Sekunden
+  eingeblendet. Legt sich über alles, auch über laufende Videos, und blendet
+  sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
+- **Ruhezeit** — außerhalb der Öffnungszeiten bleibt der Bildschirm schwarz und
+  die Schleife steht still. Schont das Gerät und spart Strom.
+- **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt.
 
 ---
 
@@ -188,6 +194,20 @@ Ohne hinterlegtes Logo erscheint bei beiden Logo-Varianten der Bar-Name.
 
 ## Die Einstellungen
 
+### Durchsage
+
+Der erste Reiter, und am Handy gleich geöffnet — dafür kommt man meistens her.
+Text eintippen, **Jetzt anzeigen** — der Balken steht binnen einer Sekunde auf
+allen Bildschirmen, die an derselben Konfiguration hängen. **Ausblenden** nimmt
+ihn wieder weg. Beide Knöpfe speichern sofort, ohne den Speichern-Knopf oben.
+
+Optional blendet sich die Durchsage nach 5, 15, 30 oder 60 Minuten von allein
+aus — praktisch für „Letzte Runde", damit niemand daran denken muss.
+
+Im Browserbetrieb steht auf demselben Reiter eine **Vorschau**: so sehen
+Timetable und Preise gerade aus, ohne zum Bildschirm zu laufen. Videos werden
+darin weggelassen, damit die Vorschau den Pi nicht zusätzlich belastet.
+
 ### Videos
 
 ![Einstellungen Videos](docs/screenshots/einstellungen-videos.png)
@@ -257,6 +277,12 @@ sonst passt.
   Bildschirme — der Fernseher wird gedreht aufgehängt, die Anzeige dreht mit.
   Wirkt sofort und gilt auf jedem System gleich, auch auf dem Raspberry Pi,
   wo die Drehung über das Betriebssystem umständlich ist.
+- **Ruhezeit**: Von–Bis, außerhalb dessen bleibt der Bildschirm schwarz. Über
+  Mitternacht hinweg funktioniert es wie bei den Clips, also auch 04:00 bis 14:00
+  für eine Bar, die nachts läuft. Unbrauchbare Zeiten schalten die Ruhezeit ab,
+  statt den Bildschirm dauerhaft schwarz zu lassen.
+- **QR-Code**: Adresse eintragen, dann erscheint unten links auf dem Timetable
+  ein Code mit Beschriftung. Leer lassen = kein Code.
   optional eine eigene Schriftdatei.
 
 ### System

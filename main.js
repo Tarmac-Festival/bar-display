@@ -47,6 +47,8 @@ const DEFAULT_CONFIG = {
     displayId: '',           // leer = Hauptbildschirm
     transition: 'fade',      // fade | cut | logo | wipe
     transitionMs: 900,
+    qrUrl: '',               // leer = kein QR-Code auf dem Timetable
+    qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE',
     timetableSubtitle: 'line up',
     pricesTitle: 'GETRÄNKE',

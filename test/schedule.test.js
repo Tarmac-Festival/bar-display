@@ -106,5 +106,23 @@ check('Tagesbezeichnung heute', dayLabel(FR(20, 0), FR(18, 0)), 'HEUTE');
 check('Tagesbezeichnung morgen', dayLabel(SA(16, 0), FR(18, 0)), 'MORGEN');
 check('Tagesbezeichnung später', dayLabel(new Date(2026, 8, 3, 16, 0), FR(18, 0)), 'DONNERSTAG 03.09.');
 
+console.log('-- QR-Code --');
+// Die Bibliothek schneidet Zeichen standardmaessig auf ein Byte ab. Ohne die
+// Umstellung auf UTF-8 werden Umlaute unlesbar - das ist einmal passiert.
+const qrcode = require(path.join(__dirname, '..', 'src', 'qr.js'));
+check('UTF-8-Kodierer vorhanden', typeof qrcode.stringToBytesFuncs['UTF-8'], 'function');
+check('Umlaut braucht zwei Bytes', qrcode.stringToBytesFuncs['UTF-8']('ä').length, 2);
+check('Standard verkuerzt auf ein Byte', qrcode.stringToBytesFuncs['default']('ä').length, 1);
+
+const playerQuelle = fs.readFileSync(path.join(__dirname, '..', 'src', 'player.js'), 'utf8');
+check('Player waehlt UTF-8 aus',
+      /stringToBytes\s*=\s*qrcode\.stringToBytesFuncs\['UTF-8'\]/.test(playerQuelle), true);
+
+qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+const qrTest = qrcode(0, 'M');
+qrTest.addData('https://tarmac-festival.de/de-DE/');
+qrTest.make();
+check('Modulanzahl fuer die Festivaladresse', qrTest.getModuleCount(), 29);
+
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
 process.exit(fail ? 1 : 0);

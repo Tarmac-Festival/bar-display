@@ -508,7 +508,7 @@ body[data-pattern="confetti"] .slide {
 .slideFoot {
   flex: none;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-end;
   gap: 0.7em;
   padding-top: 1em;
@@ -524,6 +524,29 @@ body[data-pattern="confetti"] .slide {
   background: var(--accent2);
 }
 .slideFoot b { color: var(--fg); font-weight: 600; }
+.slideFoot.mitQr { justify-content: space-between; }
+.fussUhr { display: flex; align-items: center; gap: 0.7em; }
+
+/* QR-Code: braucht hellen Grund und einen Rand ringsum, sonst lesen ihn
+   viele Handykameras nicht. */
+.qr { display: flex; align-items: center; gap: 0.9em; }
+.qrBild {
+  width: 7.5em;
+  height: 7.5em;
+  padding: 0.55em;
+  border-radius: 0.3em;
+  background: #fff;
+  flex: none;
+}
+.qrBild svg { display: block; width: 100%; height: 100%; }
+.qrText {
+  font-size: 1.05em;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  color: var(--fg);
+  max-width: 12em;
+  text-transform: none;
+}
 
 /* --------------------------- Startbild ----------------------------- */
 .idleWrap {

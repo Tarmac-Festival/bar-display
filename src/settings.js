@@ -75,6 +75,11 @@ function fuerBrowserAnpassen() {
   const nummerieren = $('identifyDisplays');
   if (nummerieren) nummerieren.style.display = 'none';
 
+  // Die Vorschau gibt es nur im Browserbetrieb - am Rechner steht die Anzeige
+  // ohnehin daneben.
+  const karte = $('vorschauKarte');
+  if (karte) { karte.style.display = ''; vorschauVerdrahten(); }
+
   // Am Handy ist die Durchsage der haeufigste Grund, diese Seite zu oeffnen
   const durchsageTab = document.querySelector('[data-tab=durchsage]');
   if (durchsageTab) durchsageTab.click();
@@ -88,6 +93,37 @@ function fuerBrowserAnpassen() {
     'am Rechner eingepflegt und auf den Pi kopiert.';
   const haupt = document.querySelector('main');
   haupt.insertBefore(hinweis, haupt.firstChild);
+}
+
+// ---------------------------------------------------------------------------
+// Vorschau
+// ---------------------------------------------------------------------------
+function vorschauSkalieren() {
+  const rahmen = document.querySelector('.vorschauRahmen');
+  const bild = $('vorschauBild');
+  if (!rahmen || !bild) return;
+  bild.style.transform = 'scale(' + (rahmen.clientWidth / 1920) + ')';
+}
+
+function vorschauVerdrahten() {
+  const bild = $('vorschauBild');
+  const an = $('vorschauAn');
+  const neu = $('vorschauNeu');
+
+  const laden = () => {
+    // Zeitstempel erzwingt frisches Laden statt einer zwischengespeicherten Seite
+    bild.src = '/?vorschau=1&t=' + Date.now();
+    vorschauSkalieren();
+  };
+
+  an.addEventListener('click', () => {
+    laden();
+    an.style.display = 'none';
+    neu.style.display = '';
+  });
+  neu.addEventListener('click', laden);
+  window.addEventListener('resize', vorschauSkalieren);
+  vorschauSkalieren();
 }
 
 // ---------------------------------------------------------------------------
@@ -390,7 +426,8 @@ const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'price
                     'timetableMaxNext', 'fadeMs', 'logoHeight', 'transitionMs', 'imageDuration'];
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
                      'timetableTitle', 'timetableSubtitle', 'pricesTitle', 'pricesSubtitle',
-                     'titleStyle', 'pattern', 'transition', 'rotation'];
+                     'titleStyle', 'pattern', 'transition', 'rotation',
+                     'qrUrl', 'qrLabel'];
 
 function fillSettingsFields() {
   const s = state.settings;

@@ -66,6 +66,7 @@ const STANDARD = {
     logo: '', logoHeight: 9, fontFile: '',
     titleStyle: 'blob', pattern: 'dots', displayId: '', rotation: 0,
     transition: 'fade', transitionMs: 900,
+    qrUrl: '', qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE', timetableSubtitle: 'line up',
     pricesTitle: 'GETRÄNKE', pricesSubtitle: 'preise',
     pin: '', timetableEvery: 3, timetableDuration: 20,

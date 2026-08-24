@@ -23,6 +23,9 @@ let lastTime = -1;
 let videoCounter = 0;   // läuft ueber die Runden hinweg weiter
 let itemToken = 0;        // invalidiert Callbacks bereits abgelöster Elemente
 let imRuhemodus = false;  // Bildschirm schwarz, Schleife angehalten
+// Vorschau: nur die Info-Slides, keine Videos. So kostet die Vorschau auf der
+// Bedienseite den Pi kein zweites Mal Dekodierung und dem Handy kein Datenvolumen.
+const nurVorschau = new URLSearchParams(location.search).has('vorschau');
 
 // ---------------------------------------------------------------------------
 // Start
@@ -119,7 +122,9 @@ function durchsagePruefen() {
 function ruhePruefen() {
   const q = cfg.quiet || {};
   const jetzt = new Date();
-  const soll = !!(q.enabled && zeitImFenster(q.from, q.to, jetzt));
+  // In der Vorschau nie schwarz schalten - sonst sieht man auf dem Handy nichts
+  // und haelt die Bedienseite fuer kaputt.
+  const soll = !nurVorschau && !!(q.enabled && zeitImFenster(q.from, q.to, jetzt));
 
   if (soll && !imRuhemodus) return ruheAn();
   if (!soll && imRuhemodus) return ruheAus();
@@ -171,7 +176,7 @@ function clearTimers() {
 function buildPlaylist() {
   const now = new Date();
   const s = cfg.settings;
-  const active = (cfg.videos || []).filter(v => isVideoActive(v, now));
+  const active = nurVorschau ? [] : (cfg.videos || []).filter(v => isVideoActive(v, now));
 
   const hasTT = (cfg.timetable || []).length > 0;
   const sp = cfg.special || {};
@@ -336,6 +341,7 @@ function playSlide(item) {
   if (item.type === 'timetable') secs = s.timetableDuration || 20;
   else if (item.type === 'prices') secs = s.pricesDuration || 25;
   else secs = 30;
+  if (nurVorschau) secs = 8;      // in der Vorschau zuegig durchwechseln
 
   itemTimer = setTimeout(() => { if (tok === itemToken) advance(); }, Math.max(3, secs) * 1000);
 }
@@ -488,10 +494,40 @@ function headHtml(title, sub) {
     '</div></div>';
 }
 
-function footHtml() {
-  if (!cfg.settings.showClock) return '';
-  return '<div class="slideFoot"><span class="dot"></span>' +
-    escapeHtml(dateLine()) + ' &middot; <b data-clock>' + nowHHMM() + '</b></div>';
+function footHtml(mitQr) {
+  const s = cfg.settings;
+  const qr = mitQr ? qrHtml() : '';
+  const uhr = s.showClock
+    ? '<div class="fussUhr"><span class="dot"></span>' +
+      escapeHtml(dateLine()) + ' &middot; <b data-clock>' + nowHHMM() + '</b></div>'
+    : '';
+  if (!qr && !uhr) return '';
+  return '<div class="slideFoot' + (qr ? ' mitQr' : '') + '">' + qr + uhr + '</div>';
+}
+
+// QR-Code fuer die Festivalseite. Wird als SVG erzeugt, damit er auf jedem
+// Bildschirm scharf bleibt; Fehlerkorrektur M reicht fuer eine Bildschirmanzeige.
+function qrHtml() {
+  const s = cfg.settings;
+  const url = (s.qrUrl || '').trim();
+  if (!url || typeof qrcode !== 'function') return '';
+  try {
+    // Ohne diese Zeile schneidet die Bibliothek jedes Zeichen auf ein Byte ab -
+    // Umlaute und alles ausserhalb von Latin-1 werden dadurch unlesbar.
+    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    }
+    const q = qrcode(0, 'M');
+    q.addData(url);
+    q.make();
+    return '<div class="qr">' +
+      '<div class="qrBild">' + q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }) + '</div>' +
+      (s.qrLabel ? '<div class="qrText">' + escapeHtml(s.qrLabel) + '</div>' : '') +
+      '</div>';
+  } catch (err) {
+    console.warn('QR-Code nicht erzeugbar:', err && err.message);
+    return '';
+  }
 }
 
 function nowHHMM() {
@@ -553,7 +589,7 @@ function renderTimetable() {
 
   return '<div class="slideInner">' +
     headHtml(s.timetableTitle || 'TIMETABLE', s.timetableSubtitle) +
-    '<div class="slideBody">' + body + '</div>' + footHtml() + '</div>';
+    '<div class="slideBody">' + body + '</div>' + footHtml(true) + '</div>';
 }
 
 function renderPrices() {
