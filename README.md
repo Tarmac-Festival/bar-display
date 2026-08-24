@@ -57,17 +57,23 @@ Getränkepreise im Festival-Design.
 
 ## Einrichten an der Bar
 
-Es gibt das Programm für Windows und für Linux. Beide Fassungen sind funktionsgleich.
+Es gibt das Programm für Windows, Linux und macOS. Alle Fassungen sind funktionsgleich.
+Die aktuellen Dateien liegen unter
+[Releases](https://github.com/Tarmac-Festival/bar-display/releases/latest); `VERSION`
+steht unten für die Versionsnummer des Releases, also z. B. `1.1.0`.
 
 | System | Datei | Anmerkung |
 |---|---|---|
-| Windows | `Bar Display Setup 1.0.0.exe` | Installer mit Startmenü- und Desktop-Eintrag |
-| Windows | `BarDisplay-portable-1.0.0.exe` | ohne Installation, einfach in einen Ordner legen |
-| Linux | `BarDisplay-1.0.0-x86_64.AppImage` | ohne Installation, läuft auf jeder Distribution |
-| Linux | `bar-display_1.0.0_amd64.deb` | für Debian, Ubuntu, Mint und Verwandte |
-| Linux | `bar-display-1.0.0.tar.gz` | einfaches Archiv, falls die anderen beiden nicht passen |
-| macOS | `BarDisplay-1.0.0-arm64.dmg` | Apple Silicon (M1 und neuer) |
-| macOS | `BarDisplay-1.0.0-x64.dmg` | Intel-Macs |
+| Windows | `Bar Display Setup VERSION.exe` | Installer mit Startmenü- und Desktop-Eintrag |
+| Windows | `BarDisplay-portable-VERSION.exe` | ohne Installation, einfach in einen Ordner legen |
+| Linux | `BarDisplay-VERSION-x86_64.AppImage` | ohne Installation, läuft auf jeder Distribution |
+| Linux | `bar-display_VERSION_amd64.deb` | für Debian, Ubuntu, Mint und Verwandte |
+| Linux | `bar-display-VERSION.tar.gz` | einfaches Archiv, falls die anderen beiden nicht passen |
+| macOS | `BarDisplay-VERSION-arm64.dmg` | Apple Silicon (M1 und neuer) |
+| macOS | `BarDisplay-VERSION-x64.dmg` | Intel-Macs |
+| alle | `SHA256SUMS-windows.txt`, `-linux.txt`, `-mac.txt` | Prüfsummen, siehe [Reproduzierbare Releases](#reproduzierbare-releases) |
+
+Raspberry Pi braucht keinen Download, siehe [Raspberry Pi](#raspberry-pi).
 
 ### Windows
 
@@ -78,20 +84,20 @@ Installer ausführen oder die portable `.exe` in einen Ordner legen und starten.
 AppImage einmalig ausführbar machen und starten:
 
 ```bash
-chmod +x BarDisplay-1.0.0-x86_64.AppImage && ./BarDisplay-1.0.0-x86_64.AppImage
+chmod +x BarDisplay-*-x86_64.AppImage && ./BarDisplay-*-x86_64.AppImage
 ```
 
 Oder das Debian-Paket installieren:
 
 ```bash
-sudo apt install ./bar-display_1.0.0_amd64.deb
+sudo apt install ./bar-display_*_amd64.deb
 ```
 
 Beim `tar.gz` müssen Programm und ffmpeg von Hand ausführbar gemacht werden, weil das
 Archiv unter Windows gepackt wurde und dabei keine Dateirechte mitkommen:
 
 ```bash
-tar -xzf bar-display-1.0.0.tar.gz && chmod +x bar-display-1.0.0/bar-display bar-display-1.0.0/resources/ffmpeg/ffmpeg
+tar -xzf bar-display-*.tar.gz && chmod +x bar-display-*/bar-display bar-display-*/resources/ffmpeg/ffmpeg
 ```
 
 ### macOS
@@ -173,6 +179,37 @@ eigener Standzeit.
 
 ![Standbild in der Schleife](docs/screenshots/anzeige-standbild.png)
 
+### Durchsage
+
+Ein Balken am unteren Bildrand, über alles gelegt — auch über ein laufendes Video.
+Eingeschaltet wird er vom Handy oder vom Einstellungsfenster aus, er steht binnen
+einer Sekunde auf jedem Bildschirm, der an derselben Konfiguration hängt, und
+blendet sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
+
+![Durchsage über einem laufenden Clip](docs/screenshots/anzeige-durchsage.png)
+
+### QR-Code
+
+Ist unter *Anzeige → Beschriftung* eine Adresse hinterlegt, steht unten links auf
+dem Timetable ein QR-Code mit Beschriftung — z. B. auf die Festivalseite oder auf
+das ausführliche Line-up. Umlaute in der Adresse sind kein Problem.
+Ohne Adresse erscheint kein Code.
+
+### Ruhezeit
+
+Außerhalb der eingestellten Öffnungszeit bleibt der Bildschirm schwarz und die
+Schleife steht still — das schont Gerät und Strom. Bewegt jemand die Maus,
+erscheint kurz ein Hinweis, dass das Programm läuft und nur schläft; über die
+Einstellungen kommt man weiterhin ganz normal rein.
+
+### Gedrehte Anzeige
+
+Für senkrecht aufgehängte Fernseher lässt sich die ganze Anzeige um 90, 180 oder
+270 Grad drehen, samt Übergängen und PIN-Feld. Am Betriebssystem muss dafür nichts
+eingestellt werden — praktisch besonders am Raspberry Pi.
+
+![Timetable auf einem hochkant montierten Bildschirm](docs/screenshots/anzeige-drehung.png)
+
 ### Übergänge
 
 Vier Varianten, einstellbar unter *Anzeige → Stil & Übergänge*:
@@ -195,6 +232,8 @@ Ohne hinterlegtes Logo erscheint bei beiden Logo-Varianten der Bar-Name.
 ## Die Einstellungen
 
 ### Durchsage
+
+![Einstellungen Durchsage](docs/screenshots/einstellungen-durchsage.png)
 
 Der erste Reiter, und am Handy gleich geöffnet — dafür kommt man meistens her.
 Text eintippen, **Jetzt anzeigen** — der Balken steht binnen einer Sekunde auf
@@ -273,6 +312,7 @@ sonst passt.
 - **Stil & Übergänge**: Fläche hinter dem Seitentitel (Blob, Balken oder ohne),
   Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang.
 - **Farben & Schrift**: Hintergrund-, Akzent- und Signalfarbe, zwei Voreinstellungen,
+  optional eine eigene Schriftdatei.
 - **Anzeige drehen**: 90, 180 oder 270 Grad. Gedacht für senkrecht montierte
   Bildschirme — der Fernseher wird gedreht aufgehängt, die Anzeige dreht mit.
   Wirkt sofort und gilt auf jedem System gleich, auch auf dem Raspberry Pi,
@@ -283,7 +323,6 @@ sonst passt.
   statt den Bildschirm dauerhaft schwarz zu lassen.
 - **QR-Code**: Adresse eintragen, dann erscheint unten links auf dem Timetable
   ein Code mit Beschriftung. Leer lassen = kein Code.
-  optional eine eigene Schriftdatei.
 
 ### System
 
@@ -443,6 +482,10 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Preise/Timetable erscheinen nie | Im Reiter *Anzeige* steht die Häufigkeit auf `0` |
 | Ein Clip läuft nie | Fähnchen im Reiter *Videos* prüfen: deaktiviert oder kein Zeitfenster gesetzt |
 | Nach einem System-Update startet nichts mehr | Autostart unter *System* neu setzen |
+| Bildschirm schwarz, Maus zeigt einen Hinweis | Ruhezeit ist aktiv – *Anzeige → Ruhezeit* |
+| Durchsage hängt fest | *Durchsage → Ausblenden*, oder eine Ausblendzeit setzen |
+| Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
+| QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*, Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |
 | Linux: Programm startet nicht | Ausführbar-Bit fehlt – `chmod +x` auf die AppImage bzw. auf `bar-display` und `resources/ffmpeg/ffmpeg` |
 | Linux: Umwandlung nicht verfügbar | Sollte nicht vorkommen, ffmpeg liegt bei. Notfalls `sudo apt install ffmpeg` – das Programm nimmt auch ein systemweit installiertes |
@@ -483,8 +526,9 @@ npm run dist:linux
 npm run dist:mac
 ```
 
-Beim ersten Bauen holt das Projekt die ffmpeg-Binärdateien für beide Plattformen nach
-`vendor/` (zusammen rund 155 MB, absichtlich nicht im Repository). Einzeln anstoßen:
+Beim ersten Bauen holt das Projekt die ffmpeg-Binärdateien für alle Plattformen nach
+`vendor/` (absichtlich nicht im Repository). Jeder Download wird gegen eine hinterlegte
+SHA-256-Prüfsumme geprüft. Einzeln anstoßen:
 
 ```bash
 npm run vendor:ffmpeg
@@ -500,8 +544,31 @@ Ausführungsrechte fehlen. Der bequeme Weg ist der Ablauf in
 Pakete für Windows und Linux und hängt sie an das Release.
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.1.0 && git push origin v1.1.0
 ```
+
+### Reproduzierbare Releases
+
+Damit ein Release später aus demselben Stand nochmal gebaut werden kann:
+
+- **Abhängigkeiten sind festgenagelt.** `package-lock.json` liegt im Repository, der
+  Ablauf auf GitHub benutzt `npm ci` — nie `npm install`.
+- **ffmpeg ist auf Prüfsumme festgelegt.** `scripts/fetch-ffmpeg.js` kennt für jede
+  Plattform die erwartete SHA-256 und Dateigröße und bricht ab, wenn etwas nicht passt.
+  Ein stillschweigend ausgetauschter Download fällt damit auf.
+- **Tag und Version müssen zusammenpassen.** Der Ablauf vergleicht den Git-Tag mit der
+  Version in `package.json` und bricht bei Abweichung ab, bevor irgendetwas gebaut wird.
+- **Prüfsummen liegen dem Release bei.** Zu jeder Plattform gibt es eine
+  `SHA256SUMS-*.txt`. Damit lässt sich eine heruntergeladene Datei gegenprüfen:
+
+```bash
+sha256sum -c SHA256SUMS-linux.txt
+```
+
+Ein Release entsteht ausschließlich über den Ablauf auf GitHub, nie von Hand:
+Version in `package.json` setzen, committen, Tag anlegen und schieben.
+Schlägt ein Lauf fehl, steht der Auszug aus dem Protokoll direkt in der
+Zusammenfassung des Laufs.
 
 ### Aufbau
 
@@ -518,12 +585,14 @@ git tag v1.0.0 && git push origin v1.0.0
 | `pi/server.js` | Webdienst für den Raspberry Pi |
 | `pi/install.sh` | Einrichtung auf dem Pi |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
-| `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows und Linux nach `vendor/` |
+| `src/qr.js` | QR-Erzeugung, mitgeliefert statt nachgeladen |
+| `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows, Linux und macOS nach `vendor/`, mit Prüfsumme |
 | `build/` | Programmsymbole, aus dem L300-Logo erzeugt |
 | `.github/workflows/release.yml` | baut auf GitHub alle Pakete und hängt sie an ein Release |
 
 ### Mitgelieferte Fremdbestandteile
 
 - **Josefin Sans** – SIL Open Font License 1.1, Lizenztext in `src/fonts/OFL.txt`
-- **ffmpeg** – über `ffmpeg-static`, wird nur zum Umwandeln aufgerufen
+- **ffmpeg** – wird beim Bauen nach `vendor/` geholt, siehe `scripts/fetch-ffmpeg.js`
+- **qrcode-generator** – MIT, als `src/qr.js` mitgeliefert
 - **Electron** – Laufzeitumgebung
