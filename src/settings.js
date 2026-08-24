@@ -361,20 +361,24 @@ async function pruefeUndWandle(eintraege, stillWennAllesOk) {
                '\n\nJetzt nach MP4 umwandeln? Das kann je nach Länge ein paar Minuten dauern.')) return;
 
   let ok = 0;
+  let fehler = null;
   for (const v of kaputt) {
     toast('Wandle „' + (v.title || v.file) + '" um…');
     const res = await window.api.convertMedia(v.file);
-    if (res.ok) {
-      v.file = res.datei;
-      ok++;
-      markDirty();
-      renderVideos();
-    } else {
-      toast('Fehlgeschlagen: ' + (v.title || v.file) + ' – ' + res.fehler, true);
-      return;
-    }
+    if (!res.ok) { fehler = (v.title || v.file) + ' – ' + res.fehler; break; }
+    v.file = res.datei;
+    ok++;
+    markDirty();
+    renderVideos();
   }
-  toast(ok + ' Clip(s) umgewandelt – nicht vergessen zu speichern');
+
+  // Die Umwandlung hat die Originaldatei bereits ersetzt. Wird jetzt nicht
+  // gespeichert, zeigt die Konfiguration auf eine Datei, die es nicht mehr gibt -
+  // deshalb hier ohne Nachfrage sichern.
+  if (ok > 0) await save();
+
+  if (fehler) toast('Fehlgeschlagen: ' + fehler, true);
+  else toast(ok + ' Clip(s) umgewandelt und gespeichert');
 }
 
 async function addVideos() {

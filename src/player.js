@@ -55,7 +55,7 @@ function applyTheme() {
   root.setProperty('--accent', s.accent || '#74ff40');
   root.setProperty('--accent2', s.accent2 || '#f04e23');
   root.setProperty('--blob', 'color-mix(in srgb, ' + (s.bgColor || '#450b6f') + ' 38%, #000)');
-  root.setProperty('--muted', 'color-mix(in srgb, ' + (s.bgColor || '#450b6f') + ' 30%, #ffffff 62%)');
+  root.setProperty('--muted', 'color-mix(in srgb, ' + (s.bgColor || '#450b6f') + ' 32%, #ffffff 68%)');
   root.setProperty('--fade', (s.transition === 'cut' ? 0 : (s.fadeMs || 700)) + 'ms');
   document.body.dataset.pattern = s.pattern || 'dots';
   document.body.dataset.title = s.titleStyle || 'blob';
@@ -167,15 +167,29 @@ function playImage(item) {
   el.dataset.kind = 'image';
 
   const img = el.querySelector('img');
+
+  // Erst einblenden, wenn das Bild wirklich da ist - sonst blitzt bei grossen
+  // Dateien kurz eine leere Flaeche auf.
+  const einblenden = () => {
+    if (tok !== itemToken) return;
+    clearTimeout(loadTimer); loadTimer = null;
+    crossfade(el);
+    const secs = Number(item.video.duration) || Number(cfg.settings.imageDuration) || 12;
+    itemTimer = setTimeout(() => { if (tok === itemToken) advance(); }, Math.max(2, secs) * 1000);
+  };
+
   img.onerror = () => {
     if (tok !== itemToken) return;
     console.warn('Bild übersprungen:', item.video.file);
     advance(300);
   };
 
-  crossfade(el);
-  const secs = Number(item.video.duration) || Number(cfg.settings.imageDuration) || 12;
-  itemTimer = setTimeout(() => { if (tok === itemToken) advance(); }, Math.max(2, secs) * 1000);
+  if (img.complete && img.naturalWidth > 0) {
+    einblenden();
+  } else {
+    img.onload = einblenden;
+    loadTimer = setTimeout(einblenden, 5000);   // Notbremse
+  }
 }
 
 function playVideo(item) {

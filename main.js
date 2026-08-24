@@ -134,7 +134,7 @@ function safeName(original, dir) {
     .replace(/[^A-Za-z0-9._-]+/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
-  if (!base) base = 'video';
+  if (!base) base = 'datei';
   let name = base + ext;
   let i = 2;
   while (fs.existsSync(path.join(dir, name))) {
@@ -284,21 +284,24 @@ if (!gotLock) {
     }
   });
 
+  // Monitor an- oder abgesteckt: Anzeige wieder dorthin schieben, wo sie hingehört
+  const neuAusrichten = () => {
+    if (playerWin && !playerWin.isDestroyed()) placeOnDisplay(playerWin, targetDisplay(loadConfig()));
+  };
+
   app.whenReady().then(() => {
     ensureDirs();
     Menu.setApplicationMenu(null);
     createPlayerWindow();
 
     // Notausgang, falls die Oberfläche mal hängt
-    globalShortcut.register('Control+Alt+S', openSettings);
-    globalShortcut.register('Control+Alt+Q', () => app.quit());
-  });
+    if (!globalShortcut.register('Control+Alt+S', openSettings)) {
+      console.warn('Strg+Alt+S ist belegt - der Notausgang steht nicht bereit');
+    }
+    if (!globalShortcut.register('Control+Alt+Q', () => app.quit())) {
+      console.warn('Strg+Alt+Q ist belegt');
+    }
 
-  // Monitor an- oder abgesteckt: Anzeige wieder dorthin schieben, wo sie hingehört
-  const neuAusrichten = () => {
-    if (playerWin && !playerWin.isDestroyed()) placeOnDisplay(playerWin, targetDisplay(loadConfig()));
-  };
-  app.whenReady().then(() => {
     screen.on('display-added', neuAusrichten);
     screen.on('display-removed', neuAusrichten);
     screen.on('display-metrics-changed', neuAusrichten);
