@@ -3,6 +3,10 @@ name: Pakete bauen
 # Bei einem Tag wie v1.0.0 entstehen alle Pakete und werden an ein Release gehaengt.
 # Ueber "Run workflow" laesst sich der Lauf auch ohne Tag anstossen; die Dateien
 # haengen dann als Artefakte am Lauf.
+#
+# Jeder Schritt schreibt zusaetzlich in lauf.log. Geht etwas schief, landen die
+# letzten Zeilen in der Zusammenfassung des Laufs - dort sind sie ohne Klicken
+# in die Protokolle zu sehen.
 on:
   push:
     tags: ['v*']
@@ -35,6 +39,9 @@ jobs:
     needs: [release]
     if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -44,26 +51,29 @@ jobs:
           cache: npm
 
       - name: Abhaengigkeiten
-        run: npm ci
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: ffmpeg holen
-        run: npm run vendor:ffmpeg
+        run: npm ci 2>&1 | tee -a lauf.log
 
       - name: Umgebung
-        shell: bash
         run: |
-          echo "node   $(node --version)"
-          echo "npm    $(npm --version)"
-          echo "builder $(npx electron-builder --version)"
-          ls -la vendor/ffmpeg/*/ || true
+          {
+            echo "node    $(node --version)"
+            echo "npm     $(npm --version)"
+            echo "builder $(npx --no-install electron-builder --version)"
+          } 2>&1 | tee -a lauf.log
+
+      - name: ffmpeg holen
+        run: npm run vendor:ffmpeg 2>&1 | tee -a lauf.log
 
       - name: Tests
-        run: npm test
+        run: npm test 2>&1 | tee -a lauf.log
 
       - name: Bauen
-        run: npx electron-builder --linux AppImage deb tar.gz --publish never
+        run: npx --no-install electron-builder --linux AppImage deb tar.gz --publish never 2>&1 | tee -a lauf.log
+
+      - name: Ergebnis auflisten
+        run: ls -la dist 2>&1 | tee -a lauf.log
 
       - uses: actions/upload-artifact@v4
         with:
@@ -79,11 +89,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$GITHUB_REF_NAME" dist/*.AppImage dist/*.deb dist/*.tar.gz --clobber
 
+      - name: Fehlerbericht in die Zusammenfassung
+        if: failure()
+        run: |
+          {
+            echo "## Linux fehlgeschlagen"
+            echo ""
+            echo '```'
+            tail -n 60 lauf.log 2>/dev/null || echo "lauf.log wurde nie angelegt - der Fehler kam vor dem ersten Schritt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   windows:
     name: Windows (Installer, portable)
     needs: [release]
     if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -93,26 +117,29 @@ jobs:
           cache: npm
 
       - name: Abhaengigkeiten
-        run: npm ci
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-
-      - name: ffmpeg holen
-        run: npm run vendor:ffmpeg
+        run: npm ci 2>&1 | tee -a lauf.log
 
       - name: Umgebung
-        shell: bash
         run: |
-          echo "node   $(node --version)"
-          echo "npm    $(npm --version)"
-          echo "builder $(npx electron-builder --version)"
-          ls -la vendor/ffmpeg/*/ || true
+          {
+            echo "node    $(node --version)"
+            echo "npm     $(npm --version)"
+            echo "builder $(npx --no-install electron-builder --version)"
+          } 2>&1 | tee -a lauf.log
+
+      - name: ffmpeg holen
+        run: npm run vendor:ffmpeg 2>&1 | tee -a lauf.log
 
       - name: Tests
-        run: npm test
+        run: npm test 2>&1 | tee -a lauf.log
 
       - name: Bauen
-        run: npx electron-builder --win nsis portable --publish never
+        run: npx --no-install electron-builder --win nsis portable --publish never 2>&1 | tee -a lauf.log
+
+      - name: Ergebnis auflisten
+        run: ls -la dist 2>&1 | tee -a lauf.log
 
       - uses: actions/upload-artifact@v4
         with:
@@ -121,7 +148,17 @@ jobs:
 
       - name: An das Release haengen
         if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$GITHUB_REF_NAME" dist/*.exe --clobber
+
+      - name: Fehlerbericht in die Zusammenfassung
+        if: failure()
+        run: |
+          {
+            echo "## Windows fehlgeschlagen"
+            echo ""
+            echo '```'
+            tail -n 60 lauf.log 2>/dev/null || echo "lauf.log wurde nie angelegt - der Fehler kam vor dem ersten Schritt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
