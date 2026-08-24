@@ -221,7 +221,9 @@ jobs:
       - name: Bauen
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'   # ohne Entwicklerkonto nicht signieren
-        run: npx --no-install electron-builder --mac dmg zip --publish never 2>&1 | tee -a lauf.log
+        # Architektur muss mit angegeben werden: die Ziele auf der Kommandozeile
+        # ersetzen die Konfiguration, sonst entsteht nur die des Laeufers
+        run: npx --no-install electron-builder --mac dmg zip --arm64 --x64 --publish never 2>&1 | tee -a lauf.log
 
       - name: Ergebnis auflisten und Pruefsummen bilden
         run: |

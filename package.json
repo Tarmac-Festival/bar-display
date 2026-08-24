@@ -14,7 +14,7 @@
     "dist:linux": "node scripts/fetch-ffmpeg.js && electron-builder --linux AppImage deb tar.gz",
     "dist:all": "node scripts/fetch-ffmpeg.js && electron-builder --win nsis portable --linux AppImage deb tar.gz",
     "dist:linux-portable": "node scripts/fetch-ffmpeg.js && electron-builder --linux tar.gz",
-    "dist:mac": "node scripts/fetch-ffmpeg.js && electron-builder --mac dmg zip"
+    "dist:mac": "node scripts/fetch-ffmpeg.js && electron-builder --mac dmg zip --arm64 --x64"
   },
   "devDependencies": {
     "electron": "^31.3.1",
