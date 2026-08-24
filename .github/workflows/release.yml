@@ -22,6 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Tag gegen package.json prüfen
+        run: |
+          FASSUNG=$(node -p "require('./package.json').version")
+          if [ "v$FASSUNG" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($FASSUNG)." >&2
+            echo "Beides muss übereinstimmen, sonst heißt das Release anders als das Programm." >&2
+            exit 1
+          fi
+          echo "Fassung $FASSUNG stimmt mit dem Tag überein."
+
       - name: Anlegen, falls noch nicht vorhanden
         env:
           GH_TOKEN: ${{ github.token }}
@@ -72,8 +83,11 @@ jobs:
       - name: Bauen
         run: npx --no-install electron-builder --linux AppImage deb tar.gz --publish never 2>&1 | tee -a lauf.log
 
-      - name: Ergebnis auflisten
-        run: ls -la dist 2>&1 | tee -a lauf.log
+      - name: Ergebnis auflisten und Prüfsummen bilden
+        run: |
+          ls -la dist 2>&1 | tee -a lauf.log
+          ( cd dist && sha256sum *.AppImage *.deb *.tar.gz > SHA256SUMS-linux.txt )
+          tee -a lauf.log < dist/SHA256SUMS-linux.txt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -82,12 +96,13 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/*.tar.gz
+            dist/SHA256SUMS-linux.txt
 
       - name: An das Release haengen
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/*.AppImage dist/*.deb dist/*.tar.gz --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.AppImage dist/*.deb dist/*.tar.gz dist/SHA256SUMS-linux.txt --clobber
 
       - name: Fehlerbericht in die Zusammenfassung
         if: failure()
@@ -138,19 +153,24 @@ jobs:
       - name: Bauen
         run: npx --no-install electron-builder --win nsis portable --publish never 2>&1 | tee -a lauf.log
 
-      - name: Ergebnis auflisten
-        run: ls -la dist 2>&1 | tee -a lauf.log
+      - name: Ergebnis auflisten und Prüfsummen bilden
+        run: |
+          ls -la dist 2>&1 | tee -a lauf.log
+          ( cd dist && sha256sum *.exe > SHA256SUMS-windows.txt )
+          tee -a lauf.log < dist/SHA256SUMS-windows.txt
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/SHA256SUMS-windows.txt
 
       - name: An das Release haengen
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/*.exe --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.exe dist/SHA256SUMS-windows.txt --clobber
 
       - name: Fehlerbericht in die Zusammenfassung
         if: failure()

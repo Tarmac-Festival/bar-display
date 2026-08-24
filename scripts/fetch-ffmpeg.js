@@ -9,16 +9,29 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const TAG = 'b6.1.1';
 const BASIS = 'https://github.com/eugeneware/ffmpeg-static/releases/download/' + TAG;
 
+// Die Pruefsummen sind bewusst fest eingetragen: damit ist ein Bau von heute
+// und einer in zwei Jahren garantiert mit derselben ffmpeg-Fassung gebaut,
+// auch wenn beim Anbieter etwas ausgetauscht wird.
 const ZIELE = [
-  { plattform: 'win32', arch: 'x64', datei: 'ffmpeg.exe', magie: [0x4d, 0x5a] },              // MZ
-  { plattform: 'linux', arch: 'x64', datei: 'ffmpeg', magie: [0x7f, 0x45, 0x4c, 0x46] }       // ELF
+  {
+    plattform: 'win32', arch: 'x64', datei: 'ffmpeg.exe',
+    magie: [0x4d, 0x5a],                                             // MZ
+    sha256: '04e1307997530f9cf2fe35cba2ca7e8875ca91da02f89d6c7243df819c94ad00',
+    groesse: 82797568
+  },
+  {
+    plattform: 'linux', arch: 'x64', datei: 'ffmpeg',
+    magie: [0x7f, 0x45, 0x4c, 0x46],                                 // ELF
+    sha256: 'e7e7fb30477f717e6f55f9180a70386c62677ef8a4d4d1a5d948f4098aa3eb99',
+    groesse: 79826272
+  }
 ];
 
-const MINDESTGROESSE = 10 * 1024 * 1024;
 const VERSUCHE = 3;
 
 function lade(url, ziel, sprung = 0) {
@@ -69,14 +82,17 @@ function lade(url, ziel, sprung = 0) {
 
 function pruefen(ziel, z) {
   const groesse = fs.statSync(ziel).size;
-  if (groesse < MINDESTGROESSE) {
-    throw new Error('Datei nur ' + groesse + ' Bytes gross - Download unvollstaendig');
+  if (groesse !== z.groesse) {
+    throw new Error('Groesse ' + groesse + ' statt ' + z.groesse + ' Bytes');
   }
-  const kopf = Buffer.alloc(z.magie.length);
-  const fd = fs.openSync(ziel, 'r');
-  try { fs.readSync(fd, kopf, 0, kopf.length, 0); } finally { fs.closeSync(fd); }
-  if (!kopf.equals(Buffer.from(z.magie))) {
-    throw new Error('Datei ist kein Programm fuer ' + z.plattform + ' (Kopf: ' + kopf.toString('hex') + ')');
+  const inhalt = fs.readFileSync(ziel);
+  if (!inhalt.subarray(0, z.magie.length).equals(Buffer.from(z.magie))) {
+    throw new Error('kein Programm fuer ' + z.plattform +
+                    ' (Kopf: ' + inhalt.subarray(0, z.magie.length).toString('hex') + ')');
+  }
+  const sha = crypto.createHash('sha256').update(inhalt).digest('hex');
+  if (sha !== z.sha256) {
+    throw new Error('Pruefsumme weicht ab\n  erwartet ' + z.sha256 + '\n  bekommen ' + sha);
   }
   return groesse;
 }

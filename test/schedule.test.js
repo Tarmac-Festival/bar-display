@@ -2,7 +2,12 @@
 const fs = require('fs');
 const vm = require('vm');
 
-const code = fs.readFileSync('C:\\Users\\mnbee\\bar-display\\src\\common.js', 'utf8');
+const path = require('path');
+
+// Pfad immer relativ zu dieser Datei aufloesen - ein absoluter Pfad wuerde auf
+// dem Entwicklungsrechner funktionieren und ueberall sonst scheitern.
+const QUELLE = path.join(__dirname, '..', 'src', 'common.js');
+const code = fs.readFileSync(QUELLE, 'utf8');
 const ctx = vm.createContext({ console, Date });
 vm.runInContext(code, ctx);
 const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel } = ctx;
