@@ -10,7 +10,7 @@ const QUELLE = path.join(__dirname, '..', 'src', 'common.js');
 const code = fs.readFileSync(QUELLE, 'utf8');
 const ctx = vm.createContext({ console, Date });
 vm.runInContext(code, ctx);
-const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel } = ctx;
+const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster } = ctx;
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -55,6 +55,25 @@ check('2 Fenster / Mo 11:00', isVideoActive(zwei, MO(11, 0)), true);
 check('2 Fenster / Mo 13:00', isVideoActive(zwei, MO(13, 0)), false);
 check('2 Fenster / Sa 17:00', isVideoActive(zwei, SA(17, 0)), true);
 check('Beschreibung', describeWindows(zwei), 'Fr+Sa 16:00-22:00 / Mo 10:00-12:00');
+
+console.log('-- Ruhezeiten --');
+// Ruhezeit tagsüber: 06:00 bis 14:00
+check('Ruhe 06-14 / 05:59', zeitImFenster('06:00', '14:00', MO(5, 59)), false);
+check('Ruhe 06-14 / 06:00', zeitImFenster('06:00', '14:00', MO(6, 0)), true);
+check('Ruhe 06-14 / 13:59', zeitImFenster('06:00', '14:00', MO(13, 59)), true);
+check('Ruhe 06-14 / 14:00', zeitImFenster('06:00', '14:00', MO(14, 0)), false);
+check('Ruhe 06-14 / 23:00', zeitImFenster('06:00', '14:00', MO(23, 0)), false);
+
+// über Mitternacht: 04:00 bis 14:00 wäre normal, hier 22:00 bis 04:00
+check('Ruhe 22-04 / 21:59', zeitImFenster('22:00', '04:00', MO(21, 59)), false);
+check('Ruhe 22-04 / 22:00', zeitImFenster('22:00', '04:00', MO(22, 0)), true);
+check('Ruhe 22-04 / 02:00', zeitImFenster('22:00', '04:00', MO(2, 0)), true);
+check('Ruhe 22-04 / 04:00', zeitImFenster('22:00', '04:00', MO(4, 0)), false);
+
+// unbrauchbare Angaben schalten die Ruhezeit ab, statt alles schwarz zu machen
+check('Ruhe gleiche Zeit', zeitImFenster('08:00', '08:00', MO(8, 0)), false);
+check('Ruhe leer', zeitImFenster('', '14:00', MO(8, 0)), false);
+check('Ruhe unsinnig', zeitImFenster('25:00', '14:00', MO(8, 0)), false);
 
 console.log('-- Timetable --');
 const tt = [

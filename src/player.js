@@ -22,6 +22,7 @@ let stallTimer = null;    // Watchdog fuer haengende Wiedergabe
 let lastTime = -1;
 let videoCounter = 0;   // läuft ueber die Runden hinweg weiter
 let itemToken = 0;        // invalidiert Callbacks bereits abgelöster Elemente
+let imRuhemodus = false;  // Bildschirm schwarz, Schleife angehalten
 
 // ---------------------------------------------------------------------------
 // Start
@@ -46,6 +47,7 @@ async function boot() {
 
   setInterval(tickClock, 1000);
   setInterval(refreshVisibleSlide, 20000);
+  setInterval(sonderzustaende, 10000);
 
   restart();
 }
@@ -81,10 +83,80 @@ function applyFont(file) {
 
 function restart() {
   clearTimers();
+  sonderzustaende();
+  if (imRuhemodus) return;      // waehrend der Ruhezeit laeuft nichts
   videoCounter = 0;
   buildPlaylist();
   index = -1;
   advance();
+}
+
+// ---------------------------------------------------------------------------
+// Durchsage und Ruhezeit
+// ---------------------------------------------------------------------------
+function sonderzustaende() {
+  durchsagePruefen();
+  ruhePruefen();
+}
+
+function durchsagePruefen() {
+  const a = cfg.announcement || {};
+  const el = document.getElementById('durchsage');
+  let zeigen = !!(a.enabled && a.text);
+
+  // Laeuft eine Ablaufzeit ab, verschwindet die Durchsage von allein
+  if (zeigen && a.until) {
+    const ende = new Date(a.until);
+    if (!isNaN(ende) && Date.now() >= ende.getTime()) zeigen = false;
+  }
+
+  if (!zeigen) { el.classList.remove('an'); return; }
+  const text = el.querySelector('.durchsageText');
+  if (text.textContent !== a.text) text.textContent = a.text;
+  el.classList.add('an');
+}
+
+function ruhePruefen() {
+  const q = cfg.quiet || {};
+  const jetzt = new Date();
+  const soll = !!(q.enabled && zeitImFenster(q.from, q.to, jetzt));
+
+  if (soll && !imRuhemodus) return ruheAn();
+  if (!soll && imRuhemodus) return ruheAus();
+  if (imRuhemodus) ruheHinweisSetzen();
+}
+
+function ruheAn() {
+  imRuhemodus = true;
+  clearTimers();
+  itemToken++;
+  videoEls.forEach(v => {
+    v.onended = null; v.onerror = null; v.oncanplay = null;
+    v.pause(); v.removeAttribute('src'); v.load(); v.classList.remove('show');
+  });
+  slideEls.forEach(el => { el.classList.remove('show'); el.innerHTML = ''; delete el.dataset.kind; });
+  currentLayer = null;
+  document.getElementById('ruhe').classList.add('an');
+  ruheHinweisSetzen();
+  console.log('[ruhezeit] Anzeige schlaeft');
+}
+
+function ruheAus() {
+  imRuhemodus = false;
+  document.getElementById('ruhe').classList.remove('an');
+  console.log('[ruhezeit] Anzeige wacht auf');
+  restart();
+}
+
+// Dezenter Hinweis, der langsam wandert - so brennt sich nichts ein und
+// niemand haelt den schwarzen Bildschirm fuer einen Defekt.
+function ruheHinweisSetzen() {
+  const el = document.querySelector('.ruheHinweis');
+  const q = cfg.quiet || {};
+  el.textContent = nowHHMM() + '   ·   Ruhezeit bis ' + (q.to || '');
+  const minute = new Date().getMinutes();
+  el.style.left = (8 + (minute * 137) % 60) + '%';
+  el.style.top = (8 + (minute * 89) % 70) + '%';
 }
 
 function clearTimers() {

@@ -352,3 +352,24 @@ textarea { resize: vertical; min-height: 66px; line-height: 1.45; font-family: i
   .grid td [data-act=del]::after { content: '  Act entfernen'; font-size: 13px; }
   .grid td [data-act=del] { width: 100%; margin-top: 0.4rem; }
 }
+
+/* ------------------------------- Durchsage --------------------------- */
+.anStatus {
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.anStatus.aktiv {
+  color: #ffd9c9;
+  border-color: #6b3a25;
+  background: rgba(240, 78, 35, 0.16);
+  font-weight: 600;
+}
+
+/* Grosse Schaltflaechen - werden am Handy mit dem Daumen getroffen */
+button.gross { padding: 0.85rem 1.4rem; font-size: 15px; flex: 1; min-width: 150px; }
+.anKnoepfe { gap: 0.7rem; }

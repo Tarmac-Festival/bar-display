@@ -13,6 +13,7 @@
   <header id="topbar">
     <div class="brand">Bar Display <span id="version"></span></div>
     <nav id="tabs">
+      <button class="tab" data-tab="durchsage">Durchsage</button>
       <button class="tab active" data-tab="videos">Videos</button>
       <button class="tab" data-tab="timetable">Timetable</button>
       <button class="tab" data-tab="prices">Getr&auml;nkepreise</button>
@@ -26,6 +27,46 @@
   </header>
 
   <main>
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-durchsage" class="panel">
+      <div class="panelHead"><div>
+        <h1>Durchsage</h1>
+        <p class="hint">Legt sich sofort &uuml;ber die Anzeige, auf allen Bildschirmen,
+           die an dieser Konfiguration h&auml;ngen. Anzeigen und Ausblenden speichern
+           direkt &ndash; ohne den Knopf oben rechts.</p>
+      </div></div>
+
+      <div class="card">
+        <div id="an_status" class="anStatus">Keine Durchsage aktiv</div>
+
+        <label class="field">
+          <span>Text</span>
+          <textarea id="an_text" rows="3" maxlength="200"
+                    placeholder="z.B. Letzte Runde &ndash; die Bar schlie&szlig;t in 20 Minuten"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Automatisch ausblenden</span>
+          <select id="an_dauer">
+            <option value="0">nicht automatisch &ndash; bleibt bis zum Ausblenden</option>
+            <option value="5">nach 5 Minuten</option>
+            <option value="15" selected>nach 15 Minuten</option>
+            <option value="30">nach 30 Minuten</option>
+            <option value="60">nach einer Stunde</option>
+          </select>
+        </label>
+
+        <div class="btnRow anKnoepfe">
+          <button id="an_zeigen" class="primary gross">Jetzt anzeigen</button>
+          <button id="an_weg" class="danger gross">Ausblenden</button>
+        </div>
+
+        <p class="hint" style="margin-top:0.9rem">Kurz und knapp wirkt am besten &ndash;
+           der Text erscheint sehr gro&szlig; auf einem Balken am unteren Bildrand,
+           auch w&auml;hrend ein Video l&auml;uft.</p>
+      </div>
+    </section>
+
     <!-- ------------------------------------------------------------- -->
     <section id="panel-videos" class="panel active">
       <div class="panelHead">
@@ -217,6 +258,28 @@
             <span>Hinweis unter der Preisliste</span>
             <input type="text" id="s_priceNote" maxlength="120" placeholder="z.B. Alle Preise in Euro, inkl. Pfand">
           </label>
+        </div>
+
+        <div class="card">
+          <h2>Ruhezeit</h2>
+          <p class="hint" style="margin-bottom:0.9rem">Au&szlig;erhalb der &Ouml;ffnungszeiten
+             bleibt der Bildschirm schwarz. Das schont das Ger&auml;t und spart Strom;
+             die Schleife wird dabei angehalten.</p>
+          <label class="checkline">
+            <input type="checkbox" id="q_enabled"> <span>Ruhezeit einschalten</span>
+          </label>
+          <div class="twoCol">
+            <label class="field">
+              <span>Von</span>
+              <input type="time" id="q_from">
+            </label>
+            <label class="field">
+              <span>Bis</span>
+              <input type="time" id="q_to">
+            </label>
+          </div>
+          <p class="hint">&Uuml;ber Mitternacht hinweg funktioniert es genauso &ndash;
+             z.B. 04:00 bis 14:00 f&uuml;r eine Bar, die nachts l&auml;uft.</p>
         </div>
 
         <div class="card">

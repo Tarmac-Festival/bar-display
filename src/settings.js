@@ -21,6 +21,8 @@ async function boot() {
   await renderDisplays();
 
   fillSettingsFields();
+  fillDurchsage();
+  fillRuhezeit();
   renderVideos();
   renderTimetable();
   renderPrices();
@@ -32,6 +34,8 @@ async function boot() {
     if (dirty) return;           // eigene Änderungen nicht ueberschreiben
     state = cfg;
     fillSettingsFields();
+    fillDurchsage();
+    fillRuhezeit();
     renderVideos();
     renderTimetable();
     renderPrices();
@@ -71,6 +75,10 @@ function fuerBrowserAnpassen() {
   const nummerieren = $('identifyDisplays');
   if (nummerieren) nummerieren.style.display = 'none';
 
+  // Am Handy ist die Durchsage der haeufigste Grund, diese Seite zu oeffnen
+  const durchsageTab = document.querySelector('[data-tab=durchsage]');
+  if (durchsageTab) durchsageTab.click();
+
   const hinweis = document.createElement('p');
   hinweis.className = 'hint';
   hinweis.style.cssText = 'margin:0 0 1rem;padding:0.7rem 0.9rem;border-radius:9px;' +
@@ -80,6 +88,78 @@ function fuerBrowserAnpassen() {
     'am Rechner eingepflegt und auf den Pi kopiert.';
   const haupt = document.querySelector('main');
   haupt.insertBefore(hinweis, haupt.firstChild);
+}
+
+// ---------------------------------------------------------------------------
+// Durchsage
+// ---------------------------------------------------------------------------
+function fillDurchsage() {
+  state.announcement = state.announcement || {};
+  const a = state.announcement;
+  const feld = $('an_text');
+  if (document.activeElement !== feld) feld.value = a.text || '';
+  durchsageStatus();
+
+  if (!feld.dataset.wired) {
+    feld.dataset.wired = '1';
+    feld.addEventListener('input', () => { state.announcement.text = feld.value; markDirty(); });
+
+    $('an_zeigen').addEventListener('click', async () => {
+      const text = feld.value.trim();
+      if (!text) { toast('Bitte erst einen Text eingeben', true); return; }
+      const minuten = Number($('an_dauer').value) || 0;
+      state.announcement = {
+        enabled: true,
+        text,
+        until: minuten ? new Date(Date.now() + minuten * 60000).toISOString() : ''
+      };
+      await save();
+      durchsageStatus();
+      toast(minuten ? 'Durchsage läuft, endet in ' + minuten + ' Minuten' : 'Durchsage läuft');
+    });
+
+    $('an_weg').addEventListener('click', async () => {
+      state.announcement = Object.assign({}, state.announcement, { enabled: false, until: '' });
+      await save();
+      durchsageStatus();
+      toast('Durchsage ausgeblendet');
+    });
+  }
+}
+
+function durchsageStatus() {
+  const a = state.announcement || {};
+  const el = $('an_status');
+  let laeuft = !!(a.enabled && a.text);
+  let bis = '';
+  if (laeuft && a.until) {
+    const ende = new Date(a.until);
+    if (!isNaN(ende)) {
+      if (Date.now() >= ende.getTime()) laeuft = false;
+      else bis = ' bis ' + pad2(ende.getHours()) + ':' + pad2(ende.getMinutes());
+    }
+  }
+  el.textContent = laeuft ? 'Durchsage läuft gerade' + bis : 'Keine Durchsage aktiv';
+  el.classList.toggle('aktiv', laeuft);
+}
+
+// ---------------------------------------------------------------------------
+// Ruhezeit
+// ---------------------------------------------------------------------------
+function fillRuhezeit() {
+  state.quiet = state.quiet || {};
+  const q = state.quiet;
+  $('q_enabled').checked = !!q.enabled;
+  $('q_from').value = q.from || '06:00';
+  $('q_to').value = q.to || '14:00';
+
+  if ($('q_enabled').dataset.wired) return;
+  $('q_enabled').dataset.wired = '1';
+  $('q_enabled').addEventListener('change', (e) => { state.quiet.enabled = e.target.checked; markDirty(); });
+  for (const k of ['from', 'to']) {
+    const el = $('q_' + k);
+    el.addEventListener('input', () => { state.quiet[k] = el.value; markDirty(); });
+  }
 }
 
 // ---------------------------------------------------------------------------

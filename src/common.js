@@ -31,6 +31,16 @@ function minutesToHHMM(min) {
   return pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
 }
 
+// Uhrzeit-Fenster ohne Wochentage, z.B. fuer Ruhezeiten. Ueber Mitternacht
+// hinweg funktioniert es wie bei den Clips: 22:00-06:00 ist eine Nacht.
+function zeitImFenster(von, bis, jetzt) {
+  const a = toMinutes(von);
+  const b = toMinutes(bis);
+  if (a === null || b === null || a === b) return false;
+  const t = jetzt.getHours() * 60 + jetzt.getMinutes();
+  return a < b ? (t >= a && t < b) : (t >= a || t < b);
+}
+
 // ---------------------------------------------------------------------------
 // Zeitfenster eines Videos
 // ---------------------------------------------------------------------------

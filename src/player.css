@@ -604,6 +604,65 @@ body.instant .layer { transition: none; }
 }
 
 /* ------------------------------------------------------------------ */
+/* Durchsage                                                            */
+/* ------------------------------------------------------------------ */
+/* Liegt ueber dem Vorhang: eine Durchsage ist wichtiger als ein huebscher
+   Uebergang und darf davon nicht verdeckt werden. */
+#durchsage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 18;
+  display: none;
+  padding: 1.6em 4vw 1.8em;
+  font-size: calc(var(--u) * var(--scale, 1));
+  background:
+    linear-gradient(0deg,
+      color-mix(in srgb, var(--accent2) 92%, #000) 0%,
+      color-mix(in srgb, var(--accent2) 78%, #000) 100%);
+  box-shadow: 0 -0.6em 2em rgba(0, 0, 0, 0.55);
+  border-top: 0.25em solid #fff;
+}
+#durchsage.an { display: block; animation: durchsageRein 400ms ease-out; }
+
+@keyframes durchsageRein {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.durchsageText {
+  font-size: 3.1em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0.02em 0.03em 0.1em rgba(0, 0, 0, 0.45);
+  max-width: 88%;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ruhezeit                                                             */
+/* ------------------------------------------------------------------ */
+#ruhe {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  display: none;
+  background: #000;
+}
+#ruhe.an { display: block; }
+
+/* Ein sehr dezenter Hinweis, damit niemand denkt das Geraet sei kaputt.
+   Wandert jede Minute ein Stueck, damit sich nichts einbrennt. */
+.ruheHinweis {
+  position: absolute;
+  font-size: calc(var(--u) * 1.1);
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.16);
+  transition: left 2s linear, top 2s linear;
+}
+
+/* ------------------------------------------------------------------ */
 /* HUD / Zahnrad                                                       */
 /* ------------------------------------------------------------------ */
 #hud {

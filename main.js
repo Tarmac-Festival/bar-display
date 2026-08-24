@@ -65,6 +65,10 @@ const DEFAULT_CONFIG = {
   videos: [],
   timetable: [],
   prices: [],
+  // Durchsage, die sich vom Handy ueber alles legen laesst
+  announcement: { enabled: false, text: '', until: '' },
+  // Ruhezeit: Bildschirm ausserhalb der Oeffnungszeiten schwarz
+  quiet: { enabled: false, from: '06:00', to: '14:00' },
   // Hervorgehobener Shot unter den Preisspalten
   special: {
     enabled: false,

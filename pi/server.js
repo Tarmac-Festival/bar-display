@@ -73,6 +73,8 @@ const STANDARD = {
     fadeMs: 700, imageDuration: 12, timetableMaxNext: 5, priceNote: ''
   },
   videos: [], timetable: [], prices: [],
+  announcement: { enabled: false, text: '', until: '' },
+  quiet: { enabled: false, from: '06:00', to: '14:00' },
   special: { enabled: false, label: 'SPEZIALSHOT', name: '', size: '', price: '', text: '' }
 };
 
