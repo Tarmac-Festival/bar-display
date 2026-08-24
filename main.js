@@ -63,7 +63,16 @@ const DEFAULT_CONFIG = {
   },
   videos: [],
   timetable: [],
-  prices: []
+  prices: [],
+  // Hervorgehobener Shot unter den Preisspalten
+  special: {
+    enabled: false,
+    label: 'SPEZIALSHOT',
+    name: '',
+    size: '',
+    price: '',
+    text: ''
+  }
 };
 
 function deepMerge(base, over) {

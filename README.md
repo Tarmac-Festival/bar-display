@@ -31,6 +31,8 @@ Getränkepreise im Festival-Design.
 - **Timetable** mit Datum, Uhrzeit, Act und optionalem Foto. Die Anzeige hebt den
   laufenden Act hervor und zeigt darunter die nächsten. Vergangenes verschwindet von selbst.
 - **Getränkepreise** in Gruppen, mit Größe und Preis.
+- **Spezialshot** – ein hervorgehobenes Band über die volle Breite unter den
+  Preisspalten, mit eigener Überschrift, Preis und Beschreibungstext.
 - **Häufigkeit einstellbar** – z. B. Timetable nach je 3 Beiträgen, Preise nach je 5.
 - **Festival-Design** in Purpur, Neongrün und Signalorange, mit Josefin Sans.
   Farben, Titel, Muster und Titelfläche sind einstellbar.
@@ -149,6 +151,10 @@ Die Gruppen stehen nebeneinander, die Anzahl der Spalten richtet sich nach dem P
 Passt die Karte nicht auf den Bildschirm, verkleinert sich die Schrift automatisch,
 bis alles zu sehen ist – abgeschnitten wird nie.
 
+Darunter liegt optional der **Spezialshot**: ein Band über die volle Breite in der
+Signalfarbe, mit Überschrift, Name, Preis und einem Beschreibungstext. Gedacht für den
+Shot des Abends oder eine Aktion, die nicht in der normalen Karte untergehen soll.
+
 ![Preis-Anzeige](docs/screenshots/anzeige-preise.png)
 
 ### Standbilder
@@ -223,6 +229,11 @@ erkennt den Tageswechsel selbst.
 Gruppen wie *Bier*, *Alkoholfrei* oder *Longdrinks*, darin je ein Getränk pro Zeile mit
 Name, Größe und Preis. Die Größe darf leer bleiben. Die Reihenfolge der Gruppen lässt
 sich mit den Pfeilen ändern.
+
+Ganz unten steht die Karte **Spezialshot**. Einmal den Haken setzen, dann Überschrift,
+Name, Größe, Preis und Beschreibung eintragen – fertig. Ohne Haken erscheint das Band
+gar nicht. Die Überschrift ist frei wählbar, also auch *AKTION*, *HAPPY HOUR* oder was
+sonst passt.
 
 ### Anzeige
 

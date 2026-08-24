@@ -91,7 +91,7 @@ h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: 
 .hidden { display: none !important; }
 
 /* ------------------------------- Inputs ------------------------------ */
-input[type=text], input[type=number], input[type=time], input[type=date], select {
+input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -279,3 +279,5 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 
 .vDur { display: flex; align-items: center; gap: 0.4rem; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .vDur input { width: 68px; }
+
+textarea { resize: vertical; min-height: 66px; line-height: 1.45; font-family: inherit; }

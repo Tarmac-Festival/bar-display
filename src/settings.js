@@ -277,6 +277,7 @@ function fillSettingsFields() {
   $('s_showClock').checked = !!s.showClock;
   renderLogoPreview();
   renderFontState();
+  fillSpecialFields();
 
   for (const k of NUM_FIELDS) {
     const el = $('s_' + k);
@@ -648,6 +649,37 @@ function ttRow(e, i) {
 
 function fileSrc(dir, file) {
   return 'file:///' + encodeURI(String(dir).replace(/\\/g, '/') + '/' + file);
+}
+
+// Spezialshot: eigener Block in der Konfiguration, deshalb eigene Verdrahtung
+const SPECIAL_TEXT = ['label', 'name', 'size', 'price', 'text'];
+
+function fillSpecialFields() {
+  state.special = state.special || {};
+  const sp = state.special;
+
+  $('sp_enabled').checked = !!sp.enabled;
+  for (const k of SPECIAL_TEXT) {
+    const el = $('sp_' + k);
+    if (el) el.value = sp[k] != null ? sp[k] : '';
+  }
+
+  if (!$('sp_enabled').dataset.wired) {
+    $('sp_enabled').dataset.wired = '1';
+    $('sp_enabled').addEventListener('change', (e) => {
+      state.special.enabled = e.target.checked;
+      markDirty();
+    });
+  }
+  for (const k of SPECIAL_TEXT) {
+    const el = $('sp_' + k);
+    if (!el || el.dataset.wired) continue;
+    el.dataset.wired = '1';
+    el.addEventListener('input', () => {
+      state.special[k] = el.value;
+      markDirty();
+    });
+  }
 }
 
 function renderLogoPreview() {

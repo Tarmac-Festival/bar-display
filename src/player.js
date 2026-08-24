@@ -98,7 +98,9 @@ function buildPlaylist() {
   const active = (cfg.videos || []).filter(v => isVideoActive(v, now));
 
   const hasTT = (cfg.timetable || []).length > 0;
-  const hasPR = (cfg.prices || []).some(c => (c.items || []).length > 0);
+  const sp = cfg.special || {};
+  const hasPR = (cfg.prices || []).some(c => (c.items || []).length > 0) ||
+                (sp.enabled && sp.name);
 
   const items = [];
   for (const v of active) {
@@ -492,12 +494,34 @@ function renderPrices() {
     body += '</div>';
   }
   body += '</div>';
+  if (!cats.length) body = '';
+
+  body += renderSpecial();
+
   if (s.priceNote) body += '<div class="priceNote">' + escapeHtml(s.priceNote) + '</div>';
-  if (!cats.length) body = '<div class="emptyNote">Preisliste noch nicht eingepflegt.</div>';
+  if (!cats.length && !body.trim()) {
+    body = '<div class="emptyNote">Preisliste noch nicht eingepflegt.</div>';
+  }
 
   return '<div class="slideInner">' +
     headHtml(s.pricesTitle || 'GETRÄNKE', s.pricesSubtitle) +
     '<div class="slideBody center">' + body + '</div>' + footHtml() + '</div>';
+}
+
+// Spezialshot: volle Breite, unter den Spalten, deutlich abgesetzt
+function renderSpecial() {
+  const sp = cfg.special || {};
+  if (!sp.enabled || !sp.name) return '';
+  return '<div class="special">' +
+    '<div class="specialTag">' + escapeHtml(sp.label || 'SPEZIALSHOT') + '</div>' +
+    '<div class="specialRow">' +
+      '<span class="specialName">' + escapeHtml(sp.name) + '</span>' +
+      (sp.size ? '<span class="specialSize">' + escapeHtml(sp.size) + '</span>' : '') +
+      '<span class="specialDots"></span>' +
+      (sp.price ? '<span class="specialPrice">' + escapeHtml(sp.price) + '</span>' : '') +
+    '</div>' +
+    (sp.text ? '<div class="specialText">' + escapeHtml(sp.text) + '</div>' : '') +
+    '</div>';
 }
 
 function renderIdle() {

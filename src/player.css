@@ -409,6 +409,76 @@ body[data-pattern="confetti"] .slide {
 
 .priceNote { margin-top: 1.3em; font-size: 1.1em; color: var(--muted); }
 
+/* --------------------- Spezialshot ---------------------------------- */
+/* Volle Breite unter den Spalten, in der Signalfarbe abgesetzt, damit er
+   sich klar von der normalen Karte unterscheidet. */
+.special {
+  margin-top: 1.8em;
+  padding: 1.1em 1.6em 1.25em;
+  border-radius: 0.35em;
+  border: 0.11em solid color-mix(in srgb, var(--accent2) 70%, transparent);
+  border-left-width: 0.5em;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent2) 24%, transparent),
+      color-mix(in srgb, var(--accent2) 8%, transparent) 55%,
+      transparent 90%),
+    color-mix(in srgb, var(--bg) 62%, #000);
+  box-shadow: 0 0.12em 0.9em rgba(0, 0, 0, 0.35);
+}
+
+.specialTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.1em;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  color: var(--accent2);
+}
+.specialTag::before {
+  content: '';
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  background: var(--accent2);
+}
+
+.specialRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  margin-top: 0.25em;
+}
+.specialName {
+  font-size: 2.6em;
+  font-weight: 700;
+  line-height: 1.05;
+  text-shadow: 0.03em 0.04em 0.1em rgba(0, 0, 0, 0.4);
+}
+.specialSize { font-size: 1.25em; color: var(--muted); white-space: nowrap; }
+.specialDots {
+  flex: 1;
+  border-bottom: 0.06em dotted rgba(255, 255, 255, 0.3);
+  transform: translateY(-0.4em);
+  min-width: 1.5em;
+}
+.specialPrice {
+  font-size: 2.6em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.specialText {
+  margin-top: 0.35em;
+  font-size: 1.25em;
+  line-height: 1.4;
+  color: var(--fg);
+  opacity: 0.85;
+  max-width: 70ch;
+}
+
 /* ------------------------------- Fuß ------------------------------- */
 .slideFoot {
   flex: none;

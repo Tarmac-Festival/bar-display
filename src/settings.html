@@ -91,6 +91,41 @@
       </div>
       <div id="priceList" class="list"></div>
       <div id="priceEmpty" class="empty hidden">Noch keine Preisgruppen angelegt.</div>
+
+      <div class="card" style="margin-top:1.2rem">
+        <h2>Spezialshot</h2>
+        <p class="hint" style="margin-bottom:0.9rem">Wird unter den Preisspalten
+           &uuml;ber die volle Breite hervorgehoben &ndash; f&uuml;r den Shot des Abends
+           oder eine Aktion.</p>
+        <label class="checkline">
+          <input type="checkbox" id="sp_enabled"> <span>Spezialshot anzeigen</span>
+        </label>
+        <div class="twoCol">
+          <label class="field">
+            <span>&Uuml;berschrift</span>
+            <input type="text" id="sp_label" maxlength="30" placeholder="SPEZIALSHOT">
+          </label>
+          <label class="field">
+            <span>Name</span>
+            <input type="text" id="sp_name" maxlength="60" placeholder="z.B. Tarmac Tornado">
+          </label>
+        </div>
+        <div class="twoCol">
+          <label class="field">
+            <span>Gr&ouml;&szlig;e (optional)</span>
+            <input type="text" id="sp_size" maxlength="20" placeholder="2 cl">
+          </label>
+          <label class="field">
+            <span>Preis</span>
+            <input type="text" id="sp_price" maxlength="20" placeholder="2,50">
+          </label>
+        </div>
+        <label class="field">
+          <span>Beschreibung</span>
+          <textarea id="sp_text" rows="3" maxlength="300"
+                    placeholder="z.B. Ingwer, Limette und ordentlich Wumms. Nur solange der Vorrat reicht."></textarea>
+        </label>
+      </div>
     </section>
 
     <!-- ------------------------------------------------------------- -->
