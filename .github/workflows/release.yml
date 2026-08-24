@@ -40,14 +40,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Abhaengigkeiten
         run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
       - name: ffmpeg holen
         run: npm run vendor:ffmpeg
+
+      - name: Umgebung
+        shell: bash
+        run: |
+          echo "node   $(node --version)"
+          echo "npm    $(npm --version)"
+          echo "builder $(npx electron-builder --version)"
+          ls -la vendor/ffmpeg/*/ || true
 
       - name: Tests
         run: npm test
@@ -79,14 +89,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Abhaengigkeiten
         run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
       - name: ffmpeg holen
         run: npm run vendor:ffmpeg
+
+      - name: Umgebung
+        shell: bash
+        run: |
+          echo "node   $(node --version)"
+          echo "npm    $(npm --version)"
+          echo "builder $(npx electron-builder --version)"
+          ls -la vendor/ffmpeg/*/ || true
 
       - name: Tests
         run: npm test
