@@ -8,6 +8,7 @@ let mediaDir = '';
 let photoDir = '';
 let brandDir = '';
 let fontDir = '';
+let httpModus = false;   // true, wenn die Anzeige im Browser statt in Electron läuft
 
 const videoEls = [document.getElementById('vidA'), document.getElementById('vidB')];
 const slideEls = [document.getElementById('slideA'), document.getElementById('slideB')];
@@ -33,6 +34,7 @@ async function boot() {
   photoDir = paths.photoDir;
   brandDir = paths.brandDir;
   fontDir = paths.fontDir;
+  httpModus = paths.mode === 'http';
   cfg = await window.api.getConfig();
   applyTheme();
 
@@ -362,7 +364,10 @@ function curtainSwap(next, mode) {
 }
 
 function fileUrl(dir, file) {
-  const p = String(dir).replace(/\\/g, '/');
+  const p = String(dir).replace(/\\/g, '/').replace(/\/$/, '');
+  // Im Browserbetrieb liefert der Dienst Pfade wie "/media" - dort darf keine
+  // file://-URL entstehen, sonst blockiert der Browser den Zugriff.
+  if (httpModus) return p + '/' + encodeURIComponent(file);
   return 'file:///' + encodeURI(p + '/' + file).replace(/#/g, '%23').replace(/\?/g, '%3F');
 }
 

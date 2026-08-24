@@ -16,6 +16,7 @@ Getränkepreise im Festival-Design.
 - [Die Anzeige](#die-anzeige)
 - [Die Einstellungen](#die-einstellungen)
 - [Mehrere Bars ausstatten](#mehrere-bars-ausstatten)
+- [Raspberry Pi](#raspberry-pi)
 - [Unterstützte Formate](#unterstützte-formate)
 - [Wo die Daten liegen](#wo-die-daten-liegen)
 - [Wenn etwas klemmt](#wenn-etwas-klemmt)
@@ -287,6 +288,79 @@ an jeder Bar über *Videos & Bilder hinzufügen* eingelesen.
 
 ---
 
+## Raspberry Pi
+
+Auf einem Raspberry Pi läuft **nicht** die Electron-Fassung. Electron bringt sein
+eigenes Chromium mit, und das nutzt die Hardware-Dekodierung des Pi nicht — 1080p
+wäre damit auf einem Pi 3 unbrauchbar. Stattdessen läuft dort ein kleiner Dienst,
+der dieselbe Anzeige ausliefert, und das Chromium von Raspberry Pi OS zeigt sie an.
+**Die Anzeige selbst ist Zeile für Zeile dieselbe** — Design, Schleife, Zeitfenster,
+Timetable, Spezialshot, alles identisch.
+
+### Einrichten
+
+Raspberry Pi OS flashen, ins Terminal, ein Befehl:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tarmac-Festival/bar-display/main/pi/install.sh | bash
+```
+
+Das Skript installiert Node.js, Chromium und `cage`, legt das Programm nach
+`/opt/bar-display` und richtet zwei Dienste ein: einen für den Webdienst, einen für
+die Vollbildanzeige. Nach dem Neustart läuft alles von allein.
+
+### Bedienung vom Handy
+
+Am Pi gibt es keine Tastatur. Die Einstellungen laufen deshalb über das Netzwerk —
+im selben WLAN im Browser aufrufen:
+
+```
+http://<IP-des-Pi>:8080/einstellungen
+```
+
+Die Seite ist für schmale Bildschirme ausgelegt. Änderungen erscheinen **sofort** auf
+der Anzeige, ohne Neustart. Was dort geht: Timetable, Preise, Spezialshot, alle Texte,
+Farben, Häufigkeiten, Zeitfenster. Was **nicht** geht: Videos, Fotos, Logo und
+Schriftart auswählen — dafür fehlt am Handy die Dateiauswahl. Die kopiert ihr in die
+Ordner auf dem Pi:
+
+```
+~/.config/Bar Display/media      Videos und Standbilder
+~/.config/Bar Display/photos     Act-Fotos
+~/.config/Bar Display/branding   eigenes Logo
+```
+
+Praktisch: Die Konfigurationsdatei hat auf allen Systemen dasselbe Format. Ihr könnt
+also am Rechner alles einrichten und `config.json` samt Ordnern auf den Pi kopieren.
+
+### Was der Pi leisten muss
+
+| | |
+|---|---|
+| Getestet gedacht für | Pi 3B mit 1 GB |
+| Videos | H.264 in MP4, Hardware-Dekodierung über Chromium |
+| Nicht empfohlen | Pi Zero 2 W — 512 MB sind für Chromium zu knapp |
+
+Nützliche Befehle auf dem Pi:
+
+```bash
+bar-display-update
+```
+
+```bash
+journalctl -u bar-display-kiosk -f
+```
+
+### Ehrlicher Hinweis
+
+Der Dienst, die Anzeige im Browser, die Bedienseite und das Live-Nachladen sind
+geprüft — allerdings auf einem PC, nicht auf einem Pi. Ob 1080p auf einem Pi 3B
+wirklich flüssig läuft und ob der Speicher reicht, lässt sich nur am Gerät
+feststellen. Wenn es klemmt, sind das die wahrscheinlichsten Stellschrauben:
+Videos auf 720p herunterrechnen, das Punktmuster im Hintergrund abschalten und
+die Überblendung auf harten Schnitt stellen.
+
+
 ## Unterstützte Formate
 
 | Art | Formate |
@@ -409,6 +483,9 @@ git tag v1.0.0 && git push origin v1.0.0
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
 | `src/branding/` | das mitgelieferte L300-Standardlogo |
 | `test/schedule.test.js` | Tests |
+| `pi/server.js` | Webdienst für den Raspberry Pi |
+| `pi/install.sh` | Einrichtung auf dem Pi |
+| `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
 | `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows und Linux nach `vendor/` |
 | `build/` | Programmsymbole, aus dem L300-Logo erzeugt |
 | `.github/workflows/release.yml` | baut auf GitHub alle Pakete und hängt sie an ein Release |

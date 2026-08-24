@@ -26,6 +26,7 @@ async function boot() {
   renderPrices();
   wireTabs();
   wireButtons();
+  fuerBrowserAnpassen();
 
   window.api.onConfigChanged((cfg) => {
     if (dirty) return;           // eigene Änderungen nicht ueberschreiben
@@ -38,6 +39,47 @@ async function boot() {
 
   // Status "läuft gerade" aktuell halten
   setInterval(() => { updateBadges(); markTimetableRows(); }, 20000);
+}
+
+// ---------------------------------------------------------------------------
+// Auf dem Raspberry Pi läuft diese Seite im Browser, aufgerufen vom Handy.
+// Dort gibt es keine Dateiauswahl und kein Fenster-Handling - alles, was das
+// braucht, wird ausgeblendet statt kaputt angeboten.
+// ---------------------------------------------------------------------------
+const NUR_AM_RECHNER = [
+  'addVideos', 'openMedia', 'checkMedia',        // Dateien hinzufügen, umwandeln
+  'cleanPhotos', 'ttExport', 'ttImport',          // Fotos und Timetable-Dateien
+  'logoPick', 'fontPick', 'fontClear',            // Logo- und Schriftauswahl
+  'openPhotos', 'exportCfg', 'importCfg',         // Ordner und Sicherungen
+  'backToPlayer', 'quitApp'                       // Fensterschaltflächen
+];
+
+function fuerBrowserAnpassen() {
+  if (paths.mode !== 'http') return;
+  document.body.dataset.modus = 'http';
+
+  for (const id of NUR_AM_RECHNER) {
+    const el = $(id);
+    if (el) el.style.display = 'none';
+  }
+  // Karten, die im Browser nichts nützen, ganz weg
+  for (const id of ['s_autostart', 's_displayId']) {
+    const el = $(id);
+    const karte = el && el.closest('.card');
+    if (karte) karte.style.display = 'none';
+  }
+  const nummerieren = $('identifyDisplays');
+  if (nummerieren) nummerieren.style.display = 'none';
+
+  const hinweis = document.createElement('p');
+  hinweis.className = 'hint';
+  hinweis.style.cssText = 'margin:0 0 1rem;padding:0.7rem 0.9rem;border-radius:9px;' +
+    'background:rgba(255,138,31,0.12);border:1px solid #4a3a28;max-width:none';
+  hinweis.textContent = 'Fernbedienung über das Netzwerk. Timetable, Preise, Spezialshot ' +
+    'und alle Texte lassen sich hier ändern. Videos, Fotos, Logo und Schriftart werden ' +
+    'am Rechner eingepflegt und auf den Pi kopiert.';
+  const haupt = document.querySelector('main');
+  haupt.insertBefore(hinweis, haupt.firstChild);
 }
 
 // ---------------------------------------------------------------------------
@@ -622,12 +664,14 @@ function ttRow(e, i) {
   const tr = document.createElement('tr');
   tr.dataset.eid = e.id || (e.id = uid());
   tr.innerHTML =
-    '<td><input type="date" data-f="date" value="' + escapeHtml(e.date || '') + '"></td>' +
-    '<td><input type="time" data-f="start" value="' + escapeHtml(e.start || '') + '"></td>' +
-    '<td><input type="time" data-f="end" value="' + escapeHtml(e.end || '') + '"></td>' +
-    '<td><input type="text" data-f="act" value="' + escapeHtml(e.act || '') + '" placeholder="Name des Acts"></td>' +
-    '<td><input type="text" data-f="info" value="' + escapeHtml(e.info || '') + '" placeholder="z.B. Live / DJ-Set"></td>' +
-    '<td class="photoCell"></td>' +
+    // data-titel wird auf schmalen Bildschirmen als Beschriftung eingeblendet,
+    // weil die Tabelle dort als Blöcke statt als Spalten dargestellt wird
+    '<td data-titel="Datum"><input type="date" data-f="date" value="' + escapeHtml(e.date || '') + '"></td>' +
+    '<td data-titel="Von"><input type="time" data-f="start" value="' + escapeHtml(e.start || '') + '"></td>' +
+    '<td data-titel="Bis"><input type="time" data-f="end" value="' + escapeHtml(e.end || '') + '"></td>' +
+    '<td data-titel="Act"><input type="text" data-f="act" value="' + escapeHtml(e.act || '') + '" placeholder="Name des Acts"></td>' +
+    '<td data-titel="Zusatz"><input type="text" data-f="info" value="' + escapeHtml(e.info || '') + '" placeholder="z.B. Live / DJ-Set"></td>' +
+    '<td class="photoCell" data-titel="Foto"></td>' +
     '<td><button class="danger icon" data-act="del">&times;</button></td>';
 
   renderPhotoCell(tr.querySelector('.photoCell'), e);
@@ -698,6 +742,7 @@ function renderLogoPreview() {
 async function renderDisplays() {
   const sel = $('s_displayId');
   const liste = await window.api.listDisplays();
+  if (!liste.length) return;      // im Browser gibt es keine Monitorliste
   sel.innerHTML = liste.map(d =>
     '<option value="' + d.id + '">Bildschirm ' + d.nummer + ' – ' + d.breite + '×' + d.hoehe +
     (d.primary ? ' (Hauptbildschirm)' : '') + '</option>').join('');
