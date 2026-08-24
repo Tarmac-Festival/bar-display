@@ -1,0 +1,600 @@
+/* Josefin Sans - die Schrift der Festival-Seite, unter der Open Font License
+   mitgeliefert (Lizenztext: src/fonts/OFL.txt). Variable Datei, alle Schnitte. */
+@font-face {
+  font-family: 'Josefin Sans';
+  src: url('fonts/JosefinSans-var.ttf') format('truetype');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Josefin Sans';
+  src: url('fonts/JosefinSans-Italic-var.ttf') format('truetype');
+  font-weight: 100 700;
+  font-style: italic;
+  font-display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tarmac-Look. Alle Größen in vw -> skaliert auf jedes 16:9-Display    */
+/* ------------------------------------------------------------------ */
+:root {
+  --bg: #450b6f;
+  --accent: #74ff40;
+  --accent2: #f04e23;
+  --fg: #dee2e6;
+  --muted: #b39ac9;
+  --blob: #35084f;
+  --line: rgba(255, 255, 255, 0.16);
+  --blobShape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M10,54 C4,28 26,9 58,6 C86,3 103,17 133,10 C168,2 197,17 195,45 C193,71 178,86 149,92 C119,98 95,86 62,95 C33,103 16,79 10,54 Z' fill='%23000'/%3E%3C/svg%3E");
+  --fade: 700ms;
+  --scale: 1;
+
+  /* Grundmaß der Anzeige. Das Layout ist auf 16:9 entworfen; auf breiteren
+     Schirmen wird die Höhe zum Engpass, auf 4:3 und Hochformat die Breite.
+     min() nimmt jeweils das, was zuerst knapp wird. */
+  --u: min(1vw, 1.85vh);
+  --font: 'BarDisplayCustom', 'Josefin Sans', 'Century Gothic', Questrial,
+          'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* 4:3 und schmaler: mehr Höhe verfügbar, also darf die Schrift etwas wachsen */
+@media (max-aspect-ratio: 4 / 3) { :root { --u: min(1.15vw, 1.85vh); } }
+/* Hochformat: die Breite bestimmt alles */
+@media (max-aspect-ratio: 1 / 1) { :root { --u: min(1.8vw, 1.85vh); } }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--fg);
+  font-family: var(--font);
+  cursor: none;
+  user-select: none;
+}
+
+body.showCursor { cursor: default; }
+
+#stage { position: fixed; inset: 0; background: #000; }
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--fade) ease-in-out;
+  will-change: opacity;
+}
+.layer.show { opacity: 1; }
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* ------------------------------------------------------------------ */
+/* Slide-Grundfläche: Purpur mit gestreuten Punkten                     */
+/* ------------------------------------------------------------------ */
+.slide {
+  display: flex;
+  background-color: var(--bg);
+  background-image: radial-gradient(130% 100% at 88% 4%, color-mix(in srgb, var(--bg) 55%, #000) 0%, transparent 62%);
+  background-size: 100% 100%;
+}
+
+/* dezent: feine Punkte, halten sich hinter dem Text zurück */
+body[data-pattern="dots"] .slide {
+  background-image:
+    radial-gradient(circle at 18% 26%, color-mix(in srgb, var(--accent2) 34%, transparent) 0.13vw, transparent 0.14vw),
+    radial-gradient(circle at 67% 74%, color-mix(in srgb, var(--accent2) 20%, transparent) 0.1vw, transparent 0.11vw),
+    radial-gradient(130% 100% at 88% 4%, color-mix(in srgb, var(--bg) 55%, #000) 0%, transparent 62%);
+  background-size: calc(var(--u)*15) calc(var(--u)*12.4), calc(var(--u)*20) calc(var(--u)*17), 100% 100%;
+}
+
+/* Konfetti: größer, bunter, ungleichmäßiger - wie auf den Instagram-Posts */
+body[data-pattern="confetti"] .slide {
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--accent2) 0.26vw, transparent 0.27vw),
+    radial-gradient(circle at 74% 58%, color-mix(in srgb, var(--accent2) 70%, transparent) 0.19vw, transparent 0.2vw),
+    radial-gradient(circle at 38% 82%, color-mix(in srgb, var(--accent) 55%, transparent) 0.17vw, transparent 0.18vw),
+    radial-gradient(circle at 88% 30%, rgba(255, 255, 255, 0.5) 0.13vw, transparent 0.14vw),
+    radial-gradient(130% 100% at 88% 4%, color-mix(in srgb, var(--bg) 55%, #000) 0%, transparent 62%);
+  background-size: calc(var(--u)*11) calc(var(--u)*9), calc(var(--u)*16.5) calc(var(--u)*13), calc(var(--u)*13) calc(var(--u)*15.5), calc(var(--u)*8.5) calc(var(--u)*11), 100% 100%;
+}
+
+.slideInner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 3em 4em 2.4em;
+  font-size: calc(var(--u) * var(--scale));
+  overflow: hidden;
+}
+
+/* Standbilder decken die Slide-Fläche vollständig ab */
+.fullImage {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fullImage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* ------------------------------- Kopf ------------------------------ */
+.slideHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2em;
+  flex-wrap: wrap;      /* auf schmalen Schirmen rutscht der Titel unter den Namen */
+}
+
+.brandBox { display: flex; align-items: center; gap: 1.1em; padding-top: 0.6em; }
+
+.brandLogo {
+  display: block;
+  width: auto;
+  max-width: 26vw;
+  object-fit: contain;
+}
+
+.brand {
+  font-size: 1.9em;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.brand span {
+  display: block;
+  font-size: 0.52em;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  text-transform: lowercase;
+  color: var(--muted);
+  margin-top: 0.5em;
+}
+
+/* Seitentitel: drei Varianten - organischer Blob, Balken oder frei */
+.titleBox {
+  flex: none;
+  position: relative;
+  max-width: 100%;
+  margin-left: auto;
+  text-align: right;
+}
+
+.titleBox.blob { padding: 3.1em 3.6em 3em; }
+.titleBox.blob::before {
+  content: '';
+  position: absolute;
+  inset: -1.2em -1.2em -1.1em -2.2em;
+  z-index: 0;
+  background-color: var(--blob);
+  -webkit-mask-image: var(--blobShape);
+  mask-image: var(--blobShape);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.titleBox.bar { padding: 1.5em 2.2em 1.7em; }
+.titleBox.bar::before {
+  content: '';
+  position: absolute;
+  inset: 0 -4vw 0 0;
+  z-index: 0;
+  background: var(--blob);
+  border-left: 0.5em solid var(--accent2);
+}
+
+.titleBox.plain { padding: 1.2em 0 0.6em; }
+
+.blobTitle, .blobSub { position: relative; z-index: 1; }
+
+.blobTitle {
+  font-size: 4.4em;
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  text-shadow: 0.035em 0.045em 0.12em rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+.blobSub {
+  margin-top: 0.5em;
+  font-size: 1.5em;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.55em;
+  text-indent: 0.55em;
+  color: #fff;
+  text-shadow: 0.05em 0.07em 0.14em rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+/* ------------------------------- Körper ---------------------------- */
+.slideBody { flex: 1; min-height: 0; overflow: hidden; margin-top: 1.6em; }
+.slideBody.center { display: flex; flex-direction: column; justify-content: center; }
+
+/* --------------------------- Timetable ----------------------------- */
+.ttNow {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  padding: 0.9em 1.3em;
+  margin-bottom: 1.3em;
+  border-left: 0.42em solid var(--accent2);
+  border-radius: 0.3em;
+  width: fit-content;
+  max-width: 100%;
+  padding-right: 2.6em;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--accent) 15%, transparent),
+      transparent 85%),
+    color-mix(in srgb, var(--bg) 68%, #000);
+}
+
+.ttPhoto {
+  flex: none;
+  width: 9.4em;
+  height: 9.4em;
+  border-radius: 58% 42% 52% 48% / 44% 58% 42% 56%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0.15em 0.9em rgba(0, 0, 0, 0.45);
+}
+.ttPhoto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.ttWhen { flex: none; }
+.ttWho { min-width: 0; }
+
+.ttNow .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: var(--accent2);
+}
+.ttNow .tag::before {
+  content: '';
+  width: 0.62em;
+  height: 0.62em;
+  border-radius: 50%;
+  background: var(--accent2);
+}
+.ttNow .time {
+  margin-top: 0.15em;
+  font-size: 1.95em;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.ttNow .act {
+  font-size: 3.15em;
+  font-weight: 700;
+  line-height: 1.03;
+  text-shadow: 0.03em 0.04em 0.1em rgba(0, 0, 0, 0.4);
+}
+.ttNow .info { font-size: 1.15em; color: var(--muted); margin-top: 0.2em; }
+
+.ttLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  color: var(--muted);
+  margin: 0.5em 0 0.8em;
+}
+.ttLabel::before {
+  content: '';
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  background: var(--accent2);
+}
+
+.ttList { display: flex; flex-direction: column; gap: 0.5em; }
+
+.ttRow {
+  display: grid;
+  grid-template-columns: 12em 1fr auto;
+  align-items: baseline;
+  gap: 1.2em;
+  padding: 0.5em 0.2em;
+  border-bottom: 0.075em solid var(--line);
+}
+.ttRow .when {
+  font-size: 1.7em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ttRow .act {
+  font-size: 2.1em;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  min-width: 0;
+}
+.ttThumb {
+  flex: none;
+  display: block;
+  width: 1.65em;
+  height: 1.65em;
+  border-radius: 44% 56% 42% 58% / 56% 44% 56% 44%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.08);
+}
+.ttThumb.empty { background: none; }
+.ttRow .day {
+  font-size: 1.05em;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.ttRow .info {
+  grid-column: 2 / -1;
+  font-size: 1.1em;
+  color: var(--muted);
+  margin-top: -0.2em;
+}
+
+.emptyNote { font-size: 1.8em; color: var(--muted); padding: 1.4em 0; }
+
+/* --------------------------- Preise -------------------------------- */
+.priceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(23em, 1fr));
+  gap: 1.5em 3.4em;
+  align-content: start;
+}
+
+.priceCat h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-bottom: 0.4em;
+  margin-bottom: 0.55em;
+  border-bottom: 0.1em solid var(--line);
+}
+.priceCat h2::before {
+  content: '';
+  flex: none;
+  width: 0.48em;
+  height: 0.48em;
+  border-radius: 50%;
+  background: var(--accent2);
+}
+
+.priceItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  padding: 0.28em 0;
+  font-size: 1.55em;
+}
+.priceItem .pn { font-weight: 600; white-space: nowrap; }
+.priceItem .psz { font-size: 0.72em; color: var(--muted); white-space: nowrap; }
+.priceItem .dots {
+  flex: 1;
+  border-bottom: 0.09em dotted rgba(255, 255, 255, 0.28);
+  transform: translateY(-0.25em);
+  min-width: 1.5em;
+}
+.priceItem .pp {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.priceNote { margin-top: 1.3em; font-size: 1.1em; color: var(--muted); }
+
+/* ------------------------------- Fuß ------------------------------- */
+.slideFoot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7em;
+  padding-top: 1em;
+  font-size: 1.15em;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.slideFoot .dot {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--accent2);
+}
+.slideFoot b { color: var(--fg); font-weight: 600; }
+
+/* --------------------------- Startbild ----------------------------- */
+.idleWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  text-align: center;
+}
+.idleWrap .idleLogo { max-width: 46vw; margin-bottom: 1em; }
+.idleWrap .big {
+  font-size: 5em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-shadow: 0.03em 0.04em 0.12em rgba(0, 0, 0, 0.45);
+}
+.idleWrap .sub { font-size: 1.6em; letter-spacing: 0.45em; color: var(--muted); }
+.idleWrap .cl { font-size: 7.5em; font-weight: 200; font-variant-numeric: tabular-nums; }
+.idleWrap .hint { font-size: 1.2em; color: var(--muted); margin-top: 1.2em; }
+
+/* ------------------------------------------------------------------ */
+/* Übergänge: Logo-Blende und Blob-Wisch                                */
+/* ------------------------------------------------------------------ */
+body.instant .layer { transition: none; }
+
+/* Nicht display:none - sonst springt die Überblendung beim Einblenden nicht an.
+   Der Vorhang ist immer im Layout, nur unsichtbar. */
+#curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+  visibility: hidden;
+}
+#curtain.active { visibility: visible; }
+
+.curtainMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg);
+}
+.curtainMark img { object-fit: contain; max-width: 60vw; }
+.curtainName {
+  font-size: calc(var(--u) * 6);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Logo-Blende: Fläche zieht auf, Logo steht kurz, Fläche geht wieder weg */
+/* Start- und Endwerte kommen aus der Web-Animations-API in player.js */
+#curtain.logo .curtainMark {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+/* Blob-Wisch: organische Form fährt von rechts durchs Bild */
+#curtain.wipe .curtainMark {
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: 0;
+  width: 150vw;
+  transform: translateX(112%);
+  -webkit-mask-image: var(--blobShape);
+  mask-image: var(--blobShape);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* ------------------------------------------------------------------ */
+/* HUD / Zahnrad                                                       */
+/* ------------------------------------------------------------------ */
+#hud {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 1.2vw;
+  opacity: 0;
+  transition: opacity 250ms;
+  z-index: 20;
+}
+#hud.visible { opacity: 1; }
+
+#gear {
+  width: 3.6vw;
+  height: 3.6vw;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.8vw;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+#gear:hover { background: rgba(0, 0, 0, 0.8); border-color: var(--accent); }
+
+/* ------------------------------------------------------------------ */
+/* PIN                                                                 */
+/* ------------------------------------------------------------------ */
+#pinOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  cursor: default;
+}
+#pinOverlay.hidden { display: none; }
+
+.pinBox {
+  background: var(--blob);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 32px 22px;
+  text-align: center;
+  min-width: 320px;
+}
+.pinTitle { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+
+.pinDots { display: flex; gap: 12px; justify-content: center; height: 18px; margin-bottom: 20px; }
+.pinDots i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); display: block; }
+
+.pinPad { display: grid; grid-template-columns: repeat(3, 76px); gap: 10px; justify-content: center; }
+.pinPad button {
+  height: 62px;
+  font-size: 22px;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  cursor: pointer;
+}
+.pinPad button:hover { background: rgba(255, 255, 255, 0.14); }
+.pinPad button.ok { background: var(--accent); color: #10230a; font-weight: 700; font-size: 16px; }
+.pinPad button.alt { background: rgba(240, 78, 35, 0.25); }
+
+.pinCancel {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.pinBox.shake { animation: shake 320ms; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-9px); }
+  75% { transform: translateX(9px); }
+}

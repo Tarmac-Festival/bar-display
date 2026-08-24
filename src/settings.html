@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' file:; img-src 'self' file: data:; font-src 'self' file: data:; style-src 'self' file: 'unsafe-inline'; script-src 'self' file:">
+  <title>Bar Display &ndash; Einstellungen</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">Bar Display <span id="version"></span></div>
+    <nav id="tabs">
+      <button class="tab active" data-tab="videos">Videos</button>
+      <button class="tab" data-tab="timetable">Timetable</button>
+      <button class="tab" data-tab="prices">Getr&auml;nkepreise</button>
+      <button class="tab" data-tab="display">Anzeige</button>
+      <button class="tab" data-tab="system">System</button>
+    </nav>
+    <div class="topActions">
+      <span id="dirty" class="dirty hidden">Nicht gespeichert</span>
+      <button id="saveBtn" class="primary">Speichern</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-videos" class="panel active">
+      <div class="panelHead">
+        <div>
+          <h1>Videos</h1>
+          <p class="hint">Videos und Standbilder laufen in dieser Reihenfolge als Endlosschleife.
+             Pro Beitrag l&auml;sst sich festlegen, an welchen Tagen und zu welchen Uhrzeiten er
+             mitl&auml;uft; Bilder bekommen zus&auml;tzlich eine eigene Standzeit.</p>
+        </div>
+        <div class="btnRow">
+          <button id="addVideos" class="primary">+ Videos &amp; Bilder hinzuf&uuml;gen</button>
+          <button id="openMedia">Medien-Ordner &ouml;ffnen</button>
+          <button id="checkMedia">Clips pr&uuml;fen &amp; umwandeln</button>
+        </div>
+      </div>
+      <div id="videoList" class="list"></div>
+      <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife. Oben auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
+    </section>
+
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-timetable" class="panel">
+      <div class="panelHead">
+        <div>
+          <h1>Timetable</h1>
+          <p class="hint">Die Anzeige hebt automatisch den gerade laufenden Act hervor und zeigt darunter die n&auml;chsten.
+             Vergangene Eintr&auml;ge verschwinden von selbst.</p>
+        </div>
+        <div class="btnRow">
+          <button id="addAct" class="primary">+ Act hinzuf&uuml;gen</button>
+          <button id="sortActs">Nach Zeit sortieren</button>
+          <button id="cleanActs" class="danger">Vergangene l&ouml;schen</button>
+          <button id="cleanPhotos">Unbenutzte Fotos aufr&auml;umen</button>
+          <button id="ttExport">Timetable weitergeben&hellip;</button>
+          <button id="ttImport">Timetable &uuml;bernehmen&hellip;</button>
+        </div>
+      </div>
+      <table id="ttTable" class="grid">
+        <thead>
+          <tr>
+            <th style="width:9.5rem">Datum</th>
+            <th style="width:6rem">Von</th>
+            <th style="width:6rem">Bis</th>
+            <th>Act</th>
+            <th style="width:20%">Zusatz (optional)</th>
+            <th style="width:7rem">Foto</th>
+            <th style="width:3rem"></th>
+          </tr>
+        </thead>
+        <tbody id="ttBody"></tbody>
+      </table>
+      <div id="ttEmpty" class="empty hidden">Noch keine Acts eingetragen.</div>
+    </section>
+
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-prices" class="panel">
+      <div class="panelHead">
+        <div>
+          <h1>Getr&auml;nkepreise</h1>
+          <p class="hint">Gruppen wie &bdquo;Bier&ldquo;, &bdquo;Cocktails&ldquo; oder &bdquo;Alkoholfrei&ldquo; werden
+             auf dem Bildschirm nebeneinander dargestellt.</p>
+        </div>
+        <div class="btnRow">
+          <button id="addCat" class="primary">+ Gruppe hinzuf&uuml;gen</button>
+        </div>
+      </div>
+      <div id="priceList" class="list"></div>
+      <div id="priceEmpty" class="empty hidden">Noch keine Preisgruppen angelegt.</div>
+    </section>
+
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-display" class="panel">
+      <div class="panelHead"><div><h1>Anzeige</h1>
+        <p class="hint">H&auml;ufigkeit und Standzeit der Info-Slides sowie das Erscheinungsbild.</p></div></div>
+
+      <div class="cards">
+        <div class="card">
+          <h2>Info-Slides in der Schleife</h2>
+          <label class="field">
+            <span>Timetable zeigen nach je&hellip; Videos</span>
+            <input type="number" min="0" max="50" id="s_timetableEvery">
+            <em>0 = Timetable gar nicht zeigen</em>
+          </label>
+          <label class="field">
+            <span>Timetable Standzeit (Sekunden)</span>
+            <input type="number" min="3" max="300" id="s_timetableDuration">
+          </label>
+          <label class="field">
+            <span>Preise zeigen nach je&hellip; Videos</span>
+            <input type="number" min="0" max="50" id="s_pricesEvery">
+            <em>0 = Preisliste gar nicht zeigen</em>
+          </label>
+          <label class="field">
+            <span>Preise Standzeit (Sekunden)</span>
+            <input type="number" min="3" max="300" id="s_pricesDuration">
+          </label>
+          <label class="field">
+            <span>Wie viele kommende Acts anzeigen</span>
+            <input type="number" min="1" max="12" id="s_timetableMaxNext">
+          </label>
+          <label class="field">
+            <span>Standzeit f&uuml;r Bilder (Sekunden)</span>
+            <input type="number" min="2" max="300" id="s_imageDuration">
+            <em>Gilt f&uuml;r alle Bilder ohne eigene Standzeit.</em>
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Logo</h2>
+          <div id="logoPreview" class="logoPreview">kein Logo hinterlegt</div>
+          <div class="btnRow">
+            <button id="logoPick" class="primary">Logo w&auml;hlen&hellip;</button>
+            <button id="logoDefault">L300-Standard</button>
+            <button id="logoNone" class="danger">Kein Logo</button>
+          </div>
+          <label class="field" style="margin-top:0.9rem">
+            <span>Logo-H&ouml;he (Prozent der Bildschirmh&ouml;he)</span>
+            <input type="number" min="3" max="30" step="1" id="s_logoHeight">
+            <em>Wird oben links neben dem Bar-Namen angezeigt. PNG mit transparentem Hintergrund sieht am besten aus.</em>
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Beschriftung</h2>
+          <label class="field">
+            <span>Name der Bar</span>
+            <input type="text" id="s_barName" maxlength="40">
+            <em>Leer lassen, wenn nur das Logo zu sehen sein soll.</em>
+          </label>
+          <label class="field">
+            <span>Untertitel</span>
+            <input type="text" id="s_subtitle" maxlength="40">
+          </label>
+          <div class="twoCol">
+            <label class="field">
+              <span>Titel Timetable-Slide</span>
+              <input type="text" id="s_timetableTitle" maxlength="24">
+            </label>
+            <label class="field">
+              <span>Unterzeile</span>
+              <input type="text" id="s_timetableSubtitle" maxlength="24">
+            </label>
+          </div>
+          <div class="twoCol">
+            <label class="field">
+              <span>Titel Preis-Slide</span>
+              <input type="text" id="s_pricesTitle" maxlength="24">
+            </label>
+            <label class="field">
+              <span>Unterzeile</span>
+              <input type="text" id="s_pricesSubtitle" maxlength="24">
+            </label>
+          </div>
+          <label class="field">
+            <span>Hinweis unter der Preisliste</span>
+            <input type="text" id="s_priceNote" maxlength="120" placeholder="z.B. Alle Preise in Euro, inkl. Pfand">
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Stil &amp; &Uuml;berg&auml;nge</h2>
+          <label class="field">
+            <span>Fl&auml;che hinter dem Seitentitel</span>
+            <select id="s_titleStyle">
+              <option value="blob">Organische Form (Blob)</option>
+              <option value="bar">Schlichter Balken</option>
+              <option value="plain">Ohne Fl&auml;che, Titel frei</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Hintergrundmuster</span>
+            <select id="s_pattern">
+              <option value="none">Kein Muster, nur Farbverlauf</option>
+              <option value="dots">Dezente Punkte</option>
+              <option value="confetti">Konfetti, gr&ouml;&szlig;er und bunter</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>&Uuml;bergang zwischen den Beitr&auml;gen</span>
+            <select id="s_transition">
+              <option value="fade">Weiche &Uuml;berblendung</option>
+              <option value="cut">Harter Schnitt</option>
+              <option value="logo">Logo-Blende</option>
+              <option value="wipe">Blob-Wisch mit Logo</option>
+            </select>
+            <em>Logo-Blende und Blob-Wisch zeigen euer Logo; ohne Logo erscheint der Bar-Name.</em>
+          </label>
+          <label class="field">
+            <span>Dauer von Logo-Blende / Blob-Wisch (Millisekunden)</span>
+            <input type="number" min="300" max="4000" step="100" id="s_transitionMs">
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Farben &amp; Schrift</h2>
+          <div class="colorRow">
+            <label class="colorField"><span>Hintergrund</span><input type="color" id="s_bgColor"></label>
+            <label class="colorField"><span>Akzent</span><input type="color" id="s_accent"></label>
+            <label class="colorField"><span>Signal</span><input type="color" id="s_accent2"></label>
+          </div>
+          <div class="btnRow" style="margin-top:0.8rem">
+            <button id="paletteTarmac">Tarmac-Farben</button>
+            <button id="paletteDark">Schlicht dunkel</button>
+          </div>
+          <div id="fontState" class="hint" style="margin-top:1.1rem">Schriftart: Standard</div>
+          <div class="btnRow" style="margin-top:0.5rem">
+            <button id="fontPick">Schriftdatei w&auml;hlen&hellip;</button>
+            <button id="fontClear" class="danger">Zur&uuml;cksetzen</button>
+          </div>
+          <p class="hint" style="margin-top:0.6rem">&bdquo;Josefin Sans&ldquo; ist fest eingebaut und wird ohne
+             eigene Datei verwendet &ndash; das ist die Schrift der Festival-Seite. Eine eigene Datei
+             (z.B. Fabrik oder Osterbar) &uuml;berschreibt sie.</p>
+          <label class="checkline" style="margin-top:0.9rem">
+            <input type="checkbox" id="s_showClock"> <span>Datum und Uhrzeit auf den Info-Slides anzeigen</span>
+          </label>
+          <label class="field">
+            <span>Dauer der weichen &Uuml;berblendung (Millisekunden)</span>
+            <input type="number" min="0" max="3000" step="100" id="s_fadeMs">
+          </label>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:1rem">Der Ton ist grunds&auml;tzlich stumm &ndash; alle Clips laufen ohne Ton.</p>
+    </section>
+
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-system" class="panel">
+      <div class="panelHead"><div><h1>System</h1></div></div>
+      <div class="cards">
+        <div class="card">
+          <h2>Start &amp; Schutz</h2>
+          <label class="checkline">
+            <input type="checkbox" id="s_autostart"> <span>Automatisch mit Windows starten</span>
+          </label>
+          <label class="field">
+            <span>PIN f&uuml;r die Einstellungen (nur Ziffern, leer = kein Schutz)</span>
+            <input type="text" id="s_pin" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="z.B. 1234">
+          </label>
+          <p class="hint">Notausg&auml;nge, falls die Anzeige mal klemmt:
+             <b>Strg + Alt + S</b> &ouml;ffnet die Einstellungen, <b>Strg + Alt + Q</b> beendet das Programm.</p>
+        </div>
+
+        <div class="card">
+          <h2>Bildschirm</h2>
+          <label class="field">
+            <span>Anzeige l&auml;uft auf</span>
+            <select id="s_displayId"></select>
+            <em>Bei mehreren Monitoren bleibt die Anzeige im Vollbild und die Einstellungen
+                &ouml;ffnen sich auf dem Hauptbildschirm.</em>
+          </label>
+          <div class="btnRow">
+            <button id="identifyDisplays">Bildschirme nummerieren</button>
+          </div>
+          <p class="hint" style="margin-top:0.6rem">Wird der gew&auml;hlte Monitor abgezogen,
+             wandert die Anzeige automatisch auf den Hauptbildschirm.</p>
+        </div>
+
+        <div class="card">
+          <h2>Daten</h2>
+          <div class="btnRow">
+            <button id="exportCfg">Konfiguration sichern&hellip;</button>
+            <button id="importCfg">Konfiguration laden&hellip;</button>
+          </div>
+          <div class="btnRow" style="margin-top:0.6rem">
+            <button id="openPhotos">Foto-Ordner &ouml;ffnen</button>
+          </div>
+          <label class="field" style="margin-top:0.9rem">
+            <span>Medien-Ordner (Videos und Bilder)</span>
+            <input type="text" id="p_media" readonly>
+          </label>
+          <label class="field">
+            <span>Foto-Ordner</span>
+            <input type="text" id="p_photos" readonly>
+          </label>
+          <label class="field">
+            <span>Konfigurationsdatei</span>
+            <input type="text" id="p_config" readonly>
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Fenster</h2>
+          <div class="btnRow">
+            <button id="backToPlayer" class="primary">Zur&uuml;ck zur Anzeige</button>
+            <button id="quitApp" class="danger">Programm beenden</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="common.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

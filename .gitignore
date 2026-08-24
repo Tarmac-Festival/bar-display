@@ -1,0 +1,14 @@
+# Abhängigkeiten und Bau-Ergebnisse
+node_modules/
+dist/
+
+# Betriebssystem und Editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Protokolle
+*.log
+npm-debug.log*

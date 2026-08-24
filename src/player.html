@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' file:; media-src 'self' file:; img-src 'self' file: data:; font-src 'self' file: data:; style-src 'self' file: 'unsafe-inline'; script-src 'self' file:">
+  <title>Bar Display</title>
+  <link rel="stylesheet" href="player.css">
+</head>
+<body>
+  <div id="stage">
+    <video id="vidA" class="layer video" muted playsinline preload="auto"></video>
+    <video id="vidB" class="layer video" muted playsinline preload="auto"></video>
+    <div id="slideA" class="layer slide"></div>
+    <div id="slideB" class="layer slide"></div>
+  </div>
+
+  <div id="curtain"><div class="curtainMark"></div></div>
+
+  <div id="hud">
+    <button id="gear" title="Einstellungen (ESC)">&#9881;</button>
+  </div>
+
+  <div id="pinOverlay" class="hidden">
+    <div class="pinBox">
+      <div class="pinTitle">PIN eingeben</div>
+      <div id="pinDots" class="pinDots"></div>
+      <div class="pinPad">
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+        <button data-k="del" class="alt">&#9003;</button><button data-k="0">0</button><button data-k="ok" class="ok">OK</button>
+      </div>
+      <button id="pinCancel" class="pinCancel">Abbrechen</button>
+    </div>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="player.js"></script>
+</body>
+</html>

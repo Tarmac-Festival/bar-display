@@ -1,0 +1,63 @@
+{
+  "name": "bar-display",
+  "version": "1.0.0",
+  "description": "Werbe- und Infodisplay fuer die Bar auf der Planetenweide (Tarmac)",
+  "productName": "Bar Display",
+  "main": "main.js",
+  "author": "Planetenweide",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/schedule.test.js",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "de.planetenweide.bardisplay",
+    "productName": "Bar Display",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json",
+      "node_modules/ffmpeg-static/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Bar Display"
+    },
+    "portable": {
+      "artifactName": "BarDisplay-portable-${version}.exe"
+    },
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**"
+    ]
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0"
+  }
+}
