@@ -12,8 +12,28 @@ permissions:
   contents: write
 
 jobs:
+  release:
+    name: Release anlegen
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Anlegen, falls noch nicht vorhanden
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME gibt es schon."
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "Bar Display $GITHUB_REF_NAME" \
+              --notes "Pakete für Windows und Linux. Installationshinweise stehen in der README."
+          fi
+
   linux:
     name: Linux (AppImage, deb, tar.gz)
+    needs: [release]
+    if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +48,9 @@ jobs:
 
       - name: ffmpeg holen
         run: npm run vendor:ffmpeg
+
+      - name: Tests
+        run: npm test
 
       - name: Bauen
         run: npx electron-builder --linux AppImage deb tar.gz --publish never
@@ -44,10 +67,12 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" dist/*.AppImage dist/*.deb dist/*.tar.gz --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.AppImage dist/*.deb dist/*.tar.gz --clobber
 
   windows:
     name: Windows (Installer, portable)
+    needs: [release]
+    if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +88,9 @@ jobs:
       - name: ffmpeg holen
         run: npm run vendor:ffmpeg
 
+      - name: Tests
+        run: npm test
+
       - name: Bauen
         run: npx electron-builder --win nsis portable --publish never
 
@@ -73,7 +101,7 @@ jobs:
 
       - name: An das Release haengen
         if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" dist/*.exe --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.exe --clobber
