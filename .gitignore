@@ -15,3 +15,6 @@ Desktop.ini
 # Protokolle
 *.log
 npm-debug.log*
+
+# Werkzeug-eigene Einstellungen mit maschinenspezifischen Pfaden
+.claude/

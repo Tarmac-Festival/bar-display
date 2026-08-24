@@ -1,0 +1,17 @@
+# Shell-Skripte muessen Unix-Zeilenenden behalten. Mit CRLF scheitert
+# install.sh auf dem Pi mit Meldungen wie "bad interpreter: /usr/bin/env bash^M".
+*.sh text eol=lf
+
+# Ebenso alles, was auf einem Linux-System gelesen wird
+*.service text eol=lf
+*.yml text eol=lf
+*.desktop text eol=lf
+
+# Binaerdateien nicht anfassen
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
