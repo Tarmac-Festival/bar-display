@@ -29,6 +29,20 @@ const ZIELE = [
     magie: [0x7f, 0x45, 0x4c, 0x46],                                 // ELF
     sha256: 'e7e7fb30477f717e6f55f9180a70386c62677ef8a4d4d1a5d948f4098aa3eb99',
     groesse: 79826272
+  },
+  // macOS: beide Bauarten, weil ein Mac-Paket auf Apple Silicon wie auf Intel
+  // laufen soll. Zur Laufzeit wird die passende ausgewaehlt.
+  {
+    plattform: 'darwin', arch: 'x64', datei: 'ffmpeg-x64',
+    magie: [0xcf, 0xfa, 0xed, 0xfe],                                 // Mach-O 64
+    sha256: 'ebdddc936f61e14049a2d4b549a412b8a40deeff6540e58a9f2a2da9e6b18894',
+    groesse: 78862176
+  },
+  {
+    plattform: 'darwin', arch: 'arm64', datei: 'ffmpeg-arm64',
+    magie: [0xcf, 0xfa, 0xed, 0xfe],                                 // Mach-O 64
+    sha256: 'a90e3db6a3fd35f6074b013f948b1aa45b31c6375489d39e572bea3f18336584',
+    groesse: 45568216
   }
 ];
 
@@ -82,15 +96,24 @@ function lade(url, ziel, sprung = 0) {
 
 function pruefen(ziel, z) {
   const groesse = fs.statSync(ziel).size;
+  const inhalt = fs.readFileSync(ziel);
+  const sha0 = crypto.createHash('sha256').update(inhalt).digest('hex');
+
+  // Noch keine Sollwerte eingetragen: nur melden, damit sie uebernommen werden koennen
+  if (!z.sha256) {
+    console.log('\n  (noch ungeprueft) ' + z.plattform + '-' + z.arch +
+                '  sha256 ' + sha0 + '  ' + groesse + ' Bytes');
+    return groesse;
+  }
+
   if (groesse !== z.groesse) {
     throw new Error('Groesse ' + groesse + ' statt ' + z.groesse + ' Bytes');
   }
-  const inhalt = fs.readFileSync(ziel);
   if (!inhalt.subarray(0, z.magie.length).equals(Buffer.from(z.magie))) {
     throw new Error('kein Programm fuer ' + z.plattform +
                     ' (Kopf: ' + inhalt.subarray(0, z.magie.length).toString('hex') + ')');
   }
-  const sha = crypto.createHash('sha256').update(inhalt).digest('hex');
+  const sha = sha0;
   if (sha !== z.sha256) {
     throw new Error('Pruefsumme weicht ab\n  erwartet ' + z.sha256 + '\n  bekommen ' + sha);
   }
@@ -99,7 +122,8 @@ function pruefen(ziel, z) {
 
 (async () => {
   for (const z of ZIELE) {
-    const ordner = path.join(__dirname, '..', 'vendor', 'ffmpeg', z.plattform + '-' + z.arch);
+    const ordner = path.join(__dirname, '..', 'vendor', 'ffmpeg',
+                             z.plattform === 'darwin' ? 'darwin' : z.plattform + '-' + z.arch);
     const ziel = path.join(ordner, z.datei);
 
     if (fs.existsSync(ziel)) {

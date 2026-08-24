@@ -379,21 +379,30 @@ ipcMain.handle('media:openFolder', () => shell.openPath(MEDIA_DIR));
 
 // --- Videos umwandeln, die Windows nicht direkt abspielen kann --------------
 function ffmpegPath() {
-  const name = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+  // Unter macOS liegen beide Bauarten nebeneinander, weil ein Paket sowohl auf
+  // Apple Silicon als auch auf Intel laufen soll.
+  const namen = process.platform === 'win32' ? ['ffmpeg.exe']
+              : process.platform === 'darwin' ? ['ffmpeg-' + process.arch, 'ffmpeg']
+              : ['ffmpeg'];
 
   // 1) im gepackten Programm: neben den Ressourcen (siehe extraResources)
   if (process.resourcesPath) {
-    const p = path.join(process.resourcesPath, 'ffmpeg', name);
-    if (fs.existsSync(p)) return p;
+    for (const n of namen) {
+      const p = path.join(process.resourcesPath, 'ffmpeg', n);
+      if (fs.existsSync(p)) return p;
+    }
   }
   // 2) in der Entwicklung: vendor-Ordner, siehe scripts/fetch-ffmpeg.js
-  const lokal = path.join(__dirname, 'vendor', 'ffmpeg',
-                          process.platform + '-' + process.arch, name);
-  if (fs.existsSync(lokal)) return lokal;
+  const ordner = process.platform === 'darwin' ? 'darwin' : process.platform + '-' + process.arch;
+  for (const n of namen) {
+    const lokal = path.join(__dirname, 'vendor', 'ffmpeg', ordner, n);
+    if (fs.existsSync(lokal)) return lokal;
+  }
 
-  // 3) systemweit installiertes ffmpeg (unter Linux der Normalfall)
+  // 3) systemweit installiertes ffmpeg
   if (process.platform !== 'win32') {
-    for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/snap/bin/ffmpeg']) {
+    for (const p of ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg',
+                     '/opt/homebrew/bin/ffmpeg', '/snap/bin/ffmpeg']) {
       if (fs.existsSync(p)) return p;
     }
   }

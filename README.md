@@ -55,6 +55,8 @@ Es gibt das Programm für Windows und für Linux. Beide Fassungen sind funktions
 | Linux | `BarDisplay-1.0.0-x86_64.AppImage` | ohne Installation, läuft auf jeder Distribution |
 | Linux | `bar-display_1.0.0_amd64.deb` | für Debian, Ubuntu, Mint und Verwandte |
 | Linux | `bar-display-1.0.0.tar.gz` | einfaches Archiv, falls die anderen beiden nicht passen |
+| macOS | `BarDisplay-1.0.0-arm64.dmg` | Apple Silicon (M1 und neuer) |
+| macOS | `BarDisplay-1.0.0-x64.dmg` | Intel-Macs |
 
 ### Windows
 
@@ -79,6 +81,24 @@ Archiv unter Windows gepackt wurde und dabei keine Dateirechte mitkommen:
 
 ```bash
 tar -xzf bar-display-1.0.0.tar.gz && chmod +x bar-display-1.0.0/bar-display bar-display-1.0.0/resources/ffmpeg/ffmpeg
+```
+
+### macOS
+
+Das passende `.dmg` öffnen und das Programm in den Programme-Ordner ziehen.
+
+Beim ersten Start meldet macOS, das Programm stamme von einem unbekannten
+Entwickler oder sei beschädigt. Das liegt daran, dass es **nicht signiert** ist —
+dafür bräuchte es ein kostenpflichtiges Apple-Entwicklerkonto. Einmalig umgehen:
+
+Rechtsklick auf **Bar Display** im Programme-Ordner → **Öffnen** → im Dialog
+nochmal **Öffnen**. Danach startet es künftig normal per Doppelklick.
+
+Falls macOS es ganz verweigert („ist beschädigt und kann nicht geöffnet werden"),
+hilft das Entfernen der Quarantäne-Markierung:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Bar Display.app"
 ```
 
 ### Danach überall gleich
@@ -278,7 +298,7 @@ dem Motiv in der Mitte sieht am besten aus, ab ungefähr 400 px Kantenlänge.
 ## Wo die Daten liegen
 
 Unter Windows liegt alles in `%APPDATA%\Bar Display\`, unter Linux in
-`~/.config/Bar Display/`.
+`~/.config/Bar Display/`, unter macOS in `~/Library/Application Support/Bar Display/`.
 
 | Was | Datei bzw. Ordner |
 |---|---|
@@ -306,6 +326,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Preise/Timetable erscheinen nie | Im Reiter *Anzeige* steht die Häufigkeit auf `0` |
 | Ein Clip läuft nie | Fähnchen im Reiter *Videos* prüfen: deaktiviert oder kein Zeitfenster gesetzt |
 | Nach einem System-Update startet nichts mehr | Autostart unter *System* neu setzen |
+| macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |
 | Linux: Programm startet nicht | Ausführbar-Bit fehlt – `chmod +x` auf die AppImage bzw. auf `bar-display` und `resources/ffmpeg/ffmpeg` |
 | Linux: Umwandlung nicht verfügbar | Sollte nicht vorkommen, ffmpeg liegt bei. Notfalls `sudo apt install ffmpeg` – das Programm nimmt auch ein systemweit installiertes |
 
@@ -341,12 +362,19 @@ npm run dist
 npm run dist:linux
 ```
 
+```bash
+npm run dist:mac
+```
+
 Beim ersten Bauen holt das Projekt die ffmpeg-Binärdateien für beide Plattformen nach
 `vendor/` (zusammen rund 155 MB, absichtlich nicht im Repository). Einzeln anstoßen:
 
 ```bash
 npm run vendor:ffmpeg
 ```
+
+Jede Plattform baut nur auf sich selbst: **AppImage und `.deb` brauchen Linux, `.dmg`
+braucht macOS.** Deshalb baut der Ablauf auf GitHub alle drei parallel.
 
 **AppImage und `.deb` lassen sich nur auf einem Linux-System bauen** – electron-builder
 braucht dafür Linux-Werkzeuge. Unter Windows entsteht nur ein `tar.gz`, dem außerdem die
