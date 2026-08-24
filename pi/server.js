@@ -58,15 +58,17 @@ const TYPEN = {
 // ---------------------------------------------------------------------------
 // Konfiguration - dasselbe Format wie die Electron-Fassung
 // ---------------------------------------------------------------------------
+const VERSION_KONFIG = 3;
+
 const STANDARD = {
-  version: 2,
+  version: VERSION_KONFIG,
   settings: {
     barName: 'TARMAC BAR', subtitle: 'Planetenweide',
     bgColor: '#450b6f', accent: '#74ff40', accent2: '#f04e23',
     logo: '', logoHeight: 9, fontFile: '',
     titleStyle: 'blob', pattern: 'dots', displayId: '', rotation: 0,
     transition: 'fade', transitionMs: 900,
-    qrUrl: '', qrLabel: 'Programm & Infos',
+    qrEnabled: false, qrUrl: '', qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE', timetableSubtitle: 'line up',
     pricesTitle: 'GETRÄNKE', pricesSubtitle: 'preise',
     pin: '', timetableEvery: 3, timetableDuration: 20,
@@ -97,9 +99,28 @@ function ordnerAnlegen() {
   }
 }
 
+// Muss dieselben Schritte gehen wie migrate() in main.js, sonst sieht eine
+// Konfiguration je nach Geraet anders aus.
+function migrieren(roh) {
+  if (!roh.version || roh.version < 2) {
+    roh.settings = roh.settings || {};
+    delete roh.settings.accent;
+  }
+  // v3: eigener Schalter fuer den QR-Code. Vorher galt eine eingetragene
+  // Adresse als "an" - das muss so bleiben.
+  if (!roh.version || roh.version < 3) {
+    roh.settings = roh.settings || {};
+    if (roh.settings.qrEnabled === undefined) {
+      roh.settings.qrEnabled = !!(roh.settings.qrUrl || '').trim();
+    }
+  }
+  roh.version = VERSION_KONFIG;
+  return roh;
+}
+
 function konfigLesen() {
   try {
-    const roh = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8').replace(/^﻿/, ''));
+    const roh = migrieren(JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8').replace(/^﻿/, '')));
     return tiefMischen(STANDARD, roh);
   } catch (err) {
     return JSON.parse(JSON.stringify(STANDARD));

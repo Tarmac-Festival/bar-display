@@ -434,6 +434,8 @@ function fillSettingsFields() {
   for (const k of NUM_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   for (const k of TEXT_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   $('s_showClock').checked = !!s.showClock;
+  $('s_qrEnabled').checked = !!s.qrEnabled;
+  qrFelderAnpassen();
   renderLogoPreview();
   renderFontState();
   fillSpecialFields();
@@ -464,6 +466,21 @@ function fillSettingsFields() {
     $('s_showClock').dataset.wired = '1';
     $('s_showClock').addEventListener('change', (e) => { state.settings.showClock = e.target.checked; markDirty(); });
   }
+  if (!$('s_qrEnabled').dataset.wired) {
+    $('s_qrEnabled').dataset.wired = '1';
+    $('s_qrEnabled').addEventListener('change', (e) => {
+      state.settings.qrEnabled = e.target.checked;
+      qrFelderAnpassen();
+      markDirty();
+    });
+  }
+}
+
+// Adresse und Beschriftung bleiben gespeichert, wenn der Code aus ist -
+// sie werden nur ausgegraut, damit klar ist, dass gerade nichts erscheint.
+function qrFelderAnpassen() {
+  const box = $('qrFelder');
+  if (box) box.classList.toggle('gedimmt', !$('s_qrEnabled').checked);
 }
 
 // ---------------------------------------------------------------------------

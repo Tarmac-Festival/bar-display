@@ -510,7 +510,7 @@ function footHtml(mitQr) {
 function qrHtml() {
   const s = cfg.settings;
   const url = (s.qrUrl || '').trim();
-  if (!url || typeof qrcode !== 'function') return '';
+  if (!s.qrEnabled || !url || typeof qrcode !== 'function') return '';
   try {
     // Ohne diese Zeile schneidet die Bibliothek jedes Zeichen auf ein Byte ab -
     // Umlaute und alles ausserhalb von Latin-1 werden dadurch unlesbar.

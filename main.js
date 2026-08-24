@@ -28,7 +28,7 @@ let settingsWin = null;
 // ---------------------------------------------------------------------------
 // Konfiguration
 // ---------------------------------------------------------------------------
-const CONFIG_VERSION = 2;
+const CONFIG_VERSION = 3;
 
 const DEFAULT_CONFIG = {
   version: CONFIG_VERSION,
@@ -47,7 +47,8 @@ const DEFAULT_CONFIG = {
     displayId: '',           // leer = Hauptbildschirm
     transition: 'fade',      // fade | cut | logo | wipe
     transitionMs: 900,
-    qrUrl: '',               // leer = kein QR-Code auf dem Timetable
+    qrEnabled: false,        // QR-Code auf dem Timetable ein-/ausschalten
+    qrUrl: '',               // Adresse; bleibt erhalten, auch wenn abgeschaltet
     qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE',
     timetableSubtitle: 'line up',
@@ -106,8 +107,17 @@ function migrate(raw) {
   if (!raw.version || raw.version < 2) {
     raw.settings = raw.settings || {};
     delete raw.settings.accent;
-    raw.version = CONFIG_VERSION;
   }
+  // v3: der QR-Code hat einen eigenen Schalter bekommen. Vorher galt eine
+  // eingetragene Adresse als "an" - das muss so bleiben, sonst verschwindet
+  // der Code beim Update stillschweigend von der Anzeige.
+  if (!raw.version || raw.version < 3) {
+    raw.settings = raw.settings || {};
+    if (raw.settings.qrEnabled === undefined) {
+      raw.settings.qrEnabled = !!(raw.settings.qrUrl || '').trim();
+    }
+  }
+  raw.version = CONFIG_VERSION;
   return raw;
 }
 

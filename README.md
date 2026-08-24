@@ -51,7 +51,8 @@ Getränkepreise im Festival-Design.
   sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
 - **Ruhezeit** — außerhalb der Öffnungszeiten bleibt der Bildschirm schwarz und
   die Schleife steht still. Schont das Gerät und spart Strom.
-- **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt.
+- **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt – abschaltbar,
+  ohne dass die Adresse verloren geht.
 
 ---
 
@@ -190,10 +191,15 @@ blendet sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
 
 ### QR-Code
 
-Ist unter *Anzeige → Beschriftung* eine Adresse hinterlegt, steht unten links auf
-dem Timetable ein QR-Code mit Beschriftung — z. B. auf die Festivalseite oder auf
-das ausführliche Line-up. Umlaute in der Adresse sind kein Problem.
-Ohne Adresse erscheint kein Code.
+Unten links auf dem Timetable kann ein QR-Code mit Beschriftung stehen — z. B. auf
+die Festivalseite oder auf das ausführliche Line-up. Umlaute in der Adresse sind kein
+Problem.
+
+Der Code ist **optional**: unter *Anzeige → Beschriftung* gibt es den Haken
+**QR-Code auf dem Timetable anzeigen**. Ohne Haken bleibt der Timetable frei, Adresse
+und Beschriftung bleiben aber gespeichert — praktisch, wenn eine Bar den Code haben
+will und die nächste nicht, oder wenn er nur an einzelnen Tagen erscheinen soll.
+Ohne Adresse erscheint ebenfalls kein Code.
 
 ### Ruhezeit
 
@@ -321,8 +327,9 @@ sonst passt.
   Mitternacht hinweg funktioniert es wie bei den Clips, also auch 04:00 bis 14:00
   für eine Bar, die nachts läuft. Unbrauchbare Zeiten schalten die Ruhezeit ab,
   statt den Bildschirm dauerhaft schwarz zu lassen.
-- **QR-Code**: Adresse eintragen, dann erscheint unten links auf dem Timetable
-  ein Code mit Beschriftung. Leer lassen = kein Code.
+- **QR-Code**: Haken setzen, Adresse und Beschriftung eintragen — dann erscheint
+  unten links auf dem Timetable ein Code. Ohne Haken bleiben die Felder ausgegraut
+  und gespeichert, es erscheint aber nichts.
 
 ### System
 
@@ -485,7 +492,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Bildschirm schwarz, Maus zeigt einen Hinweis | Ruhezeit ist aktiv – *Anzeige → Ruhezeit* |
 | Durchsage hängt fest | *Durchsage → Ausblenden*, oder eine Ausblendzeit setzen |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
-| QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*, Adresse eintragen |
+| QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |
 | Linux: Programm startet nicht | Ausführbar-Bit fehlt – `chmod +x` auf die AppImage bzw. auf `bar-display` und `resources/ffmpeg/ffmpeg` |
 | Linux: Umwandlung nicht verfügbar | Sollte nicht vorkommen, ffmpeg liegt bei. Notfalls `sudo apt install ffmpeg` – das Programm nimmt auch ein systemweit installiertes |

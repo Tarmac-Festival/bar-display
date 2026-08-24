@@ -266,11 +266,14 @@
               <input type="text" id="s_pricesSubtitle" maxlength="24">
             </label>
           </div>
-          <div class="twoCol">
+          <label class="checkline">
+            <input type="checkbox" id="s_qrEnabled"> <span>QR-Code auf dem Timetable anzeigen</span>
+          </label>
+          <div class="twoCol" id="qrFelder">
             <label class="field">
-              <span>QR-Code auf dem Timetable (Adresse)</span>
+              <span>Adresse</span>
               <input type="text" id="s_qrUrl" maxlength="200" placeholder="https://tarmac-festival.de">
-              <em>Leer lassen = kein QR-Code.</em>
+              <em>Ohne Adresse erscheint kein Code.</em>
             </label>
             <label class="field">
               <span>Beschriftung daneben</span>
