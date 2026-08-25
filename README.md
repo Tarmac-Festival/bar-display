@@ -77,7 +77,7 @@ Getränkepreise im Festival-Design.
 Es gibt das Programm für Windows, Linux und macOS. Alle Fassungen sind funktionsgleich.
 Die aktuellen Dateien liegen unter
 [Releases](https://github.com/Tarmac-Festival/bar-display/releases/latest); `VERSION`
-steht unten für die Versionsnummer des Releases, also z. B. `1.3.0`.
+steht unten für die Versionsnummer des Releases, also z. B. `1.3.1`.
 
 | System | Datei | Anmerkung |
 |---|---|---|
@@ -808,7 +808,7 @@ Ausführungsrechte fehlen. Der bequeme Weg ist der Ablauf in
 Pakete für Windows und Linux und hängt sie an das Release.
 
 ```bash
-git tag v1.3.0 && git push origin v1.3.0
+git tag v1.3.1 && git push origin v1.3.1
 ```
 
 ### Reproduzierbare Releases
