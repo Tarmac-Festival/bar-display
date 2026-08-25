@@ -58,8 +58,7 @@ echo "Starte Anzeige: cage=$CAGE chromium=$CHROMIUM port=$PORT"
 if [ ! -e /dev/dri/card0 ] && [ ! -e /dev/dri/card1 ]; then
   echo "Warnung: keine Grafikschnittstelle unter /dev/dri gefunden." >&2
 fi
-if ! id -nG | tr ' ' '
-' | grep -qx video; then
+if ! id -nG | grep -qw video; then
   echo "Warnung: Benutzer $(id -un) ist nicht in der Gruppe 'video'." >&2
 fi
 
