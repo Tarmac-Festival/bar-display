@@ -49,6 +49,12 @@ Getränkepreise im Festival-Design.
 - **Durchsage** — ein Balken über die ganze Breite, vom Handy in Sekunden
   eingeblendet. Legt sich über alles, auch über laufende Videos, und blendet
   sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
+- **Geplante Durchsagen** — Wochentage und Zeitfenster wie bei den Videos, also
+  z. B. *Fr + Sa, 01:40–02:00*. Erscheinen und verschwinden von allein, jeden
+  Festivaltag aufs Neue.
+- **Countdown im Balken** — mit `{zeit}` im Text läuft eine Uhr mit, die
+  sekundengenau auf das Ende des Fensters herunterzählt: „Letzte Runde – die Bar
+  schließt in 11:30"
 - **Ruhezeit** — außerhalb der Öffnungszeiten bleibt der Bildschirm schwarz und
   die Schleife steht still. Schont das Gerät und spart Strom.
 - **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt – abschaltbar,
@@ -183,11 +189,40 @@ eigener Standzeit.
 ### Durchsage
 
 Ein Balken am unteren Bildrand, über alles gelegt — auch über ein laufendes Video.
-Eingeschaltet wird er vom Handy oder vom Einstellungsfenster aus, er steht binnen
-einer Sekunde auf jedem Bildschirm, der an derselben Konfiguration hängt, und
-blendet sich auf Wunsch nach 5 bis 60 Minuten von allein wieder aus.
+Es gibt ihn auf zwei Wegen:
 
-![Durchsage über einem laufenden Clip](docs/screenshots/anzeige-durchsage.png)
+**Von Hand**, wenn gerade etwas ansteht. Text eintippen, *Jetzt anzeigen* — der
+Balken steht binnen einer Sekunde auf jedem Bildschirm, der an derselben
+Konfiguration hängt, und blendet sich auf Wunsch nach 5 bis 60 Minuten von allein
+wieder aus.
+
+**Nach Plan**, für alles, was sich jeden Abend wiederholt. Wochentage und
+Zeitfenster wie bei den Videos, auch über Mitternacht hinweg. Der Balken erscheint
+und verschwindet von allein; niemand muss daran denken.
+
+![Durchsage mit Countdown über einem laufenden Clip](docs/screenshots/anzeige-durchsage.png)
+
+#### Countdown
+
+Steht `{zeit}` im Text, läuft an dieser Stelle eine Uhr mit, die sekundengenau auf
+das **Ende des Zeitfensters** herunterzählt. Aus
+
+    Letzte Runde – die Bar schließt in {zeit}
+
+bei einem Fenster von 01:40 bis 02:00 wird also um 01:48:30 auf dem Bildschirm
+
+    Letzte Runde – die Bar schließt in 11:30
+
+Bei null verschwindet der Balken — das Fensterende ist zugleich das Ende der
+Anzeige. Über einer Stunde steht dort `1:05:00`, darunter `mm:ss`. Die Ziffern
+haben feste Breite, damit der Text bei jedem Sekundenwechsel ruhig stehen bleibt.
+
+Wer den Platzhalter vergisst, verliert nichts: die Zeit hängt sich dann hinten an
+den Text. Wer gar keinen Countdown will, nimmt in der jeweiligen Durchsage den
+Haken *Countdown mitlaufen lassen* weg — der Platzhalter fällt dann aus dem Text.
+
+Eine von Hand ausgelöste Durchsage hat immer Vorrang vor dem Plan. Passen mehrere
+Pläne gleichzeitig, gilt der oberste in der Liste.
 
 ### QR-Code
 
@@ -252,6 +287,24 @@ aus — praktisch für „Letzte Runde", damit niemand daran denken muss.
 Im Browserbetrieb steht auf demselben Reiter eine **Vorschau**: so sehen
 Timetable und Preise gerade aus, ohne zum Bildschirm zu laufen. Videos werden
 darin weggelassen, damit die Vorschau den Pi nicht zusätzlich belastet.
+
+Darunter liegen die **geplanten Durchsagen**.
+
+![Geplante Durchsagen](docs/screenshots/einstellungen-durchsage-plan.png)
+
+Pro Eintrag: Text, Wochentage, Von–Bis und zwei Haken.
+
+- **aktiv** schaltet einen Eintrag vorübergehend ab, ohne ihn zu löschen.
+- **{zeit} einfügen** setzt den Platzhalter dort ein, wo der Cursor gerade steht.
+- **Countdown mitlaufen lassen** bestimmt, ob die Uhr überhaupt zählt.
+- Die Pfeile rechts ändern die Reihenfolge — bei gleichzeitig passenden Plänen
+  gewinnt der oberste.
+- Neben *aktiv* steht in Klartext, was der Eintrag gerade tut: „läuft gerade –
+  noch 10:54", „Sa+So 08:00-09:30", „abgeschaltet" oder ein roter Hinweis, wenn
+  Text oder Wochentag fehlen und deshalb nie etwas erscheinen würde.
+
+**Vorlage „Bar schließt"** legt einen fertigen Eintrag mit Countdown an, bei dem
+nur noch die Uhrzeiten anzupassen sind.
 
 ### Videos
 
@@ -491,6 +544,9 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Nach einem System-Update startet nichts mehr | Autostart unter *System* neu setzen |
 | Bildschirm schwarz, Maus zeigt einen Hinweis | Ruhezeit ist aktiv – *Anzeige → Ruhezeit* |
 | Durchsage hängt fest | *Durchsage → Ausblenden*, oder eine Ausblendzeit setzen |
+| Geplante Durchsage erscheint nie | Status neben *aktiv* lesen: fehlt Text oder Wochentag? |
+| Countdown zählt nicht | `{zeit}` im Text und Haken bei *Countdown mitlaufen lassen* |
+| Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |

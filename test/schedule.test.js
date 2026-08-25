@@ -10,7 +10,8 @@ const QUELLE = path.join(__dirname, '..', 'src', 'common.js');
 const code = fs.readFileSync(QUELLE, 'utf8');
 const ctx = vm.createContext({ console, Date });
 vm.runInContext(code, ctx);
-const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster } = ctx;
+const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster,
+        fensterEnde, countdownText, aktiveDurchsage, durchsageTeile } = ctx;
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -105,6 +106,64 @@ check('Ende auf Folgetag', se.end.getDate(), 29);
 check('Tagesbezeichnung heute', dayLabel(FR(20, 0), FR(18, 0)), 'HEUTE');
 check('Tagesbezeichnung morgen', dayLabel(SA(16, 0), FR(18, 0)), 'MORGEN');
 check('Tagesbezeichnung später', dayLabel(new Date(2026, 8, 3, 16, 0), FR(18, 0)), 'DONNERSTAG 03.09.');
+
+console.log('-- Durchsagen --');
+// SA = Samstag, 29.08.2026
+const planSchluss = { id: 'a', text: 'Die Bar schliesst in {zeit}',
+                      days: [5, 6], from: '01:40', to: '02:00' };
+
+check('Fensterende bei normalem Fenster',
+      fensterEnde(planSchluss, SA(1, 45)).getHours() * 60 + fensterEnde(planSchluss, SA(1, 45)).getMinutes(), 120);
+check('Fensterende bleibt am selben Tag', fensterEnde(planSchluss, SA(1, 45)).getDate(), 29);
+
+const ueberMitternacht = { days: [5], from: '23:50', to: '00:10' };
+check('Fenster ueber Mitternacht: vor 24 Uhr zeigt auf morgen',
+      fensterEnde(ueberMitternacht, FR(23, 55)).getDate(), 29);
+check('Fenster ueber Mitternacht: nach 24 Uhr zeigt auf heute',
+      fensterEnde(ueberMitternacht, SA(0, 5)).getDate(), 29);
+check('Ganztagsfenster hat kein Ende', fensterEnde({ from: '00:00', to: '00:00' }, SA(3, 0)), null);
+check('Unbrauchbare Zeit hat kein Ende', fensterEnde({ from: 'quatsch', to: '02:00' }, SA(3, 0)), null);
+
+check('Restzeit unter einer Stunde', countdownText(12 * 60000 + 34000), '12:34');
+check('Restzeit ueber einer Stunde', countdownText(3900000), '1:05:00');
+check('Restzeit null', countdownText(0), '00:00');
+check('Restzeit negativ bleibt null', countdownText(-5000), '00:00');
+check('Angebrochene Sekunde zaehlt noch', countdownText(1500), '00:02');
+
+const nurPlan = { announcement: { enabled: false, text: '', plans: [planSchluss] } };
+check('Plan greift im Fenster', aktiveDurchsage(nurPlan, SA(1, 45)).text, 'Die Bar schliesst in {zeit}');
+check('Plan greift nicht davor', aktiveDurchsage(nurPlan, SA(1, 39)), null);
+check('Plan greift nicht danach', aktiveDurchsage(nurPlan, SA(2, 0)), null);
+check('Plan greift nicht am falschen Tag', aktiveDurchsage(nurPlan, MO(1, 45)), null);
+check('Plan liefert das Fensterende mit',
+      aktiveDurchsage(nurPlan, SA(1, 45)).ende.getMinutes(), 0);
+
+const ausgeschaltet = { announcement: { plans: [Object.assign({}, planSchluss, { enabled: false })] } };
+check('Abgeschalteter Plan greift nicht', aktiveDurchsage(ausgeschaltet, SA(1, 45)), null);
+
+const ohneCountdown = { announcement: { plans: [Object.assign({}, planSchluss, { countdown: false })] } };
+check('Plan ohne Countdown hat kein Ende', aktiveDurchsage(ohneCountdown, SA(1, 45)).ende, null);
+
+const beides = { announcement: { enabled: true, text: 'Kind vermisst', plans: [planSchluss] } };
+check('Sofort-Durchsage hat Vorrang', aktiveDurchsage(beides, SA(1, 45)).quelle, 'sofort');
+
+const abgelaufen = { announcement: { enabled: true, text: 'alt',
+                     until: new Date(2026, 7, 29, 1, 0).toISOString(), plans: [planSchluss] } };
+check('Abgelaufene Sofort-Durchsage laesst den Plan durch',
+      aktiveDurchsage(abgelaufen, SA(1, 45)).quelle, 'plan');
+check('Ohne alles nichts', aktiveDurchsage({ announcement: {} }, SA(1, 45)), null);
+
+check('Platzhalter wird geteilt',
+      durchsageTeile('Bar schliesst in {zeit}', true), [{ text: 'Bar schliesst in ' }, { zeit: true }]);
+check('Platzhalter mittendrin',
+      durchsageTeile('Noch {zeit} bis Schluss', true),
+      [{ text: 'Noch ' }, { zeit: true }, { text: ' bis Schluss' }]);
+check('Ohne Platzhalter haengt die Zeit hinten dran',
+      durchsageTeile('Letzte Runde', true), [{ text: 'Letzte Runde ' }, { zeit: true }]);
+check('Ohne Countdown faellt der Platzhalter weg',
+      durchsageTeile('Bar schliesst in {zeit}', false), [{ text: 'Bar schliesst in' }]);
+check('Grossschreibung des Platzhalters zaehlt auch',
+      durchsageTeile('Noch {ZEIT}', true), [{ text: 'Noch ' }, { zeit: true }]);
 
 console.log('-- QR-Code --');
 // Die Bibliothek schneidet Zeichen standardmaessig auf ein Byte ab. Ohne die

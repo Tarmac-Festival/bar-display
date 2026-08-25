@@ -175,6 +175,32 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 .dayPresets { display: flex; gap: 3px; }
 .dayPresets button { font-size: 11px; padding: 0.25rem 0.45rem; color: var(--muted); }
 
+/* --------------------------- Geplante Durchsagen --------------------- */
+.planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
+.planRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+}
+.planRow.aus { opacity: 0.55; }
+.planKopf { display: flex; align-items: center; gap: 0.7rem; }
+.planKopf .checkline { margin: 0; }
+.planKopf .spacer { flex: 1; }
+.planRow textarea { resize: vertical; }
+.planRow .times { display: flex; align-items: center; gap: 0.4rem; font-size: 13px; color: var(--muted); }
+.planRow input[type=time] { width: 110px; }
+.planWerkzeug { align-items: center; }
+.planWerkzeug .checkline { margin: 0; }
+
+.planStatus { font-size: 12px; color: var(--muted); }
+.planStatus.an { color: var(--accent); font-weight: 700; }
+.planStatus.warn { color: var(--danger); }
+.planStatus.aus { color: var(--muted); font-style: italic; }
+
 /* ------------------------------- Tabellen ---------------------------- */
 .grid { width: 100%; border-collapse: collapse; }
 .grid th {

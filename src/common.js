@@ -152,3 +152,79 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ---------------------------------------------------------------------------
+// Durchsagen
+// ---------------------------------------------------------------------------
+// Der Countdown zaehlt auf das Ende des Anzeigefensters. Weil ein Fenster ueber
+// Mitternacht laufen darf, reicht die Uhrzeit allein nicht - hier wird daraus
+// ein echter Zeitpunkt gemacht.
+function fensterEnde(win, now) {
+  const von = toMinutes(win && win.from);
+  const bis = toMinutes(win && win.to);
+  if (von === null || bis === null || von === bis) return null;
+
+  const ende = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
+                        Math.floor(bis / 60), bis % 60, 0, 0);
+  // Fenster ueber Mitternacht: liegt das Ende hinter uns, gehoert es zu morgen.
+  if (von > bis && ende.getTime() <= now.getTime()) ende.setDate(ende.getDate() + 1);
+  return ende;
+}
+
+// Restzeit als "12:34" bzw. "1:05:00". Fuehrende Nullen bei den Minuten nur
+// dann, wenn Stunden davor stehen - "05:03" liest sich auf dem Balken schlecht.
+function countdownText(ms) {
+  let sek = Math.max(0, Math.ceil(ms / 1000));
+  const std = Math.floor(sek / 3600); sek -= std * 3600;
+  const min = Math.floor(sek / 60);   sek -= min * 60;
+  if (std > 0) return std + ':' + pad2(min) + ':' + pad2(sek);
+  return pad2(min) + ':' + pad2(sek);
+}
+
+// Was soll gerade auf dem Balken stehen? Die von Hand ausgeloeste Durchsage hat
+// Vorrang - wer jetzt etwas eintippt, meint es dringender als den Wochenplan.
+// Danach gilt der erste passende Plan in Listenreihenfolge.
+function aktiveDurchsage(cfg, now) {
+  const a = (cfg && cfg.announcement) || {};
+
+  if (a.enabled && a.text) {
+    let offen = true;
+    if (a.until) {
+      const ende = new Date(a.until);
+      if (!isNaN(ende) && now.getTime() >= ende.getTime()) offen = false;
+    }
+    if (offen) return { text: a.text, ende: null, quelle: 'sofort' };
+  }
+
+  for (const p of (a.plans || [])) {
+    if (!p || p.enabled === false || !p.text) continue;
+    if (!windowMatches(p, now)) continue;
+    return {
+      text: p.text,
+      ende: p.countdown === false ? null : fensterEnde(p, now),
+      quelle: 'plan',
+      id: p.id
+    };
+  }
+  return null;
+}
+
+// Platzhalter im Text durch die Restzeit ersetzen. Steht kein Platzhalter drin,
+// haengt die Zeit hinten dran - sonst tippt jemand den Text ohne {zeit} und
+// wundert sich, warum nichts zaehlt.
+function durchsageTeile(text, hatZeit) {
+  const roh = String(text == null ? '' : text);
+  if (!hatZeit) {
+    return [{ text: roh.replace(/\{zeit\}/gi, '').replace(/\s{2,}/g, ' ').trim() }];
+  }
+  const stuecke = roh.split(/\{zeit\}/gi);
+  // Kein Platzhalter im Text: die Zeit haengt hinten dran, damit sie nicht fehlt
+  if (stuecke.length === 1) return [{ text: roh + ' ' }, { zeit: true }];
+
+  const teile = [];
+  stuecke.forEach((st, k) => {
+    if (st) teile.push({ text: st });
+    if (k < stuecke.length - 1) teile.push({ zeit: true });
+  });
+  return teile;
+}

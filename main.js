@@ -69,7 +69,9 @@ const DEFAULT_CONFIG = {
   timetable: [],
   prices: [],
   // Durchsage, die sich vom Handy ueber alles legen laesst
-  announcement: { enabled: false, text: '', until: '' },
+  // enabled/text/until = die von Hand ausgeloeste Durchsage,
+  // plans = der Wochenplan, siehe aktiveDurchsage() in src/common.js
+  announcement: { enabled: false, text: '', until: '', plans: [] },
   // Ruhezeit: Bildschirm ausserhalb der Oeffnungszeiten schwarz
   quiet: { enabled: false, from: '06:00', to: '14:00' },
   // Hervorgehobener Shot unter den Preisspalten

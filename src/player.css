@@ -663,6 +663,18 @@ body.instant .layer { transition: none; }
   max-width: 88%;
 }
 
+/* Der laufende Countdown. Feste Ziffernbreite, sonst zappelt der Text bei
+   jedem Sekundenwechsel hin und her. */
+.durchsageZeit {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  white-space: nowrap;
+  padding: 0 0.12em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 0.12em;
+}
+
 /* ------------------------------------------------------------------ */
 /* Ruhezeit                                                             */
 /* ------------------------------------------------------------------ */

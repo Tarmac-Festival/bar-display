@@ -49,6 +49,7 @@ async function boot() {
   });
 
   setInterval(tickClock, 1000);
+  setInterval(durchsageTicken, 1000);
   setInterval(refreshVisibleSlide, 20000);
   setInterval(sonderzustaende, 10000);
 
@@ -102,21 +103,55 @@ function sonderzustaende() {
   ruhePruefen();
 }
 
-function durchsagePruefen() {
-  const a = cfg.announcement || {};
-  const el = document.getElementById('durchsage');
-  let zeigen = !!(a.enabled && a.text);
+// Was zurzeit auf dem Balken steht. Wird gemerkt, damit der Balken nur dann neu
+// aufgebaut wird, wenn sich wirklich etwas geaendert hat - sonst flackert der
+// Countdown jede Sekunde.
+let durchsageStand = '';
+let durchsageEnde = null;
 
-  // Laeuft eine Ablaufzeit ab, verschwindet die Durchsage von allein
-  if (zeigen && a.until) {
-    const ende = new Date(a.until);
-    if (!isNaN(ende) && Date.now() >= ende.getTime()) zeigen = false;
+function durchsagePruefen() {
+  const el = document.getElementById('durchsage');
+  const d = aktiveDurchsage(cfg, new Date());
+
+  if (!d) {
+    if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
+    return;
   }
 
-  if (!zeigen) { el.classList.remove('an'); return; }
-  const text = el.querySelector('.durchsageText');
-  if (text.textContent !== a.text) text.textContent = a.text;
+  // Ein abgelaufener Countdown nimmt die Durchsage mit - das Fensterende ist
+  // zugleich das Ende der Anzeige.
+  if (d.ende && Date.now() >= d.ende.getTime()) {
+    if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
+    return;
+  }
+
+  const kennung = (d.quelle || '') + '|' + (d.id || '') + '|' + d.text + '|' + (d.ende ? d.ende.getTime() : '');
+  if (kennung !== durchsageStand) {
+    durchsageStand = kennung;
+    durchsageEnde = d.ende;
+    durchsageAufbauen(el, d);
+  }
+  durchsageTicken();
   el.classList.add('an');
+}
+
+// Der Text wird in Stuecke zerlegt; das Stueck mit dem Countdown bekommt ein
+// eigenes Element, damit jede Sekunde nur diese Zahl neu geschrieben wird.
+function durchsageAufbauen(el, d) {
+  const ziel = el.querySelector('.durchsageText');
+  ziel.innerHTML = durchsageTeile(d.text, !!d.ende).map(t =>
+    t.zeit ? '<b class="durchsageZeit">--:--</b>' : escapeHtml(t.text)
+  ).join('');
+}
+
+function durchsageTicken() {
+  if (!durchsageEnde) return;
+  const rest = durchsageEnde.getTime() - Date.now();
+  if (rest <= 0) return durchsagePruefen();   // Fenster vorbei, Balken raeumen
+  const txt = countdownText(rest);
+  document.querySelectorAll('.durchsageZeit').forEach(el => {
+    if (el.textContent !== txt) el.textContent = txt;
+  });
 }
 
 function ruhePruefen() {

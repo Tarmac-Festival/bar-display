@@ -135,6 +135,7 @@ function fillDurchsage() {
   const feld = $('an_text');
   if (document.activeElement !== feld) feld.value = a.text || '';
   durchsageStatus();
+  renderPlaene();
 
   if (!feld.dataset.wired) {
     feld.dataset.wired = '1';
@@ -144,11 +145,11 @@ function fillDurchsage() {
       const text = feld.value.trim();
       if (!text) { toast('Bitte erst einen Text eingeben', true); return; }
       const minuten = Number($('an_dauer').value) || 0;
-      state.announcement = {
+      state.announcement = Object.assign({}, state.announcement, {
         enabled: true,
         text,
         until: minuten ? new Date(Date.now() + minuten * 60000).toISOString() : ''
-      };
+      });
       await save();
       durchsageStatus();
       toast(minuten ? 'Durchsage läuft, endet in ' + minuten + ' Minuten' : 'Durchsage läuft');
@@ -177,6 +178,180 @@ function durchsageStatus() {
   }
   el.textContent = laeuft ? 'Durchsage läuft gerade' + bis : 'Keine Durchsage aktiv';
   el.classList.toggle('aktiv', laeuft);
+}
+
+// ---------------------------------------------------------------------------
+// Geplante Durchsagen
+// ---------------------------------------------------------------------------
+function neuerPlan() {
+  return { id: uid(), enabled: true, text: '', days: [5, 6],
+           from: '01:40', to: '02:00', countdown: true };
+}
+
+function plaene() {
+  state.announcement = state.announcement || {};
+  if (!Array.isArray(state.announcement.plans)) state.announcement.plans = [];
+  return state.announcement.plans;
+}
+
+function renderPlaene() {
+  const box = $('planListe');
+  if (!box) return;
+  const liste = plaene();
+  box.innerHTML = '';
+
+  if (!liste.length) {
+    const leer = document.createElement('div');
+    leer.className = 'hint';
+    leer.textContent = 'Noch keine geplante Durchsage. Der Balken erscheint dann nur, '
+                     + 'wenn ihr ihn oben von Hand ausloest.';
+    box.appendChild(leer);
+  }
+
+  liste.forEach((pl, i) => box.appendChild(planZeile(pl, i)));
+
+  if (!$('planNeu').dataset.wired) {
+    $('planNeu').dataset.wired = '1';
+    $('planNeu').addEventListener('click', () => {
+      plaene().push(neuerPlan());
+      markDirty(); renderPlaene();
+    });
+    $('planVorlage').addEventListener('click', () => {
+      plaene().push(Object.assign(neuerPlan(), {
+        text: 'Letzte Runde \u2013 die Bar schlie\u00dft in {zeit}'
+      }));
+      markDirty(); renderPlaene();
+    });
+  }
+}
+
+function planZeile(pl, i) {
+  const wrap = document.createElement('div');
+  wrap.className = 'planRow' + (pl.enabled === false ? ' aus' : '');
+
+  const tage = DAY_ORDER.map(d =>
+    '<button data-day="' + d + '" class="' + ((pl.days || []).includes(d) ? 'on' : '') + '">'
+    + DAY_NAMES[d] + '</button>').join('');
+
+  wrap.innerHTML =
+    '<div class="planKopf">'
+      + '<label class="checkline"><input type="checkbox" data-f="enabled"'
+        + (pl.enabled === false ? '' : ' checked') + '> <span>aktiv</span></label>'
+      + '<span class="planStatus"></span>'
+      + '<div class="spacer"></div>'
+      + '<button class="icon" data-act="up" title="nach oben">&#9650;</button>'
+      + '<button class="icon" data-act="down" title="nach unten">&#9660;</button>'
+      + '<button class="danger icon" data-act="del" title="Durchsage entfernen">&times;</button>'
+    + '</div>'
+    + '<label class="field"><span>Text</span>'
+      + '<textarea data-f="text" rows="2" maxlength="200" '
+      + 'placeholder="z.B. Letzte Runde \u2013 die Bar schlie\u00dft in {zeit}">'
+      + escapeHtml(pl.text || '') + '</textarea></label>'
+    + '<div class="btnRow planWerkzeug">'
+      + '<button data-act="zeit">{zeit} einf\u00fcgen</button>'
+      + '<label class="checkline"><input type="checkbox" data-f="countdown"'
+        + (pl.countdown === false ? '' : ' checked') + '> <span>Countdown mitlaufen lassen</span></label>'
+    + '</div>'
+    + '<div class="days">' + tage + '</div>'
+    + '<div class="dayPresets">'
+      + '<button data-preset="week">Mo-Fr</button>'
+      + '<button data-preset="weekend">Fr-So</button>'
+      + '<button data-preset="all">alle</button>'
+    + '</div>'
+    + '<div class="times">von <input type="time" data-f="from" value="' + escapeHtml(pl.from || '') + '">'
+    + ' bis <input type="time" data-f="to" value="' + escapeHtml(pl.to || '') + '"></div>';
+
+  const txt = wrap.querySelector('[data-f=text]');
+  txt.addEventListener('input', () => { pl.text = txt.value; markDirty(); planStatusSetzen(wrap, pl); });
+
+  wrap.querySelectorAll('input[type=time]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      pl[inp.dataset.f] = inp.value; markDirty(); planStatusSetzen(wrap, pl);
+    });
+  });
+
+  wrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      pl[cb.dataset.f] = cb.checked;
+      wrap.classList.toggle('aus', pl.enabled === false);
+      markDirty(); planStatusSetzen(wrap, pl);
+    });
+  });
+
+  wrap.querySelectorAll('.days button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = parseInt(btn.dataset.day, 10);
+      pl.days = pl.days || [];
+      const k = pl.days.indexOf(d);
+      if (k >= 0) pl.days.splice(k, 1); else pl.days.push(d);
+      btn.classList.toggle('on', pl.days.includes(d));
+      markDirty(); planStatusSetzen(wrap, pl);
+    });
+  });
+
+  wrap.querySelectorAll('.dayPresets button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.preset;
+      pl.days = v === 'week' ? [1, 2, 3, 4, 5] : v === 'weekend' ? [5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+      markDirty(); renderPlaene();
+    });
+  });
+
+  // Platzhalter dort einsetzen, wo der Cursor gerade steht
+  wrap.querySelector('[data-act=zeit]').addEventListener('click', () => {
+    const a = txt.selectionStart != null ? txt.selectionStart : txt.value.length;
+    const b = txt.selectionEnd != null ? txt.selectionEnd : a;
+    txt.value = txt.value.slice(0, a) + '{zeit}' + txt.value.slice(b);
+    pl.text = txt.value;
+    txt.focus();
+    txt.setSelectionRange(a + 6, a + 6);
+    markDirty(); planStatusSetzen(wrap, pl);
+  });
+
+  wrap.querySelector('[data-act=up]').addEventListener('click', () => planSchieben(i, -1));
+  wrap.querySelector('[data-act=down]').addEventListener('click', () => planSchieben(i, 1));
+  wrap.querySelector('[data-act=del]').addEventListener('click', () => {
+    if (!confirm('Diese geplante Durchsage entfernen?')) return;
+    plaene().splice(i, 1);
+    markDirty(); renderPlaene();
+  });
+
+  planStatusSetzen(wrap, pl);
+  return wrap;
+}
+
+function planSchieben(i, richtung) {
+  const liste = plaene();
+  const j = i + richtung;
+  if (j < 0 || j >= liste.length) return;
+  const tmp = liste[i]; liste[i] = liste[j]; liste[j] = tmp;
+  markDirty(); renderPlaene();
+}
+
+// Klartext statt Raetselraten: laeuft der Plan gerade, und wie lange noch?
+function planStatusSetzen(wrap, pl) {
+  const el = wrap.querySelector('.planStatus');
+  const jetzt = new Date();
+
+  if (pl.enabled === false) { el.textContent = 'abgeschaltet'; el.className = 'planStatus aus'; return; }
+  if (!pl.text) { el.textContent = 'ohne Text erscheint nichts'; el.className = 'planStatus warn'; return; }
+  if (!(pl.days || []).length) { el.textContent = 'ohne Tag erscheint nichts'; el.className = 'planStatus warn'; return; }
+
+  const ende = fensterEnde(pl, jetzt);
+  if (pl.countdown !== false && !ende) {
+    el.textContent = 'Zeitfenster unbrauchbar \u2013 kein Countdown';
+    el.className = 'planStatus warn';
+    return;
+  }
+
+  if (windowMatches(pl, jetzt)) {
+    el.textContent = 'l\u00e4uft gerade' + (ende && pl.countdown !== false
+      ? ' \u2013 noch ' + countdownText(ende.getTime() - jetzt.getTime()) : '');
+    el.className = 'planStatus an';
+  } else {
+    el.textContent = describeWindows({ windows: [pl] });
+    el.className = 'planStatus';
+  }
 }
 
 // ---------------------------------------------------------------------------
