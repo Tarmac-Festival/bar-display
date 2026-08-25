@@ -114,9 +114,10 @@ DIENST
 # ---------------------------------------------------------------------------
 sage "Vollbildanzeige einrichten"
 # Chromium-Zwischenspeicher ins RAM. Die SD-Karte ist im Dauerbetrieb das
-# schwaechste Glied - je weniger darauf geschrieben wird, desto besser. Nach
-# einem Neustart ist der Zwischenspeicher weg, das stoert hier niemanden.
-CACHE="/run/user/$(id -u "$BENUTZER")/chromium-cache"
+# schwaechste Glied - je weniger darauf geschrieben wird, desto besser. Den
+# Ordner legt systemd selbst unter /run an (RuntimeDirectory weiter unten),
+# mit den richtigen Rechten und ohne in /run/user hineinzupfuschen.
+CACHE="/run/bar-display-cache"
 # cage ist ein winziger Wayland-Aufsatz: kein Desktop, kein Panel, nichts das
 # Speicher frisst - auf einem Pi 3B mit 1 GB macht das einen spuerbaren
 # Unterschied gegenueber einer vollen Arbeitsflaeche.
@@ -136,8 +137,12 @@ StandardOutput=journal
 TTYReset=yes
 TTYVHangup=yes
 Environment=XDG_RUNTIME_DIR=/run/user/$(id -u "$BENUTZER")
-ExecStartPre=/bin/sh -c 'until curl -sf http://localhost:$PORT/api/config >/dev/null; do sleep 1; done'
-ExecStartPre=/bin/mkdir -p $CACHE
+RuntimeDirectory=bar-display-cache
+RuntimeDirectoryPreserve=yes
+# Warten, bis der Webdienst antwortet - aber nicht ewig. Ohne Grenze laeuft die
+# Schleife in systemds Zeitlimit und meldet nur "fatal signal", was nichts
+# darueber verraet, was eigentlich klemmt.
+ExecStartPre=/bin/sh -c 'for i in \$(seq 1 60); do curl -sf http://localhost:$PORT/api/config >/dev/null && exit 0; sleep 1; done; echo "Webdienst antwortet nicht auf Port $PORT - siehe: journalctl -u bar-display" >&2; exit 1'
 ExecStart=$(command -v cage) -d -- $CHROMIUM \\
   --kiosk http://localhost:$PORT/ \\
   --ozone-platform=wayland \\
@@ -160,8 +165,14 @@ WantedBy=multi-user.target
 KIOSK
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now bar-display.service
-sudo systemctl enable --now bar-display-kiosk.service
+
+# Bewusst ohne Abbruch: startet die Anzeige nicht, sollen die restlichen
+# Einstellungen trotzdem gesetzt werden - sonst steht der Pi halb eingerichtet
+# da und selbst "bar-display-update" fehlt.
+DIENST_OK=ja
+KIOSK_OK=ja
+sudo systemctl enable --now bar-display.service || DIENST_OK=nein
+sudo systemctl enable --now bar-display-kiosk.service || KIOSK_OK=nein
 
 # ---------------------------------------------------------------------------
 sage "System auf Dauerbetrieb trimmen"
@@ -237,10 +248,23 @@ else
   Durchsagen zur falschen Stunde. Pruefen mit: timedatectl status"
 fi
 
+if [ "$DIENST_OK" = nein ] || [ "$KIOSK_OK" = nein ]; then
+  LAGE="ACHTUNG: "
+  [ "$DIENST_OK" = nein ] && LAGE="${LAGE}Der Webdienst ist nicht gestartet. "
+  [ "$KIOSK_OK" = nein ] && LAGE="${LAGE}Die Vollbildanzeige ist nicht gestartet. "
+  LAGE="${LAGE}
+  Alles andere ist eingerichtet. Ursache ansehen mit:
+      systemctl status bar-display.service --no-pager -l
+      journalctl -u bar-display -n 50 --no-pager
+      journalctl -u bar-display-kiosk -n 50 --no-pager"
+else
+  LAGE="Anzeige laeuft auf dem angeschlossenen Bildschirm."
+fi
+
 sage "Fertig"
 cat <<ENDE
 
-  Anzeige laeuft auf dem angeschlossenen Bildschirm.
+  $LAGE
 
   Bedienung vom Handy im selben WLAN:
       http://${ADRESSE:-<IP-des-Pi>}:$PORT/einstellungen

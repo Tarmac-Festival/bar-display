@@ -274,7 +274,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pfad === '/api/zeit') {
-      return zeitStatus().then(z => json(res, z));
+      // Bewusst await: ein returntes Versprechen laeuft am try/catch vorbei,
+      // und eine unbehandelte Ablehnung beendet in Node den ganzen Prozess.
+      // Der Dienst wuerde dann bei jeder Zeitabfrage neu starten.
+      return json(res, await zeitStatus());
     }
 
     // Die PIN steht in der Konfiguration - wer sie nicht kennt, bekommt sie
@@ -420,6 +423,17 @@ const server = http.createServer(async (req, res) => {
   } catch (err) {
     return fehler(res, 500, 'Fehler: ' + err.message);
   }
+});
+
+// Letztes Netz: ein einzelner Fehler in einer Anfrage darf nicht die ganze
+// Anzeige mitnehmen. Node beendet sich bei unbehandelten Ablehnungen sonst von
+// selbst, und mit Restart=always haette man einen Neustartkreisel statt einer
+// Fehlermeldung.
+process.on('unhandledRejection', (grund) => {
+  console.error('[dienst] unbehandelte Ablehnung:', grund && grund.stack ? grund.stack : grund);
+});
+process.on('uncaughtException', (fehler) => {
+  console.error('[dienst] unbehandelter Fehler:', fehler && fehler.stack ? fehler.stack : fehler);
 });
 
 ordnerAnlegen();
