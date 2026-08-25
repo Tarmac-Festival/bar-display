@@ -128,6 +128,12 @@ sudo tee /etc/systemd/system/bar-display-kiosk.service >/dev/null <<KIOSK
 Description=Bar Display - Vollbild
 After=bar-display.service
 Wants=bar-display.service
+# Auf tty1 sitzt bei Konsolenstart der automatische Login. Ohne Conflicts
+# streiten sich beide um denselben Bildschirm: systemd haengt den Login ab,
+# getty startet nach, und die Anzeige kommt nie zum Zug. Conflicts sorgt dafuer,
+# dass systemd den Login sauber beendet, bevor die Anzeige uebernimmt.
+After=getty@tty1.service
+Conflicts=getty@tty1.service
 
 [Service]
 Type=simple

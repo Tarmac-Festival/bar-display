@@ -52,6 +52,17 @@ fi
 
 mkdir -p "$CACHE" 2>/dev/null || true
 
+# Was hier oft klemmt, steht sonst nirgends. Einmal ins Protokoll, damit man bei
+# einem Fehlstart nicht raten muss.
+echo "Starte Anzeige: cage=$CAGE chromium=$CHROMIUM port=$PORT"
+if [ ! -e /dev/dri/card0 ] && [ ! -e /dev/dri/card1 ]; then
+  echo "Warnung: keine Grafikschnittstelle unter /dev/dri gefunden." >&2
+fi
+if ! id -nG | tr ' ' '
+' | grep -qx video; then
+  echo "Warnung: Benutzer $(id -un) ist nicht in der Gruppe 'video'." >&2
+fi
+
 # exec, damit cage der Hauptprozess des Dienstes wird - sonst haelt systemd
 # dieses Skript fuer die Anzeige und merkt ihr Ende nicht.
 exec "$CAGE" -d -- "$CHROMIUM" \
