@@ -216,19 +216,76 @@ fi
 
 # Ohne dtoverlay=vc4-kms-v3d gibt es keinen Grafiktreiber und damit kein
 # /dev/dri - die Vollbildanzeige findet dann nichts, worauf sie zeichnen kann.
-# Auf einem Standard-Raspberry-Pi-OS steht die Zeile drin; fehlt sie, ist an der
-# config.txt etwas passiert. Wir schreiben hier bewusst nichts hinein: am
-# Bootbereich zu raten kann ein Geraet unstartbar machen.
+#
+# Hier wird ausnahmsweise am Bootbereich geschrieben, denn genau das ist einem
+# Geraet passiert: die config.txt war leer, und ohne sie kommt keine Grafik.
+# Deshalb vorsichtig: erst Sicherungskopie, dann nur das Noetigste, danach
+# Gegenprobe - und schlaegt die fehl, wird die Sicherung zurueckgespielt.
 BOOT_HINWEIS=""
-if [ -n "$BOOTCFG" ] && ! grep -q '^dtoverlay=vc4-kms-v3d' "$BOOTCFG"; then
-  warne "In $BOOTCFG fehlt die Zeile dtoverlay=vc4-kms-v3d."
-  BOOT_HINWEIS="ACHTUNG: In $BOOTCFG fehlt dtoverlay=vc4-kms-v3d. Ohne diese Zeile
-  gibt es keinen Grafiktreiber, /dev/dri bleibt leer und die Anzeige startet nicht.
-  Ist die Datei leer oder unvollstaendig, hilft der Standardinhalt aus der
-  Anleitung im Wiki (Abschnitt Raspberry Pi)."
-elif [ -n "$BOOTCFG" ] && [ ! -s "$BOOTCFG" ]; then
-  warne "$BOOTCFG ist leer."
-  BOOT_HINWEIS="ACHTUNG: $BOOTCFG ist leer. Ohne Inhalt startet die Grafik nicht."
+if [ -n "$BOOTCFG" ]; then
+  BOOT_TAT=""
+  SICHERUNG="$BOOTCFG.vor-bar-display"
+
+  if [ ! -s "$BOOTCFG" ]; then
+    # Ganz leer: der Standardinhalt von Raspberry Pi OS muss zurueck.
+    sudo cp -a "$BOOTCFG" "$SICHERUNG" 2>/dev/null || true
+    sage "$BOOTCFG ist leer - Standardinhalt wird geschrieben"
+
+    # arm_64bit nur bei einem 64-Bit-System. Bei einem 32-Bit-Userland wuerde
+    # die Zeile einen Kernel starten, der nicht dazu passt.
+    BIT64=""
+    [ "$(uname -m)" = "aarch64" ] && BIT64="arm_64bit=1"
+
+    sudo tee "$BOOTCFG" >/dev/null <<BOOTSTD
+# For more options and information see http://rptl.io/configtxt
+# Von Bar Display wiederhergestellt - die Datei war leer.
+
+dtparam=audio=on
+camera_auto_detect=1
+display_auto_detect=1
+auto_initramfs=1
+
+# Grafiktreiber - ohne diese Zeile gibt es kein /dev/dri
+dtoverlay=vc4-kms-v3d
+max_framebuffers=2
+disable_fw_kms_setup=1
+$BIT64
+disable_overscan=1
+arm_boost=1
+
+[cm4]
+otg_mode=1
+
+[cm5]
+dtoverlay=dwc2,dr_mode=host
+
+[all]
+BOOTSTD
+    BOOT_TAT="wiederhergestellt"
+
+  elif ! grep -q '^dtoverlay=vc4-kms-v3d' "$BOOTCFG"; then
+    # Datei hat Inhalt, aber der Grafiktreiber fehlt: nur anhaengen, damit
+    # eigene Einstellungen der Bar erhalten bleiben.
+    sudo cp -a "$BOOTCFG" "$SICHERUNG" 2>/dev/null || true
+    sage "dtoverlay=vc4-kms-v3d fehlte in $BOOTCFG - wird ergaenzt"
+    printf '\n# Von Bar Display ergaenzt - ohne diese Zeile gibt es kein /dev/dri\ndtoverlay=vc4-kms-v3d\nmax_framebuffers=2\n' \
+      | sudo tee -a "$BOOTCFG" >/dev/null
+    BOOT_TAT="ergaenzt"
+  fi
+
+  # Gegenprobe: hat es wirklich funktioniert?
+  if [ -n "$BOOT_TAT" ]; then
+    if [ -s "$BOOTCFG" ] && grep -q '^dtoverlay=vc4-kms-v3d' "$BOOTCFG"; then
+      BOOT_HINWEIS="Die Grafik-Einstellung in $BOOTCFG wurde $BOOT_TAT
+  (Sicherung: $SICHERUNG). Das wirkt erst nach einem Neustart:
+      sudo reboot"
+    else
+      warne "Schreiben in $BOOTCFG hat nicht geklappt - Sicherung wird zurueckgespielt."
+      [ -f "$SICHERUNG" ] && sudo cp -a "$SICHERUNG" "$BOOTCFG"
+      BOOT_HINWEIS="ACHTUNG: $BOOTCFG liess sich nicht reparieren. Ohne die Zeile
+  dtoverlay=vc4-kms-v3d bleibt der Bildschirm schwarz - bitte von Hand nachsehen."
+    fi
+  fi
 fi
 
 # WLAN-Stromsparen verzoegert die Push-Verbindung zur Bedienseite: Durchsagen

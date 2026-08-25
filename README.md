@@ -644,14 +644,22 @@ findet die Anzeige kein Grafikgerät. Erste Prüfung:
 ls /dev/dri/
 ```
 
-Kommt dort „nicht gefunden", ist der Grafiktreiber nicht geladen. Dann muss in
-`/boot/firmware/config.txt` diese Zeile stehen:
+Kommt dort „nicht gefunden", ist der Grafiktreiber nicht geladen. Dafür fehlt in
+`/boot/firmware/config.txt` die Zeile `dtoverlay=vc4-kms-v3d`.
 
-```
-dtoverlay=vc4-kms-v3d
+**Das repariert das Einrichtungsskript von selbst.** Einmal laufen lassen und
+neu starten:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tarmac-Festival/bar-display/main/pi/install.sh | bash && sudo reboot
 ```
 
-Fehlt sie oder ist die Datei leer, hilft der Standardinhalt von Raspberry Pi OS:
+Es legt vorher eine Sicherungskopie als `config.txt.vor-bar-display` an. Ist die
+Datei leer, schreibt es den Standardinhalt von Raspberry Pi OS; fehlt nur die
+eine Zeile, hängt es sie an und lässt eure übrigen Einstellungen in Ruhe.
+Danach prüft es nach – und spielt die Sicherung zurück, falls etwas schiefging.
+
+Von Hand ginge es so:
 
 ```bash
 sudo tee /boot/firmware/config.txt > /dev/null <<'ENDE'
@@ -682,9 +690,7 @@ sollte einige hundert Bytes melden. Dann `sudo reboot`.
 
 > **Vorsicht bei Befehlen mit `>`.** Ein versehentliches Größerzeichen hinter
 > einem Befehl leitet die Ausgabe um und **kürzt die genannte Datei auf null**.
-> Genau so kann eine `config.txt` leer werden. Das Einrichtungsskript warnt
-> inzwischen, wenn die Zeile fehlt – reparieren tut es sie bewusst nicht, denn
-> am Bootbereich zu raten kann ein Gerät unstartbar machen.
+> Genau so kann eine `config.txt` leer werden.
 
 ### Wieder an den Pi kommen
 
@@ -858,7 +864,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
 | Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
-| Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät. Meist eine Zeile `gpu_mem=` in der `config.txt` – entfernen und neu starten |
+| Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
