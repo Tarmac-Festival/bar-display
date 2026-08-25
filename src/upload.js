@@ -28,9 +28,9 @@
       feld.style.cssText = 'position:fixed;left:-9999px;opacity:0';
       document.body.appendChild(feld);
 
-      // "change" kommt nicht, wenn jemand den Dialog abbricht. Damit die
-      // Zusage nicht ewig offen bleibt, hängen wir uns zusätzlich an den
-      // nächsten Fokus des Fensters.
+      // "change" kommt nicht, wenn jemand den Dialog abbricht. Damit die Zusage
+      // nicht ewig offen bleibt, hängen wir uns zusätzlich an den nächsten
+      // Fokus des Fensters.
       let erledigt = false;
       const schliessen = (dateien) => {
         if (erledigt) return;
@@ -39,7 +39,16 @@
         feld.remove();
         fertig(dateien);
       };
-      const beiFokus = () => setTimeout(() => schliessen([]), 800);
+      // Bewusst nicht einfach mit [] abschliessen: kommt "change" erst nach dem
+      // Fokus - bei grossen Dateien am Handy durchaus - waere die Auswahl sonst
+      // stillschweigend verschluckt. Also nachsehen, was wirklich drinsteht.
+      const beiFokus = () => setTimeout(() => {
+        const da = Array.from(feld.files || []);
+        if (da.length) return schliessen(da);
+        // Noch nichts da? Dem Browser eine zweite Chance geben, bevor wir
+        // "abgebrochen" annehmen.
+        setTimeout(() => schliessen(Array.from(feld.files || [])), 1500);
+      }, 400);
 
       feld.addEventListener('change', () => schliessen(Array.from(feld.files || [])));
       window.addEventListener('focus', beiFokus);

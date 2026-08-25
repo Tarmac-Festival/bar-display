@@ -444,6 +444,14 @@ function planStatusSetzen(wrap, pl) {
     return;
   }
 
+  // Waehrend der Ruhezeit ist der Bildschirm schwarz - eine Durchsage darin
+  // erscheint nie. Das sieht man dem Eintrag sonst nicht an.
+  if (inRuhezeit(pl)) {
+    el.textContent = describeWindows({ windows: [pl] }) + ' \u2013 liegt in der Ruhezeit';
+    el.className = 'planStatus warn';
+    return;
+  }
+
   if (windowMatches(pl, jetzt)) {
     el.textContent = 'l\u00e4uft gerade' + (ende && pl.countdown !== false
       ? ' \u2013 noch ' + countdownText(ende.getTime() - jetzt.getTime()) : '');
@@ -452,6 +460,17 @@ function planStatusSetzen(wrap, pl) {
     el.textContent = describeWindows({ windows: [pl] });
     el.className = 'planStatus';
   }
+}
+
+// Faellt der Beginn der Durchsage in die Ruhezeit?
+function inRuhezeit(pl) {
+  const q = state.quiet || {};
+  if (!q.enabled) return false;
+  const m = String(pl.from || '').match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return false;
+  const start = new Date();
+  start.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  return zeitImFenster(q.from, q.to, start);
 }
 
 // ---------------------------------------------------------------------------
