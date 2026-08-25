@@ -614,7 +614,8 @@ function renderTimetable() {
     const e = view.current.entry;
     const times = timeLabel(se.start) + (se.end ? ' &ndash; ' + timeLabel(se.end) : '');
     body += '<div class="ttNow">' +
-      (e.photo ? '<div class="ttPhoto"><img src="' + photoUrl(e.photo) + '" alt=""></div>' : '') +
+      (e.photo ? '<div class="ttPhoto"><img src="' + photoUrl(e.photo) +
+                 '" alt="" style="' + fotoStil(e) + '"></div>' : '') +
       '<div class="ttWhen"><div class="tag">JETZT</div><div class="time">' + times + '</div></div>' +
       '<div class="ttWho"><div class="act">' + escapeHtml(e.act) + '</div>' +
       (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') + '</div>' +
@@ -634,7 +635,8 @@ function renderTimetable() {
       body += '<div class="ttRow">' +
         '<div class="when">' + when + '</div>' +
         '<div class="act">' +
-          (e.photo ? '<img class="ttThumb" src="' + photoUrl(e.photo) + '" alt="">'
+          (e.photo ? '<span class="ttThumb"><img src="' + photoUrl(e.photo) +
+                     '" alt="" style="' + fotoStil(e) + '"></span>'
                    : (anyPhoto ? '<span class="ttThumb empty"></span>' : '')) +
           '<span>' + escapeHtml(e.act) + '</span></div>' +
         '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +

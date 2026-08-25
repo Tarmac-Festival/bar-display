@@ -11,7 +11,8 @@ const code = fs.readFileSync(QUELLE, 'utf8');
 const ctx = vm.createContext({ console, Date });
 vm.runInContext(code, ctx);
 const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster,
-        fensterEnde, countdownText, aktiveDurchsage, durchsageTeile } = ctx;
+        fensterEnde, countdownText, aktiveDurchsage, durchsageTeile,
+        fotoAusschnitt, fotoStil, ausschnittIstStandard } = ctx;
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -164,6 +165,32 @@ check('Ohne Countdown faellt der Platzhalter weg',
       durchsageTeile('Bar schliesst in {zeit}', false), [{ text: 'Bar schliesst in' }]);
 check('Grossschreibung des Platzhalters zaehlt auch',
       durchsageTeile('Noch {ZEIT}', true), [{ text: 'Noch ' }, { zeit: true }]);
+
+console.log('-- Bildausschnitt --');
+check('ohne Angabe die Mitte', fotoAusschnitt({}), { x: 50, y: 50, z: 1 });
+check('ohne Eintrag die Mitte', fotoAusschnitt(null), { x: 50, y: 50, z: 1 });
+check('Werte werden uebernommen',
+      fotoAusschnitt({ crop: { x: 30, y: 12, z: 1.8 } }), { x: 30, y: 12, z: 1.8 });
+check('zu grosse Werte werden begrenzt',
+      fotoAusschnitt({ crop: { x: 300, y: -40, z: 99 } }), { x: 100, y: 0, z: 4 });
+check('Unsinn faellt auf den Standard zurueck',
+      fotoAusschnitt({ crop: { x: 'links', y: null, z: 'nah' } }), { x: 50, y: 50, z: 1 });
+check('Zoom unter 1 ist nicht erlaubt', fotoAusschnitt({ crop: { z: 0.2 } }).z, 1);
+
+check('Standard erkannt', ausschnittIstStandard(fotoAusschnitt({})), true);
+check('Verschoben ist nicht Standard',
+      ausschnittIstStandard(fotoAusschnitt({ crop: { x: 20 } })), false);
+
+check('Stil ohne Zoom', fotoStil({}), 'object-position:50% 50%');
+check('Stil mit Ausschnitt', fotoStil({ crop: { x: 25, y: 80 } }), 'object-position:25% 80%');
+check('Stil mit Zoom', fotoStil({ crop: { x: 25, y: 80, z: 2 } }),
+      'object-position:25% 80%;transform:scale(2);transform-origin:25% 80%');
+// Der Stil landet in einem HTML-Attribut - er darf es nicht sprengen koennen
+check('Stil enthaelt keine Anfuehrungszeichen',
+      /["'<>]/.test(fotoStil({ crop: { x: '\" onerror=alert(1) ', y: 5 } })), false);
+
+const spielerQuelle = fs.readFileSync(path.join(__dirname, '..', 'src', 'player.js'), 'utf8');
+check('Player benutzt denselben Helfer', /fotoStil\(/.test(spielerQuelle), true);
 
 console.log('-- QR-Code --');
 // Die Bibliothek schneidet Zeichen standardmaessig auf ein Byte ab. Ohne die

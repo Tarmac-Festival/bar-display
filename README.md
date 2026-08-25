@@ -31,6 +31,8 @@ Getränkepreise im Festival-Design.
   *Fr + Sa, 20:00–02:00*. Fenster über Mitternacht funktionieren.
 - **Timetable** mit Datum, Uhrzeit, Act und optionalem Foto. Die Anzeige hebt den
   laufenden Act hervor und zeigt darunter die nächsten. Vergangenes verschwindet von selbst.
+- **Bildausschnitt wählbar** — pro Act festlegen, welcher Teil des Fotos zu sehen
+  ist. Kein abgeschnittener Kopf mehr bei Hochformat-Bildern.
 - **Getränkepreise** in Gruppen, mit Größe und Preis.
 - **Spezialshot** – ein hervorgehobenes Band über die volle Breite unter den
   Preisspalten, mit eigener Überschrift, Preis und Beschreibungstext.
@@ -362,6 +364,8 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
 - **Foto**: Klick auf *+ Foto* wählt ein Bild, Klick auf die Miniatur tauscht es,
   das rote × entfernt es.
+- **Ausschnitt**: der kleine Knopf unten rechts auf der Miniatur öffnet die
+  Ausschnittwahl — siehe unten.
 - **Nach Zeit sortieren** bringt die Liste in die richtige Reihenfolge.
 - **Vergangene löschen** räumt nach dem Festival auf.
 - **Unbenutzte Fotos aufräumen** löscht Bilder, die keinem Act mehr zugeordnet sind.
@@ -369,6 +373,30 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
 Endet ein Act nach Mitternacht, einfach `23:00` bis `01:30` eintragen – das Programm
 erkennt den Tageswechsel selbst.
+
+#### Bildausschnitt wählen
+
+Die Anzeige beschneidet Act-Fotos auf eine quadratische, organisch geformte Fläche.
+Ohne Zutun sitzt der Ausschnitt mittig – bei einem Hochformat trifft das gern den
+Bauch statt des Gesichts:
+
+| mittig (Standard) | selbst gewählt |
+|---|---|
+| ![Foto mittig beschnitten](docs/screenshots/foto-mittig.png) | ![Foto mit gewähltem Ausschnitt](docs/screenshots/foto-ausschnitt.png) |
+
+Der Knopf unten rechts auf der Miniatur öffnet dafür ein Fenster:
+
+![Ausschnitt wählen](docs/screenshots/einstellungen-ausschnitt.png)
+
+- **Bild verschieben**, bis der richtige Teil im Fenster steht — mit der Maus
+  ziehen, am Handy mit dem Finger.
+- **Vergrößern** holt einen kleineren Ausschnitt heran, bis zum Vierfachen.
+- **Zurücksetzen** stellt wieder auf mittig.
+
+Das Fenster hat dieselbe Form und denselben Zuschnitt wie die Anzeige — was dort
+steht, steht später auch auf dem Bildschirm. Der Ausschnitt gehört zum Act, nicht
+zur Bilddatei: dasselbe Foto kann bei zwei Acts unterschiedlich sitzen, und beim
+*Timetable weitergeben* wandert er mit.
 
 ### Getränkepreise
 
@@ -502,6 +530,7 @@ Ein Balken am unteren Rand zeigt den Fortschritt; über WLAN dauert ein Video se
 Zeit. **Fotos werden vor dem Hochladen im Browser verkleinert** — aus einem
 6-MB-Handyfoto werden rund 260 KB. Act-Fotos landen auf der Anzeige ohnehin
 quadratisch beschnitten bei wenigen hundert Pixeln, es geht also nichts verloren.
+Welcher Teil des Fotos das ist, lässt sich pro Act wählen — auch am Handy.
 
 Zwei Dinge, die man wissen sollte:
 
@@ -655,8 +684,11 @@ sieht nur jemand vor dem Pi über `chrome://gpu`.
 Beim Hinzufügen prüft das Programm jedes Video und bietet die Umwandlung nach MP4 an,
 wenn Windows es nicht direkt abspielen kann. Dafür ist ffmpeg mitgeliefert.
 
-Act-Fotos werden mittig quadratisch beschnitten – ein etwa quadratischer Ausschnitt mit
-dem Motiv in der Mitte sieht am besten aus, ab ungefähr 400 px Kantenlänge.
+Act-Fotos werden quadratisch beschnitten, standardmäßig mittig. Passt das nicht,
+lässt sich der Ausschnitt pro Act selbst wählen – siehe
+[Bildausschnitt wählen](#bildausschnitt-wählen). Ab ungefähr 400 px Kantenlänge
+sieht es gut aus; größer schadet nicht, das Programm verkleinert beim Hochladen
+vom Handy ohnehin.
 
 ---
 
@@ -698,6 +730,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
+| Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |

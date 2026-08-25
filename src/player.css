@@ -356,15 +356,18 @@ body[data-pattern="confetti"] .slide {
   gap: 0.45em;
   min-width: 0;
 }
+/* Huelle statt blossem Bild, damit ein vergroesserter Ausschnitt innerhalb
+   der Form beschnitten wird und die Miniatur nicht selbst waechst. */
 .ttThumb {
   flex: none;
   display: block;
   width: 1.65em;
   height: 1.65em;
   border-radius: 44% 56% 42% 58% / 56% 44% 56% 44%;
-  object-fit: cover;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
 }
+.ttThumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ttThumb.empty { background: none; }
 .ttRow .day {
   font-size: 1.05em;

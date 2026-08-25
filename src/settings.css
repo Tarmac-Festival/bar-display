@@ -307,18 +307,19 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 /* ------------------------------- Act-Fotos --------------------------- */
 .photoCell { white-space: nowrap; padding-right: 1rem !important; }
 
-.photoWrap { position: relative; width: 68px; height: 50px; }
-.photoWrap img {
+/* Quadratisch wie auf der Anzeige - sonst zeigt die Vorschau einen anderen
+   Ausschnitt als der Bildschirm spaeter. */
+.photoWrap { position: relative; width: 54px; height: 54px; }
+.photoBox {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  overflow: hidden;
   border-radius: 6px;
   border: 1px solid var(--line);
-  cursor: pointer;
   background: var(--bg);
 }
-.photoWrap img:hover { border-color: var(--accent); }
+.photoWrap img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer; }
+.photoWrap:hover .photoBox { border-color: var(--accent); }
 
 .photoDel {
   position: absolute;
@@ -338,7 +339,65 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 }
 .photoDel:hover { filter: brightness(1.1); background: var(--danger); }
 
+/* Sitzt bewusst IM Bild statt daneben: haengt er unten heraus, stoesst er in
+   der Tabelle an das Loeschkreuz der naechsten Zeile. */
+.photoCrop {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 11px;
+  line-height: 19px;
+  cursor: pointer;
+}
+.photoCrop:hover { background: var(--accent); color: #17130c; }
+
 .photoAdd { font-size: 12px; padding: 0.4rem 0.6rem; color: var(--muted); }
+
+/* --------------------------- Ausschnitt waehlen ---------------------- */
+.cropSchirm {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+.cropKasten {
+  width: min(420px, 100%);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.3rem;
+}
+.cropKasten h2 { margin: 0 0 0.4rem; font-size: 16px; }
+.cropKasten .btnRow { margin-top: 1rem; }
+.cropKasten .spacer { flex: 1; }
+
+/* Dieselbe organische Form wie auf der Anzeige, damit man sieht, was wirklich
+   stehen bleibt - ein rechteckiger Rahmen wuerde zu viel versprechen. */
+.cropBuehne {
+  width: min(300px, 74vw);
+  aspect-ratio: 1 / 1;
+  margin: 0.9rem auto;
+  overflow: hidden;
+  border-radius: 58% 42% 52% 48% / 44% 58% 42% 56%;
+  background: var(--bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.cropBuehne:active { cursor: grabbing; }
+.cropBuehne img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.cropKasten input[type=range] { width: 100%; accent-color: var(--accent); }
 
 /* ------------------------------- Branding ---------------------------- */
 .logoPreview {

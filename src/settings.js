@@ -1195,21 +1195,120 @@ function photoSrc(file) { return fileSrc(paths.photoDir, file); }
 
 function renderPhotoCell(td, e) {
   if (e.photo) {
+    // Die Vorschau zeigt denselben Ausschnitt wie die Anzeige - sonst wundert
+    // man sich hinterher, warum der Kopf abgeschnitten ist.
     td.innerHTML =
       '<div class="photoWrap">' +
-        '<img src="' + photoSrc(e.photo) + '" alt="" title="Anderes Foto wählen">' +
+        '<div class="photoBox"><img src="' + photoSrc(e.photo) + '" alt="" ' +
+          'title="Anderes Foto wählen" style="' + fotoStil(e) + '"></div>' +
         '<button class="photoDel" title="Foto entfernen">&times;</button>' +
+        '<button class="photoCrop" title="Ausschnitt wählen">&#9635;</button>' +
       '</div>';
     td.querySelector('img').addEventListener('click', () => pickPhoto(td, e));
     td.querySelector('.photoDel').addEventListener('click', () => {
       e.photo = '';
+      delete e.crop;
       markDirty();
       renderPhotoCell(td, e);
     });
+    td.querySelector('.photoCrop').addEventListener('click', () => ausschnittWaehlen(td, e));
   } else {
     td.innerHTML = '<button class="photoAdd">+ Foto</button>';
     td.querySelector('.photoAdd').addEventListener('click', () => pickPhoto(td, e));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Ausschnitt wählen
+// ---------------------------------------------------------------------------
+// Die Anzeige beschneidet Act-Fotos quadratisch. Bei einem Hochformat trifft
+// die Mitte gern den Bauch statt des Gesichts - hier lässt sich der Ausschnitt
+// vorher zurechtziehen. Das Fenster zeigt exakt dieselbe Form und denselben
+// Stil wie später auf dem Bildschirm.
+function ausschnittWaehlen(td, e) {
+  const stand = fotoAusschnitt(e);
+  let x = stand.x, y = stand.y, z = stand.z;
+
+  const schirm = document.createElement('div');
+  schirm.className = 'cropSchirm';
+  schirm.innerHTML =
+    '<div class="cropKasten">' +
+      '<h2>Ausschnitt für „' + escapeHtml(e.act || 'diesen Act') + '"</h2>' +
+      '<p class="hint">Bild verschieben, bis der richtige Teil im Fenster steht. ' +
+         'So sieht es später auf der Anzeige aus.</p>' +
+      '<div class="cropBuehne"><img alt=""></div>' +
+      '<label class="field"><span>Vergrößern</span>' +
+        '<input type="range" id="cropZoom" min="100" max="400" step="5"></label>' +
+      '<div class="btnRow">' +
+        '<button class="primary" data-act="ok">Übernehmen</button>' +
+        '<button data-act="mitte">Zurücksetzen</button>' +
+        '<div class="spacer"></div>' +
+        '<button data-act="weg">Abbrechen</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(schirm);
+
+  const bild = schirm.querySelector('.cropBuehne img');
+  const buehne = schirm.querySelector('.cropBuehne');
+  const regler = schirm.querySelector('#cropZoom');
+  bild.src = photoSrc(e.photo);
+  regler.value = Math.round(z * 100);
+
+  const zeigen = () => {
+    bild.setAttribute('style', fotoStil({ crop: { x, y, z } }));
+  };
+  zeigen();
+
+  // Ziehen: die Bewegung wird auf die Fenstergröße bezogen und durch den Zoom
+  // geteilt, damit sich das Bild bei starker Vergrößerung feiner schieben lässt.
+  let zieht = false, vonX = 0, vonY = 0, startX = 0, startY = 0;
+  const start = (ev) => {
+    zieht = true;
+    const p = ev.touches ? ev.touches[0] : ev;
+    vonX = p.clientX; vonY = p.clientY; startX = x; startY = y;
+    ev.preventDefault();
+  };
+  const zieh = (ev) => {
+    if (!zieht) return;
+    const p = ev.touches ? ev.touches[0] : ev;
+    const kasten = buehne.getBoundingClientRect();
+    x = Math.min(100, Math.max(0, startX - (p.clientX - vonX) / kasten.width * 100 / z));
+    y = Math.min(100, Math.max(0, startY - (p.clientY - vonY) / kasten.height * 100 / z));
+    zeigen();
+    ev.preventDefault();
+  };
+  const halt = () => { zieht = false; };
+
+  buehne.addEventListener('mousedown', start);
+  window.addEventListener('mousemove', zieh);
+  window.addEventListener('mouseup', halt);
+  buehne.addEventListener('touchstart', start, { passive: false });
+  buehne.addEventListener('touchmove', zieh, { passive: false });
+  buehne.addEventListener('touchend', halt);
+
+  regler.addEventListener('input', () => { z = Number(regler.value) / 100; zeigen(); });
+
+  const schliessen = () => {
+    window.removeEventListener('mousemove', zieh);
+    window.removeEventListener('mouseup', halt);
+    schirm.remove();
+  };
+
+  schirm.querySelector('[data-act=mitte]').addEventListener('click', () => {
+    x = 50; y = 50; z = 1; regler.value = 100; zeigen();
+  });
+  schirm.querySelector('[data-act=weg]').addEventListener('click', schliessen);
+  schirm.addEventListener('click', (ev) => { if (ev.target === schirm) schliessen(); });
+
+  schirm.querySelector('[data-act=ok]').addEventListener('click', () => {
+    const neu = fotoAusschnitt({ crop: { x, y, z } });
+    // Der Standard wird nicht gespeichert - so bleibt die Konfiguration sauber
+    // und alte Einträge sehen aus wie eh und je.
+    if (ausschnittIstStandard(neu)) delete e.crop; else e.crop = neu;
+    markDirty();
+    renderPhotoCell(td, e);
+    schliessen();
+  });
 }
 
 async function pickPhoto(td, e) {

@@ -228,3 +228,47 @@ function durchsageTeile(text, hatZeit) {
   });
   return teile;
 }
+
+// ---------------------------------------------------------------------------
+// Bildausschnitt der Act-Fotos
+// ---------------------------------------------------------------------------
+// Die Fotos werden auf der Anzeige quadratisch beschnitten. Ohne Zutun sitzt
+// der Ausschnitt mittig - was bei einem Hochformat gern den Kopf abschneidet.
+// Deshalb laesst sich pro Act festlegen, welcher Teil zu sehen ist:
+//   x, y  Blickpunkt in Prozent (50/50 = Mitte)
+//   z     Vergroesserung, 1 = der groesstmoegliche Ausschnitt
+// Fehlt die Angabe, kommt genau das Verhalten von frueher heraus.
+const ZOOM_MAX = 4;
+
+function fotoAusschnitt(entry) {
+  const c = (entry && entry.crop) || {};
+  const zahl = (wert, standard, min, max) => {
+    // Number(null) und Number('') sind 0 - das waere hier der obere bzw. linke
+    // Rand statt "nicht gesetzt". Leeres also vorher aussortieren.
+    if (wert === null || wert === undefined || wert === '') return standard;
+    const n = Number(wert);
+    if (!isFinite(n)) return standard;
+    return Math.min(max, Math.max(min, n));
+  };
+  return {
+    x: Math.round(zahl(c.x, 50, 0, 100)),
+    y: Math.round(zahl(c.y, 50, 0, 100)),
+    z: Math.round(zahl(c.z, 1, 1, ZOOM_MAX) * 100) / 100
+  };
+}
+
+// Ist der Ausschnitt der Standard? Dann muss er auch nicht gespeichert werden.
+function ausschnittIstStandard(a) {
+  return a.x === 50 && a.y === 50 && a.z === 1;
+}
+
+// Derselbe Stil fuer Anzeige und Editor - sonst sieht man beim Einstellen
+// etwas anderes als spaeter auf dem Bildschirm.
+function fotoStil(entry) {
+  const a = fotoAusschnitt(entry);
+  let stil = 'object-position:' + a.x + '% ' + a.y + '%';
+  if (a.z > 1) {
+    stil += ';transform:scale(' + a.z + ');transform-origin:' + a.x + '% ' + a.y + '%';
+  }
+  return stil;
+}
