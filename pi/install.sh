@@ -121,6 +121,8 @@ CACHE="/run/bar-display-cache"
 # cage ist ein winziger Wayland-Aufsatz: kein Desktop, kein Panel, nichts das
 # Speicher frisst - auf einem Pi 3B mit 1 GB macht das einen spuerbaren
 # Unterschied gegenueber einer vollen Arbeitsflaeche.
+sudo install -m 0755 "$ZIEL/pi/kiosk.sh" /usr/local/bin/bar-display-kiosk
+
 sudo tee /etc/systemd/system/bar-display-kiosk.service >/dev/null <<KIOSK
 [Unit]
 Description=Bar Display - Vollbild
@@ -137,26 +139,16 @@ StandardOutput=journal
 TTYReset=yes
 TTYVHangup=yes
 Environment=XDG_RUNTIME_DIR=/run/user/$(id -u "$BENUTZER")
+Environment=PORT=$PORT
+Environment=CHROMIUM=$CHROMIUM
+Environment=CACHE=$CACHE
 RuntimeDirectory=bar-display-cache
 RuntimeDirectoryPreserve=yes
-# Warten, bis der Webdienst antwortet - aber nicht ewig. Ohne Grenze laeuft die
-# Schleife in systemds Zeitlimit und meldet nur "fatal signal", was nichts
-# darueber verraet, was eigentlich klemmt.
-ExecStartPre=/bin/sh -c 'for i in \$(seq 1 60); do curl -sf http://localhost:$PORT/api/config >/dev/null && exit 0; sleep 1; done; echo "Webdienst antwortet nicht auf Port $PORT - siehe: journalctl -u bar-display" >&2; exit 1'
-ExecStart=$(command -v cage) -d -- $CHROMIUM \\
-  --kiosk http://localhost:$PORT/ \\
-  --ozone-platform=wayland \\
-  --autoplay-policy=no-user-gesture-required \\
-  --noerrdialogs --disable-infobars --disable-session-crashed-bubble \\
-  --disable-pinch --overscroll-history-navigation=0 \\
-  --force-device-scale-factor=1 --disable-smooth-scrolling \\
-  --enable-low-end-device-mode \\
-  --renderer-process-limit=1 --process-per-site \\
-  --disk-cache-dir=$CACHE --disk-cache-size=33554432 --media-cache-size=16777216 \\
-  --disable-features=Translate,TranslateUI,MediaRouter \\
-  --check-for-update-interval=31536000 --disable-component-update \\
-  --disable-breakpad --disable-crash-reporter --disable-sync \\
-  --no-first-run --no-default-browser-check --disable-background-networking
+# Bewusst kein ExecStartPre: TTYVHangup haengt vor dem Start alles von tty1 ab,
+# und ein Kontrollprozess haengt wegen StandardInput=tty selbst daran. Er bekam
+# SIGHUP, der Dienst scheiterte mit "code=killed, status=1/HUP" und startete
+# endlos neu. Das Warten auf den Webdienst macht jetzt das Startskript selbst.
+ExecStart=/usr/local/bin/bar-display-kiosk
 Restart=always
 RestartSec=5
 
@@ -173,6 +165,26 @@ DIENST_OK=ja
 KIOSK_OK=ja
 sudo systemctl enable --now bar-display.service || DIENST_OK=nein
 sudo systemctl enable --now bar-display-kiosk.service || KIOSK_OK=nein
+
+# ---------------------------------------------------------------------------
+# Die Vollbildanzeige braucht tty1 fuer sich. Startet der Pi mit Arbeitsflaeche,
+# sitzt die dort schon - dann kommen sich beide in die Quere.
+ZIEL_JETZT="$(systemctl get-default 2>/dev/null || echo unbekannt)"
+if [ "$ZIEL_JETZT" = "graphical.target" ]; then
+  if [ "${KONSOLENSTART:-}" = "ja" ]; then
+    sage "Auf Start ohne Arbeitsflaeche umstellen"
+    sudo systemctl set-default multi-user.target >/dev/null
+    KONSOLE_HINWEIS="Umgestellt auf Start ohne Arbeitsflaeche - wirkt nach dem Neustart."
+  else
+    KONSOLE_HINWEIS="ACHTUNG: Der Pi startet mit Arbeitsflaeche. Die Vollbildanzeige
+  braucht tty1 fuer sich und kommt so nicht hoch. Umstellen mit:
+      sudo systemctl set-default multi-user.target && sudo reboot
+  Danach laeuft die Anzeige von allein; bedient wird ohnehin vom Handy.
+  (Zurueck geht es mit: sudo systemctl set-default graphical.target)"
+  fi
+else
+  KONSOLE_HINWEIS=""
+fi
 
 # ---------------------------------------------------------------------------
 sage "System auf Dauerbetrieb trimmen"
@@ -227,8 +239,12 @@ sudo tee /usr/local/bin/bar-display-update >/dev/null <<'AKTUELL'
 set -euo pipefail
 sudo git -C /opt/bar-display fetch --depth 1 origin main
 sudo git -C /opt/bar-display reset --hard origin/main
+# Das Startskript der Anzeige liegt ausserhalb des Repos und muss mit
+sudo install -m 0755 /opt/bar-display/pi/kiosk.sh /usr/local/bin/bar-display-kiosk
 sudo systemctl restart bar-display.service bar-display-kiosk.service
 echo "Bar Display aktualisiert."
+echo "Hinweis: Aendert sich einmal etwas an den Diensten selbst, hilft nur ein"
+echo "erneuter Lauf des Einrichtungsskripts - das steht dann in den Hinweisen."
 AKTUELL
 sudo chmod +x /usr/local/bin/bar-display-update
 
@@ -275,7 +291,9 @@ cat <<ENDE
       ~/.config/Bar Display/branding
 
   $ZEITLAGE
-
+${KONSOLE_HINWEIS:+
+  $KONSOLE_HINWEIS
+}
   Nuetzliche Befehle:
       bar-display-update                       neue Fassung holen
       timedatectl status                       Uhrzeit und Abgleich pruefen

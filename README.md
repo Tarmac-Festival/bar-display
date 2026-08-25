@@ -518,6 +518,19 @@ Das Skript installiert Node.js, Chromium und `cage`, legt das Programm nach
 `/opt/bar-display` und richtet zwei Dienste ein: einen für den Webdienst, einen für
 die Vollbildanzeige. Nach dem Neustart läuft alles von allein.
 
+> **Der Pi muss ohne Arbeitsfläche starten.** Die Vollbildanzeige übernimmt `tty1`;
+> läuft dort schon ein Desktop, kommen sich beide in die Quere und die Anzeige
+> bleibt schwarz. Das Skript sagt Bescheid, wenn es das bemerkt. Umstellen:
+>
+> ```bash
+> sudo systemctl set-default multi-user.target && sudo reboot
+> ```
+>
+> Wer das gleich mit erledigen will, ruft das Skript mit `KONSOLENSTART=ja` auf.
+> Zurück geht es jederzeit mit `sudo systemctl set-default graphical.target`.
+> Ohne Desktop bleibt auf einem Pi 3B nebenbei deutlich mehr Speicher für die
+> Videos übrig.
+
 ### Bedienung vom Handy
 
 Am Pi gibt es keine Tastatur. Die Einstellungen laufen deshalb über das Netzwerk —
@@ -636,6 +649,10 @@ Nützliche Befehle auf dem Pi:
 bar-display-update
 ```
 
+Das holt den neuen Stand aus dem Repository und startet die Dienste neu. Ändert
+sich einmal etwas an den Diensten selbst, muss stattdessen das Einrichtungsskript
+noch einmal laufen – das steht dann in den Release-Hinweisen.
+
 ```bash
 journalctl -u bar-display-kiosk -f
 ```
@@ -745,6 +762,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
+| Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
@@ -848,6 +866,7 @@ Zusammenfassung des Laufs.
 | `test/schedule.test.js` | Tests |
 | `pi/server.js` | Webdienst für den Raspberry Pi |
 | `pi/install.sh` | Einrichtung auf dem Pi |
+| `pi/kiosk.sh` | startet die Vollbildanzeige, wartet vorher auf den Webdienst |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
 | `src/qr.js` | QR-Erzeugung, mitgeliefert statt nachgeladen |
 | `lib/zeitstatus.js` | fragt das System, ob die Uhr aus dem Netz kommt |
