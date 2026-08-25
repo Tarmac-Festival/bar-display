@@ -656,6 +656,7 @@ function fillSettingsFields() {
   for (const k of TEXT_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   $('s_showClock').checked = !!s.showClock;
   $('s_qrEnabled').checked = !!s.qrEnabled;
+  $('s_sparmodus').checked = !!s.sparmodus;
   qrFelderAnpassen();
   renderLogoPreview();
   renderFontState();
@@ -686,6 +687,13 @@ function fillSettingsFields() {
   if (!$('s_showClock').dataset.wired) {
     $('s_showClock').dataset.wired = '1';
     $('s_showClock').addEventListener('change', (e) => { state.settings.showClock = e.target.checked; markDirty(); });
+  }
+  if (!$('s_sparmodus').dataset.wired) {
+    $('s_sparmodus').dataset.wired = '1';
+    $('s_sparmodus').addEventListener('change', (e) => {
+      state.settings.sparmodus = e.target.checked;
+      markDirty();
+    });
   }
   if (!$('s_qrEnabled').dataset.wired) {
     $('s_qrEnabled').dataset.wired = '1';

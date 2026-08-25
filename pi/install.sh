@@ -113,6 +113,10 @@ DIENST
 
 # ---------------------------------------------------------------------------
 sage "Vollbildanzeige einrichten"
+# Chromium-Zwischenspeicher ins RAM. Die SD-Karte ist im Dauerbetrieb das
+# schwaechste Glied - je weniger darauf geschrieben wird, desto besser. Nach
+# einem Neustart ist der Zwischenspeicher weg, das stoert hier niemanden.
+CACHE="/run/user/$(id -u "$BENUTZER")/chromium-cache"
 # cage ist ein winziger Wayland-Aufsatz: kein Desktop, kein Panel, nichts das
 # Speicher frisst - auf einem Pi 3B mit 1 GB macht das einen spuerbaren
 # Unterschied gegenueber einer vollen Arbeitsflaeche.
@@ -133,15 +137,21 @@ TTYReset=yes
 TTYVHangup=yes
 Environment=XDG_RUNTIME_DIR=/run/user/$(id -u "$BENUTZER")
 ExecStartPre=/bin/sh -c 'until curl -sf http://localhost:$PORT/api/config >/dev/null; do sleep 1; done'
+ExecStartPre=/bin/mkdir -p $CACHE
 ExecStart=$(command -v cage) -d -- $CHROMIUM \\
   --kiosk http://localhost:$PORT/ \\
   --ozone-platform=wayland \\
   --autoplay-policy=no-user-gesture-required \\
   --noerrdialogs --disable-infobars --disable-session-crashed-bubble \\
-  --disable-features=Translate,TranslateUI \\
-  --check-for-update-interval=31536000 \\
-  --enable-features=VaapiVideoDecoder \\
-  --disable-pinch --overscroll-history-navigation=0
+  --disable-pinch --overscroll-history-navigation=0 \\
+  --force-device-scale-factor=1 --disable-smooth-scrolling \\
+  --enable-low-end-device-mode \\
+  --renderer-process-limit=1 --process-per-site \\
+  --disk-cache-dir=$CACHE --disk-cache-size=33554432 --media-cache-size=16777216 \\
+  --disable-features=Translate,TranslateUI,MediaRouter \\
+  --check-for-update-interval=31536000 --disable-component-update \\
+  --disable-breakpad --disable-crash-reporter --disable-sync \\
+  --no-first-run --no-default-browser-check --disable-background-networking
 Restart=always
 RestartSec=5
 
@@ -152,6 +162,52 @@ KIOSK
 sudo systemctl daemon-reload
 sudo systemctl enable --now bar-display.service
 sudo systemctl enable --now bar-display-kiosk.service
+
+# ---------------------------------------------------------------------------
+sage "System auf Dauerbetrieb trimmen"
+
+# Ohne genug Speicher fuer die Grafikeinheit faellt der Pi bei 1080p auf
+# Dekodierung im Hauptprozessor zurueck - und die schafft ein Pi 3B nicht.
+BOOTCFG=""
+for k in /boot/firmware/config.txt /boot/config.txt; do
+  [ -f "$k" ] && { BOOTCFG="$k"; break; }
+done
+if [ -n "$BOOTCFG" ]; then
+  if grep -q '^gpu_mem=' "$BOOTCFG"; then
+    sudo sed -i 's/^gpu_mem=.*/gpu_mem=128/' "$BOOTCFG"
+  else
+    echo 'gpu_mem=128' | sudo tee -a "$BOOTCFG" >/dev/null
+  fi
+  sage "gpu_mem=128 in $BOOTCFG gesetzt (wirkt nach dem Neustart)"
+else
+  warne "config.txt nicht gefunden - gpu_mem bitte von Hand auf 128 setzen."
+fi
+
+# WLAN-Stromsparen verzoegert die Push-Verbindung zur Bedienseite: Durchsagen
+# vom Handy kaemen sonst mit Verspaetung an.
+sudo tee /etc/systemd/system/bar-display-wlan.service >/dev/null <<'WLAN'
+[Unit]
+Description=Bar Display - WLAN-Stromsparen abschalten
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for d in /sys/class/net/wl*; do iw dev "$(basename "$d")" set power_save off || true; done'
+
+[Install]
+WantedBy=multi-user.target
+WLAN
+sudo systemctl enable --now bar-display-wlan.service >/dev/null 2>&1 || true
+
+# Protokolle ins RAM statt auf die SD-Karte
+sudo mkdir -p /etc/systemd/journald.conf.d
+sudo tee /etc/systemd/journald.conf.d/bar-display.conf >/dev/null <<'JOURNAL'
+[Journal]
+Storage=volatile
+RuntimeMaxUse=32M
+JOURNAL
+sudo systemctl restart systemd-journald >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------------------
 sage "Aktualisierungsbefehl anlegen"
@@ -199,6 +255,13 @@ cat <<ENDE
   Nuetzliche Befehle:
       bar-display-update                       neue Fassung holen
       timedatectl status                       Uhrzeit und Abgleich pruefen
+
+  Laeuft die Anzeige ruckelig, hilft im Reiter "Anzeige" der Sparmodus.
+  Ob die Videodekodierung in Hardware laeuft, verraet in Chromium die
+  Adresse chrome://gpu (Zeile "Video Decode").
+
+  gpu_mem wirkt erst nach einem Neustart:
+      sudo reboot
       sudo systemctl restart bar-display       Dienst neu starten
       journalctl -u bar-display -f             Protokoll ansehen
       journalctl -u bar-display-kiosk -f       Protokoll der Anzeige

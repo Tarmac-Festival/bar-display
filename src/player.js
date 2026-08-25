@@ -27,6 +27,13 @@ let imRuhemodus = false;  // Bildschirm schwarz, Schleife angehalten
 // Bedienseite den Pi kein zweites Mal Dekodierung und dem Handy kein Datenvolumen.
 const nurVorschau = new URLSearchParams(location.search).has('vorschau');
 
+// Zuletzt gefundene Skalierung je Slide-Art und der zuletzt gezeigte Inhalt.
+// Beides spart auf dem Pi Layoutarbeit, siehe fitToBox() und
+// refreshVisibleSlide(). Stehen hier oben, weil applyTheme() sie schon beim
+// Start anfasst.
+let letzteSkala = {};
+let letzterSlideStand = '';
+
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
@@ -50,6 +57,9 @@ async function boot() {
 
   zeitPruefen();
   setInterval(zeitPruefen, 60000);
+  // Aendert sich die Fenstergroesse, passt die gemerkte Skalierung nicht mehr
+  window.addEventListener('resize', () => { skalaVergessen(); letzterSlideStand = ''; });
+
   setInterval(tickClock, 1000);
   setInterval(durchsageTicken, 1000);
   setInterval(refreshVisibleSlide, 20000);
@@ -61,6 +71,11 @@ async function boot() {
 function applyTheme() {
   const s = cfg.settings;
   const root = document.documentElement.style;
+  // Schriftgroesse, Drehung oder Farben geaendert - die gemerkte Skalierung
+  // gilt dann nicht mehr.
+  skalaVergessen();
+  letzterSlideStand = '';
+  document.body.classList.toggle('spar', !!s.sparmodus);
   root.setProperty('--bg', s.bgColor || '#450b6f');
   root.setProperty('--accent', s.accent || '#74ff40');
   root.setProperty('--accent2', s.accent2 || '#f04e23');
@@ -371,8 +386,11 @@ function playSlide(item) {
 
   el.innerHTML = renderSlide(item.type);
   el.dataset.kind = item.type;
-  crossfade(el);
+  // Einpassen vor dem Ueberblenden: das Einpassen erzwingt Layout, und das
+  // mitten in einer laufenden Blende zu tun ist genau der sichtbare Ruckler.
   fitToBox(el);
+  letzterSlideStand = ohneUhrzeit(el.innerHTML);
+  crossfade(el);
 
   let secs = 15;
   if (item.type === 'timetable') secs = s.timetableDuration || 20;
@@ -388,8 +406,15 @@ function pickLayer(type) {
   return pool[0] === currentLayer ? pool[1] : pool[0];
 }
 
+// Im Sparmodus wird hart geschnitten, egal was eingestellt ist. Blenden und
+// Vorhaenge sind auf einem Pi der teuerste Teil der ganzen Anzeige.
+function uebergang() {
+  if (cfg.settings.sparmodus) return 'cut';
+  return cfg.settings.transition || 'fade';
+}
+
 function fadeMs() {
-  return cfg.settings.transition === 'cut' ? 0 : (cfg.settings.fadeMs || 700);
+  return uebergang() === 'cut' ? 0 : (cfg.settings.fadeMs || 700);
 }
 
 function cleanupLayer(el) {
@@ -407,7 +432,7 @@ function cleanupLayer(el) {
 }
 
 function crossfade(next) {
-  const mode = cfg.settings.transition || 'fade';
+  const mode = uebergang();
   if (mode === 'logo' || mode === 'wipe') return curtainSwap(next, mode);
 
   const prev = currentLayer;
@@ -689,18 +714,48 @@ function renderIdle() {
 }
 
 // Schrift so weit verkleinern, bis der Inhalt in die Fläche passt
+// Kleinste Schrift, die wir zulassen - darunter liest das niemand mehr.
+const MIN_SKALA = 45;   // in Hundertsteln, damit ganzzahlig gerechnet wird
+
+function skalaVergessen() { letzteSkala = {}; }
+
+// Passt der Inhalt in die Flaeche? Jeder Aufruf erzwingt ein Layout - das ist
+// der teure Teil, deshalb wird hier gezaehlt und nicht getastet.
+function passtBei(inner, body, hundertstel) {
+  inner.style.setProperty('--scale', (hundertstel / 100).toFixed(2));
+  return body.scrollHeight <= body.clientHeight + 2;
+}
+
 function fitToBox(layer) {
   const inner = layer.querySelector('.slideInner');
   const body = layer.querySelector('.slideBody');
   if (!inner || !body) return;
-  let scale = 1;
-  inner.style.setProperty('--scale', '1');
-  let guard = 0;
-  while (body.scrollHeight > body.clientHeight + 2 && scale > 0.45 && guard < 40) {
-    scale -= 0.04;
-    guard++;
-    inner.style.setProperty('--scale', scale.toFixed(2));
+
+  const art = layer.dataset.kind || '?';
+  const gemerkt = letzteSkala[art];
+
+  // Erst den Wert vom letzten Mal probieren. Passt er und eine Stufe groesser
+  // passt nicht mehr, ist er weiterhin der beste - fertig nach zwei Layouts.
+  if (gemerkt && passtBei(inner, body, gemerkt)) {
+    if (gemerkt >= 100 || !passtBei(inner, body, gemerkt + 1)) {
+      inner.style.setProperty('--scale', (gemerkt / 100).toFixed(2));
+      return;
+    }
   }
+
+  // Sonst binaer suchen. Das findet in rund sechs Schritten den groessten
+  // passenden Wert - das fruehere Abtasten brauchte bis zu vierzig und blieb
+  // ausserdem am groben Raster haengen, die Schrift war also unnoetig klein.
+  if (passtBei(inner, body, 100)) { letzteSkala[art] = 100; return; }
+
+  let lo = MIN_SKALA;     // gilt als "passt" (Untergrenze, die wir hinnehmen)
+  let hi = 100;           // passt nachweislich nicht
+  while (hi - lo > 1) {
+    const mitte = (lo + hi) >> 1;
+    if (passtBei(inner, body, mitte)) lo = mitte; else hi = mitte;
+  }
+  inner.style.setProperty('--scale', (lo / 100).toFixed(2));
+  letzteSkala[art] = lo;
 }
 
 function tickClock() {
@@ -729,13 +784,30 @@ async function zeitPruefen() {
   }
 }
 
-// Sichtbaren Info-Slide regelmaessig aktualisieren, damit "JETZT" live bleibt
+// Sichtbaren Info-Slide regelmaessig aktualisieren, damit "JETZT" live bleibt.
+// Meistens aendert sich dabei nichts ausser der Uhrzeit - und die schreibt
+// tickClock ohnehin jede Sekunde neu. Den Slide dann trotzdem neu aufzubauen
+// und neu einzupassen kostet auf einem Pi spuerbar Zeit, also erst vergleichen.
 function refreshVisibleSlide() {
   if (!currentLayer || currentLayer.tagName === 'VIDEO') return;
   const kind = currentLayer.dataset.kind;
   if (kind !== 'timetable') return;
-  currentLayer.innerHTML = renderSlide(kind);
+
+  const frisch = renderSlide(kind);
+  const stand = ohneUhrzeit(frisch);
+  if (stand === letzterSlideStand) return;
+
+  letzterSlideStand = stand;
+  currentLayer.innerHTML = frisch;
   fitToBox(currentLayer);
+}
+
+// Nur den Inhalt der laufenden Uhr ausblenden, sonst schlaegt der Vergleich
+// jede Minute an. Bewusst eng gefasst: eine allgemeine Zeitmaske wuerde auch
+// die Spielzeiten der Acts treffen, und deren Aenderung soll sehr wohl einen
+// Neuaufbau ausloesen.
+function ohneUhrzeit(html) {
+  return html.replace(/(<b data-clock>)[^<]*/g, '$1#');
 }
 
 // ---------------------------------------------------------------------------

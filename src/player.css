@@ -665,6 +665,34 @@ body.instant .layer { transition: none; }
 
 /* Der laufende Countdown. Feste Ziffernbreite, sonst zappelt der Text bei
    jedem Sekundenwechsel hin und her. */
+/* ------------------------------------------------------------------ */
+/* Sparmodus                                                            */
+/* ------------------------------------------------------------------ */
+/* Fuer schwache Geraete, vor allem den Raspberry Pi. Weg kommt alles, was
+   die Grafikeinheit pro Bild erneut beschaeftigt: das gekachelte Muster,
+   saemtliche Schatten, die Maske hinter dem Seitentitel und die Weichzeichner
+   der Bedienflaechen. Die Anzeige sieht dadurch flacher aus - dafuer laeuft
+   sie fluessig. */
+body.spar .slide { background-image: none !important; }
+body.spar .slide *,
+body.spar .slide { text-shadow: none !important; box-shadow: none !important; }
+body.spar #durchsage { box-shadow: none; animation: none; }
+body.spar #hud,
+body.spar #pinOverlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* Die organische Form wird zur abgerundeten Flaeche. Die Maske sitzt auf einem
+   Pseudo-Element und kostet einen eigenen Zeichendurchgang; abgerundete Ecken
+   kosten nichts. Im Sparmodus wird ohnehin hart geschnitten, den Blob-Wisch
+   gibt es dann gar nicht mehr - die Regel bleibt trotzdem, falls der Vorhang
+   auf anderem Weg auftaucht. */
+body.spar .titleBox.blob::before,
+body.spar .titleBox.bar::before,
+body.spar #curtain.wipe .curtainMark {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  border-radius: 1.4em;
+}
+
 /* Zeigt nur, wenn die Systemuhr nicht aus dem Netz abgeglichen ist. */
 .uhrWarnung { display: none; margin-left: 0.4em; }
 body.uhrUnsicher .uhrWarnung { display: inline; color: var(--accent2); }

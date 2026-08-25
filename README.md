@@ -62,6 +62,7 @@ Getränkepreise im Festival-Design.
 - **Uhrzeit aus dem Netz** — der Raspberry Pi stellt seine Uhr gegen einen
   Zeitserver. Klappt das nicht, sagt das Programm Bescheid, statt stillschweigend
   mit der falschen Zeit zu arbeiten.
+- **Sparmodus** für schwache Geräte — ein Schalter statt drei Einstellungen.
 
 ---
 
@@ -395,6 +396,10 @@ sonst passt.
   Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang.
 - **Farben & Schrift**: Hintergrund-, Akzent- und Signalfarbe, zwei Voreinstellungen,
   optional eine eigene Schriftdatei.
+- **Sparmodus**: schaltet Hintergrundmuster, Schatten, die Form hinter dem
+  Seitentitel und alle Blenden ab und schneidet hart. Für den Raspberry Pi
+  gedacht. Die übrigen Einstellungen bleiben gespeichert — der Schalter
+  überstimmt sie nur, solange er gesetzt ist.
 - **Anzeige drehen**: 90, 180 oder 270 Grad. Gedacht für senkrecht montierte
   Bildschirme — der Fernseher wird gedreht aufgehängt, die Anzeige dreht mit.
   Wirkt sofort und gilt auf jedem System gleich, auch auf dem Raspberry Pi,
@@ -543,14 +548,47 @@ bar-display-update
 journalctl -u bar-display-kiosk -f
 ```
 
+### Wenn es ruckelt
+
+**Der Sparmodus zuerst.** Unter *Anzeige → Sparmodus* fällt alles weg, was die
+Grafikeinheit des Pi pro Bild erneut beschäftigt: das gekachelte Punktmuster,
+sämtliche Schatten, die Maske hinter dem Seitentitel, die Weichzeichner der
+Bedienflächen — und statt zu blenden wird hart geschnitten. Die Anzeige wirkt
+flacher, läuft dafür deutlich ruhiger.
+
+| Normal | Sparmodus |
+|---|---|
+| ![Normale Anzeige](docs/screenshots/anzeige-normal.png) | ![Anzeige im Sparmodus](docs/screenshots/anzeige-sparmodus.png) |
+
+**Videos auf 720p herunterrechnen.** Ein Pi 3B dekodiert 1080p nur mit
+Hardwareunterstützung flüssig, und die greift nicht bei jedem Format.
+
+**Läuft die Dekodierung überhaupt in Hardware?** In Chromium auf dem Pi die
+Adresse `chrome://gpu` öffnen und die Zeile *Video Decode* lesen. Steht dort
+Software, hilft das Herunterrechnen am meisten.
+
+Das Installationsskript nimmt außerdem folgende Einstellungen vor:
+
+- **`gpu_mem=128`** in der `config.txt`. Ohne genug Speicher für die
+  Grafikeinheit fällt der Pi bei 1080p auf den Hauptprozessor zurück.
+- **Chromium sparsam gestartet** — ein Renderprozess, Sparmodus für schwache
+  Geräte, kein Crash-Reporter, kein Komponenten-Update, kein Hintergrundfunk.
+- **Zwischenspeicher im RAM** statt auf der SD-Karte. Die Karte ist im
+  Dauerbetrieb das schwächste Glied; je weniger darauf geschrieben wird, desto
+  länger hält sie. Aus demselben Grund landen auch die Protokolle im RAM.
+- **WLAN-Stromsparen aus.** Sonst verzögert der Treiber die Push-Verbindung zur
+  Bedienseite, und Durchsagen vom Handy kämen mit Verspätung an.
+
 ### Ehrlicher Hinweis
 
 Der Dienst, die Anzeige im Browser, die Bedienseite und das Live-Nachladen sind
 geprüft — allerdings auf einem PC, nicht auf einem Pi. Ob 1080p auf einem Pi 3B
 wirklich flüssig läuft und ob der Speicher reicht, lässt sich nur am Gerät
 feststellen. Wenn es klemmt, sind das die wahrscheinlichsten Stellschrauben:
-Videos auf 720p herunterrechnen, das Punktmuster im Hintergrund abschalten und
-die Überblendung auf harten Schnitt stellen.
+Videos auf 720p herunterrechnen und den Sparmodus einschalten. Auch die
+Chromium-Startoptionen und `gpu_mem` sind nach bestem Wissen gesetzt, aber nicht
+am Gerät nachgemessen — ob die Videodekodierung wirklich in Hardware läuft,
+sieht nur jemand vor dem Pi über `chrome://gpu`.
 
 
 ## Unterstützte Formate
@@ -610,6 +648,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
+| Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |

@@ -69,6 +69,7 @@ const STANDARD = {
     bgColor: '#450b6f', accent: '#74ff40', accent2: '#f04e23',
     logo: '', logoHeight: 9, fontFile: '',
     titleStyle: 'blob', pattern: 'dots', displayId: '', rotation: 0,
+    sparmodus: false,
     transition: 'fade', transitionMs: 900,
     qrEnabled: false, qrUrl: '', qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE', timetableSubtitle: 'line up',

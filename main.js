@@ -47,6 +47,7 @@ const DEFAULT_CONFIG = {
     pattern: 'dots',         // none | dots | confetti
     rotation: 0,             // 0 | 90 | 180 | 270
     displayId: '',           // leer = Hauptbildschirm
+    sparmodus: false,        // schwache Geraete: Muster, Schatten und Blenden weg
     transition: 'fade',      // fade | cut | logo | wipe
     transitionMs: 900,
     qrEnabled: false,        // QR-Code auf dem Timetable ein-/ausschalten
