@@ -38,6 +38,12 @@ if (!window.api) {
   }
   lauschen();
 
+  function loeschen(art, datei) {
+    return fetch('/api/loeschen?art=' + encodeURIComponent(art) +
+                 '&name=' + encodeURIComponent(datei), { method: 'POST' })
+      .then(r => r.json()).then(a => !!(a && a.ok)).catch(() => false);
+  }
+
   window.api = {
     paths: () => hole('/api/paths'),
     zeitStatus: () => hole('/api/zeit'),
@@ -58,21 +64,44 @@ if (!window.api) {
     identifyDisplays: async () => 0,
     getAutostart: async () => true,
     setAutostart: async () => true,
-    addMedia: async () => [],
+    // Dateien kommen hier nicht aus einem Systemdialog, sondern aus der
+    // Dateiauswahl des Handys - siehe upload.js. Die Rückgabewerte sind
+    // dieselben wie unter Electron, das Einstellungsfenster merkt nichts davon.
+    addMedia: (aufMeldung) => window.barDisplayUpload.ablauf('media', aufMeldung),
     listMedia: () => hole('/api/media'),
-    deleteMedia: async () => false,
+    deleteMedia: (datei) => loeschen('media', datei),
     openMediaFolder: async () => {},
     canConvert: () => hole('/api/canconvert'),
-    convertMedia: async () => ({ ok: false, fehler: 'Umwandlung läuft nur am Rechner.' }),
+    convertMedia: async () => ({ ok: false, fehler: 'Umwandeln geht nur am Rechner.' }),
     onConvertProgress: () => {},
-    addPhoto: async () => null,
-    deletePhoto: async () => false,
+
+    addPhoto: async (aufMeldung) => {
+      const fertig = await window.barDisplayUpload.ablauf('photo', aufMeldung);
+      return fertig.length ? fertig[0].file : null;
+    },
+    deletePhoto: (datei) => loeschen('photo', datei),
     openPhotoFolder: async () => {},
-    cleanupPhotos: async () => 0,
-    addLogo: async () => null,
-    removeLogo: async () => false,
-    addFont: async () => null,
-    removeFont: async () => false,
+    cleanupPhotos: () => fetch('/api/aufraeumen?art=photos', { method: 'POST' })
+      .then(r => r.json()).then(a => (a && a.ok) ? a.weg : 0).catch(() => 0),
+
+    addLogo: async (aufMeldung) => {
+      const fertig = await window.barDisplayUpload.ablauf('logo', aufMeldung);
+      return fertig.length ? fertig[0].file : null;
+    },
+    removeLogo: (datei) => loeschen('logo', datei),
+    addFont: async (aufMeldung) => {
+      const fertig = await window.barDisplayUpload.ablauf('font', aufMeldung);
+      return fertig.length ? fertig[0].file : null;
+    },
+    removeFont: (datei) => loeschen('font', datei),
+
+    // PIN-Schutz der Bedienseite
+    zugangStatus: () => hole('/api/status'),
+    anmelden: (pin) => fetch('/api/anmelden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin })
+    }).then(r => r.json().catch(() => ({ ok: false, fehler: 'Keine Antwort.' }))),
     exportTimetable: async () => 0,
     importTimetable: async () => null,
     exportConfig: async () => false,

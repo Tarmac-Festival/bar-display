@@ -59,6 +59,8 @@ const TYPEN = {
 // Konfiguration - dasselbe Format wie die Electron-Fassung
 // ---------------------------------------------------------------------------
 const { zeitStatus } = require('../lib/zeitstatus');
+const { entgegennehmen, formatHinweis } = require('../lib/hochladen');
+const anmeldung = require('../lib/anmeldung');
 
 const VERSION_KONFIG = 3;
 
@@ -197,6 +199,17 @@ function fehler(res, code, text) {
   res.end(text);
 }
 
+// Schreiben verlangt die PIN, sofern eine gesetzt ist. Lesen bleibt offen -
+// die Anzeige im Kiosk-Browser kann keine PIN eintippen und braucht die
+// Konfiguration trotzdem.
+function darfSchreiben(req, res) {
+  const cfg = konfigLesen();
+  if (!(cfg.settings.pin || '').trim()) return true;
+  if (anmeldung.angemeldet(req)) return true;
+  json(res, { ok: false, fehler: 'Bitte erst die PIN eingeben.' }, 401);
+  return false;
+}
+
 function json(res, daten, code = 200) {
   const koerper = JSON.stringify(daten);
   res.writeHead(code, {
@@ -264,15 +277,99 @@ const server = http.createServer(async (req, res) => {
       return zeitStatus().then(z => json(res, z));
     }
 
+    // Die PIN steht in der Konfiguration - wer sie nicht kennt, bekommt sie
+    // hier auch nicht zu lesen.
     if (pfad === '/api/config' && req.method === 'GET') {
-      return json(res, konfigLesen());
+      const cfg = konfigLesen();
+      return json(res, anmeldung.angemeldet(req) ? cfg : anmeldung.ohnePin(cfg));
+    }
+
+    if (pfad === '/api/status') {
+      const cfg = konfigLesen();
+      return json(res, {
+        pinAktiv: !!(cfg.settings.pin || '').trim(),
+        angemeldet: anmeldung.angemeldet(req)
+      });
+    }
+
+    if (pfad === '/api/anmelden' && req.method === 'POST') {
+      const cfg = konfigLesen();
+      const erwartet = (cfg.settings.pin || '').trim();
+      if (!erwartet) return json(res, { ok: true, pinAktiv: false });
+
+      const eingabe = JSON.parse(await koerperLesen(req) || '{}').pin;
+      if (!anmeldung.pinStimmt(eingabe, erwartet)) {
+        return json(res, { ok: false, fehler: 'PIN stimmt nicht.' }, 401);
+      }
+      res.setHeader('Set-Cookie', anmeldung.cookieKopf(anmeldung.anmelden()));
+      return json(res, { ok: true });
     }
 
     if (pfad === '/api/config' && req.method === 'POST') {
+      if (!darfSchreiben(req, res)) return;
       const roh = await koerperLesen(req);
-      const gespeichert = konfigSchreiben(JSON.parse(roh));
+      const neu = JSON.parse(roh);
+      const alt = konfigLesen();
+
+      // Wer die Konfiguration ungeschuetzt gelesen hat, bekam sie ohne PIN und
+      // mit der Marke pinAktiv. Schickt er sie so zurueck, wuerde die echte PIN
+      // stillschweigend verschwinden - also an der Marke erkennen und behalten.
+      // Eine bewusst geleerte PIN kommt ohne die Marke, weil sie nur beim
+      // Ausblenden gesetzt wird.
+      if (neu.settings && neu.settings.pinAktiv && !(neu.settings.pin || '').trim()) {
+        neu.settings.pin = alt.settings.pin;
+      }
+      if (neu.settings) delete neu.settings.pinAktiv;
+      const gespeichert = konfigSchreiben(neu);
+      // Wurde die PIN geaendert, gelten alte Anmeldungen nicht mehr
+      if ((gespeichert.settings.pin || '') !== (alt.settings.pin || '')) anmeldung.abmeldenAlle();
       verkuenden(gespeichert);
       return json(res, gespeichert);
+    }
+
+    // ---- Datei vom Handy entgegennehmen ---------------------------------
+    if (pfad === '/api/upload' && req.method === 'POST') {
+      if (!darfSchreiben(req, res)) return;
+      const art = url.searchParams.get('art') || '';
+      const ordner = { media: MEDIA_DIR, photo: PHOTO_DIR, logo: BRAND_DIR, font: FONT_DIR }[art];
+      if (!ordner) return json(res, { ok: false, fehler: 'Unbekannte Art.' }, 400);
+
+      ordnerAnlegen();
+      try {
+        const erg = await entgegennehmen(req, art, url.searchParams.get('name') || '', ordner);
+        const hinweis = art === 'media' ? formatHinweis(path.join(ordner, erg.name)) : null;
+        return json(res, { ok: true, file: erg.name, groesse: erg.groesse, hinweis });
+      } catch (err) {
+        return json(res, { ok: false, fehler: err.message }, 400);
+      }
+    }
+
+    // ---- Unbenutzte Act-Fotos wegraeumen --------------------------------
+    if (pfad === '/api/aufraeumen' && req.method === 'POST') {
+      if (!darfSchreiben(req, res)) return;
+      ordnerAnlegen();
+      const benutzt = new Set((konfigLesen().timetable || []).map(e => e.photo).filter(Boolean));
+      let weg = 0;
+      for (const f of fs.readdirSync(PHOTO_DIR)) {
+        if (benutzt.has(f)) continue;
+        try { fs.unlinkSync(path.join(PHOTO_DIR, f)); weg++; } catch (e) { /* egal */ }
+      }
+      return json(res, { ok: true, weg });
+    }
+
+    // ---- Datei wieder loeschen ------------------------------------------
+    if (pfad === '/api/loeschen' && req.method === 'POST') {
+      if (!darfSchreiben(req, res)) return;
+      const art = url.searchParams.get('art') || '';
+      const ordner = { media: MEDIA_DIR, photo: PHOTO_DIR, logo: BRAND_DIR, font: FONT_DIR }[art];
+      if (!ordner) return json(res, { ok: false, fehler: 'Unbekannte Art.' }, 400);
+      const name = path.basename(String(url.searchParams.get('name') || ''));
+      const ziel = path.join(ordner, name);
+      if (!name || path.dirname(path.resolve(ziel)) !== path.resolve(ordner)) {
+        return json(res, { ok: false, fehler: 'Ungueltiger Name.' }, 400);
+      }
+      try { fs.unlinkSync(ziel); } catch (e) { return json(res, { ok: false, fehler: e.message }, 400); }
+      return json(res, { ok: true });
     }
 
     if (pfad === '/api/media') {
@@ -300,8 +397,17 @@ const server = http.createServer(async (req, res) => {
     // Medien, Fotos, Logo, Schrift
     for (const [praefix, ordner] of Object.entries(ORDNER)) {
       if (pfad.startsWith(praefix + '/')) {
-        const datei = sicherJoin(ordner, pfad.slice(praefix.length + 1));
+        const rest = pfad.slice(praefix.length + 1);
+        const datei = sicherJoin(ordner, rest);
         if (!datei) return fehler(res, 403, 'Nicht erlaubt');
+
+        // Das mitgelieferte L300-Logo liegt in src/branding, nicht im Ordner der
+        // Bar. Ohne diesen Rueckfall zeigt der Player unter Electron das
+        // Standardlogo (relativer Pfad ab src/) und am Pi nichts.
+        if (!fs.existsSync(datei) && praefix === '/branding') {
+          const mitgeliefert = sicherJoin(path.join(SRC_DIR, 'branding'), rest);
+          if (mitgeliefert && fs.existsSync(mitgeliefert)) return ausliefern(res, mitgeliefert, req);
+        }
         return ausliefern(res, datei, req);
       }
     }

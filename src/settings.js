@@ -20,43 +20,96 @@ async function boot() {
   $('s_autostart').checked = await window.api.getAutostart();
   await renderDisplays();
 
-  fillSettingsFields();
-  fillDurchsage();
-  fillRuhezeit();
-  renderVideos();
-  renderTimetable();
-  renderPrices();
+  fillAll();
   wireTabs();
   wireButtons();
   fuerBrowserAnpassen();
+  await zugangPruefen();
 
   window.api.onConfigChanged((cfg) => {
     if (dirty) return;           // eigene Änderungen nicht ueberschreiben
     state = cfg;
-    fillSettingsFields();
-    fillDurchsage();
-    fillRuhezeit();
-    renderVideos();
-    renderTimetable();
-    renderPrices();
+    fillAll();
   });
 
   // Status "läuft gerade" aktuell halten
   setInterval(() => { updateBadges(); markTimetableRows(); }, 20000);
 }
 
+// Alle Felder aus dem aktuellen Zustand neu füllen.
+function fillAll() {
+  fillSettingsFields();
+  fillDurchsage();
+  fillRuhezeit();
+  renderVideos();
+  renderTimetable();
+  renderPrices();
+}
+
 // ---------------------------------------------------------------------------
 // Auf dem Raspberry Pi läuft diese Seite im Browser, aufgerufen vom Handy.
-// Dort gibt es keine Dateiauswahl und kein Fenster-Handling - alles, was das
-// braucht, wird ausgeblendet statt kaputt angeboten.
+// Dateien auswählen geht dort inzwischen auch (upload.js); ausgeblendet wird
+// nur noch, was ohne Fenster oder Dateimanager gar nicht geht.
 // ---------------------------------------------------------------------------
+// Was es im Browser wirklich nicht gibt. Dateien auswählen geht inzwischen
+// auch am Handy (siehe upload.js) - hier bleibt nur, was einen Systemdialog,
+// einen Dateimanager oder ein Fenster braucht.
 const NUR_AM_RECHNER = [
-  'addVideos', 'openMedia', 'checkMedia',        // Dateien hinzufügen, umwandeln
-  'cleanPhotos', 'ttExport', 'ttImport',          // Fotos und Timetable-Dateien
-  'logoPick', 'fontPick', 'fontClear',            // Logo- und Schriftauswahl
+  'openMedia', 'checkMedia',                      // Ordner öffnen, umwandeln
+  'ttExport', 'ttImport',                         // Timetable als Datei weitergeben
   'openPhotos', 'exportCfg', 'importCfg',         // Ordner und Sicherungen
   'backToPlayer', 'quitApp'                       // Fensterschaltflächen
 ];
+
+// Ohne PIN darf im Netzwerk niemand mehr schreiben - erst recht nicht, seit
+// sich Dateien hochladen lassen. Gelesen werden darf weiter frei, sonst käme
+// die Anzeige selbst nicht an ihre Konfiguration.
+async function zugangPruefen() {
+  if (paths.mode !== 'http' || !window.api.zugangStatus) return;
+  let zustand = null;
+  try { zustand = await window.api.zugangStatus(); } catch (e) { return; }
+  if (!zustand || !zustand.pinAktiv || zustand.angemeldet) return;
+  await pinAbfragen();
+}
+
+function pinAbfragen() {
+  return new Promise((fertig) => {
+    const schirm = document.createElement('div');
+    schirm.id = 'pinSchirm';
+    schirm.innerHTML =
+      '<form class="pinKasten">' +
+        '<h2>PIN eingeben</h2>' +
+        '<p class="hint">Diese Bar ist mit einer PIN geschützt. Ohne sie lässt sich ' +
+           'hier nichts ändern.</p>' +
+        '<input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" ' +
+           'id="pinFeld" maxlength="12">' +
+        '<div class="pinFehler"></div>' +
+        '<button type="submit" class="primary gross">Weiter</button>' +
+      '</form>';
+    document.body.appendChild(schirm);
+
+    const feld = schirm.querySelector('#pinFeld');
+    const fehler = schirm.querySelector('.pinFehler');
+    feld.focus();
+
+    schirm.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      fehler.textContent = '';
+      let antwort = null;
+      try { antwort = await window.api.anmelden(feld.value); } catch (err) { /* gleich */ }
+      if (antwort && antwort.ok) {
+        schirm.remove();
+        // Jetzt darf die vollstaendige Konfiguration geholt werden - vorher kam
+        // sie ohne PIN, und die wuerde beim Speichern die echte ueberschreiben.
+        try { state = await window.api.getConfig(); fillAll(); } catch (err) { location.reload(); }
+        return fertig();
+      }
+      fehler.textContent = (antwort && antwort.fehler) || 'PIN stimmt nicht.';
+      feld.value = '';
+      feld.focus();
+    });
+  });
+}
 
 function fuerBrowserAnpassen() {
   if (paths.mode !== 'http') return;
@@ -84,9 +137,10 @@ function fuerBrowserAnpassen() {
   hinweis.className = 'hint';
   hinweis.style.cssText = 'margin:0 0 1rem;padding:0.7rem 0.9rem;border-radius:9px;' +
     'background:rgba(255,138,31,0.12);border:1px solid #4a3a28;max-width:none';
-  hinweis.textContent = 'Fernbedienung über das Netzwerk. Timetable, Preise, Spezialshot ' +
-    'und alle Texte lassen sich hier ändern. Videos, Fotos, Logo und Schriftart werden ' +
-    'am Rechner eingepflegt und auf den Pi kopiert.';
+  hinweis.textContent = 'Fernbedienung über das Netzwerk. Timetable, Preise, Durchsagen ' +
+    'und alle Texte lassen sich hier ändern, und Clips, Fotos, Logo und Schrift könnt ihr ' +
+    'direkt vom Handy hochladen. Nur Umwandeln und das Weitergeben von Dateien bleiben ' +
+    'dem Rechner vorbehalten.';
   const haupt = document.querySelector('main');
   haupt.insertBefore(hinweis, haupt.firstChild);
 }
@@ -515,7 +569,7 @@ function wireButtons() {
   $('openPhotos').addEventListener('click', () => window.api.openPhotoFolder());
 
   $('logoPick').addEventListener('click', async () => {
-    const f = await window.api.addLogo();
+    const f = await window.api.addLogo(toast);
     if (!f) return;
     const old = state.settings.logo;
     state.settings.logo = f;
@@ -546,7 +600,7 @@ function wireButtons() {
   });
 
   $('fontPick').addEventListener('click', async () => {
-    const f = await window.api.addFont();
+    const f = await window.api.addFont(toast);
     if (!f) return;
     const old = state.settings.fontFile;
     state.settings.fontFile = f;
@@ -788,7 +842,7 @@ async function pruefeUndWandle(eintraege, stillWennAllesOk) {
 }
 
 async function addVideos() {
-  const added = await window.api.addMedia();
+  const added = await window.api.addMedia(toast);
   if (!added.length) return;
   state.videos = state.videos || [];
   for (const a of added) {
@@ -1159,7 +1213,7 @@ function renderPhotoCell(td, e) {
 }
 
 async function pickPhoto(td, e) {
-  const file = await window.api.addPhoto();
+  const file = await window.api.addPhoto(toast);
   if (!file) return;
   e.photo = file;
   markDirty();

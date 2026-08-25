@@ -29,6 +29,7 @@ let settingsWin = null;
 // Konfiguration
 // ---------------------------------------------------------------------------
 const { zeitStatus } = require('./lib/zeitstatus');
+const { sicherName } = require('./lib/dateiname');
 
 const CONFIG_VERSION = 3;
 
@@ -154,26 +155,8 @@ function saveConfig(cfg) {
 // ---------------------------------------------------------------------------
 // Dateinamen entschärfen (Leerzeichen/Umlaute machen file:// URLs fragil)
 // ---------------------------------------------------------------------------
-function safeName(original, dir) {
-  const ext = path.extname(original).toLowerCase();
-  let base = path.basename(original, path.extname(original));
-  base = base
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue')
-    .replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue')
-    .replace(/ß/g, 'ss')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^A-Za-z0-9._-]+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  if (!base) base = 'datei';
-  let name = base + ext;
-  let i = 2;
-  while (fs.existsSync(path.join(dir, name))) {
-    name = base + '_' + i + ext;
-    i++;
-  }
-  return name;
-}
+// Liegt in lib/dateiname.js, weil der Pi-Dienst denselben Weg braucht.
+const safeName = sicherName;
 
 // ---------------------------------------------------------------------------
 // Bildschirme

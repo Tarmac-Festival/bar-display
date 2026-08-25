@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' file:; img-src 'self' file: data:; font-src 'self' file: data:; style-src 'self' file: 'unsafe-inline'; script-src 'self' file:">
+        content="default-src 'self' file:; img-src 'self' file: data: blob:; font-src 'self' file: data:; style-src 'self' file: 'unsafe-inline'; script-src 'self' file:">
   <title>Bar Display &ndash; Einstellungen</title>
   <link rel="stylesheet" href="settings.css">
 </head>
@@ -484,6 +484,7 @@
 
   <div id="toast" class="toast hidden"></div>
 
+  <script src="upload.js"></script>
   <script src="api-http.js"></script>
   <script src="common.js"></script>
   <script src="settings.js"></script>

@@ -178,6 +178,64 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 /* --------------------------- Geplante Durchsagen --------------------- */
 .anStatus.fehler { border-color: var(--danger); color: var(--danger); font-weight: 700; }
 
+/* ---------------------- Hochladen vom Handy -------------------------- */
+/* Ein Video ueber WLAN dauert Minuten. Ohne Rueckmeldung haelt das jeder
+   fuer haengen geblieben, also ein Balken, der immer sichtbar bleibt. */
+#uploadBalken {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  display: none;
+  padding: 0.8rem 1rem 1rem;
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+#uploadBalken.an { display: block; }
+#uploadBalken .uText {
+  font-size: 13px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#uploadBalken .uSpur { height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; }
+#uploadBalken .uFuell {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
+/* ------------------------------ PIN ---------------------------------- */
+#pinSchirm {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: var(--bg);
+}
+#pinSchirm .pinKasten {
+  width: min(360px, 100%);
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.4rem;
+}
+#pinSchirm h2 { margin: 0 0 0.5rem; font-size: 17px; }
+#pinSchirm input {
+  width: 100%;
+  margin: 0.9rem 0 0.4rem;
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+#pinSchirm .pinFehler { min-height: 1.2em; color: var(--danger); font-size: 13px; margin-bottom: 0.7rem; }
+#pinSchirm button { width: 100%; }
+
 .planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
 .planRow {
   display: flex;

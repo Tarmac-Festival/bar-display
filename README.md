@@ -63,6 +63,9 @@ Getränkepreise im Festival-Design.
   Zeitserver. Klappt das nicht, sagt das Programm Bescheid, statt stillschweigend
   mit der falschen Zeit zu arbeiten.
 - **Sparmodus** für schwache Geräte — ein Schalter statt drei Einstellungen.
+- **Dateien vom Handy** — Clips, Fotos, Logo und Schrift lassen sich am
+  Raspberry Pi direkt über die Bedienseite hochladen, ohne Rechner.
+- **PIN für die Bedienseite** — im Netzwerk darf nur ändern, wer sie kennt.
 
 ---
 
@@ -417,7 +420,9 @@ sonst passt.
 ![Einstellungen System](docs/screenshots/einstellungen-system.png)
 
 - **Automatisch mit Windows starten**
-- **PIN** für die Einstellungen (nur Ziffern, leer = kein Schutz)
+- **PIN** für die Einstellungen (nur Ziffern, leer = kein Schutz). Sie schützt
+  zweierlei: das Einstellungsfenster am Bildschirm und die Bedienseite im
+  Netzwerk — siehe [Raspberry Pi](#raspberry-pi).
 - **Uhrzeit**: Datum, Uhrzeit und ob sie aus dem Netz abgeglichen ist. Unter
   Windows und macOS steht dort nur die Zeit — diese Systeme haben eine
   Hardware-Uhr und halten sie selbst in Ordnung. Auf einem Raspberry Pi ist das
@@ -482,10 +487,36 @@ http://<IP-des-Pi>:8080/einstellungen
 ```
 
 Die Seite ist für schmale Bildschirme ausgelegt. Änderungen erscheinen **sofort** auf
-der Anzeige, ohne Neustart. Was dort geht: Timetable, Preise, Spezialshot, alle Texte,
-Farben, Häufigkeiten, Zeitfenster. Was **nicht** geht: Videos, Fotos, Logo und
-Schriftart auswählen — dafür fehlt am Handy die Dateiauswahl. Die kopiert ihr in die
-Ordner auf dem Pi:
+der Anzeige, ohne Neustart. Timetable, Preise, Spezialshot, Durchsagen, alle Texte,
+Farben, Häufigkeiten und Zeitfenster lassen sich dort ändern.
+
+### Dateien vom Handy hochladen
+
+Clips, Standbilder, Act-Fotos, das Logo und eine eigene Schrift könnt ihr direkt
+vom Handy hochladen — dieselben Knöpfe wie am Rechner, nur öffnet sich statt eines
+Systemdialogs die Dateiauswahl des Telefons.
+
+![Hochladen vom Handy](docs/screenshots/handy-hochladen.png)
+
+Ein Balken am unteren Rand zeigt den Fortschritt; über WLAN dauert ein Video seine
+Zeit. **Fotos werden vor dem Hochladen im Browser verkleinert** — aus einem
+6-MB-Handyfoto werden rund 260 KB. Act-Fotos landen auf der Anzeige ohnehin
+quadratisch beschnitten bei wenigen hundert Pixeln, es geht also nichts verloren.
+
+Zwei Dinge, die man wissen sollte:
+
+**iPhone-Videos spielen auf einem Pi meist nicht.** iPhones nehmen standardmäßig in
+HEVC (H.265) auf, und ein Pi 3B kann das nicht dekodieren — auch nicht langsam. Das
+Programm erkennt das direkt nach dem Hochladen und sagt es, statt den Clip abends
+stillschweigend zu überspringen. Abhilfe: am iPhone unter *Einstellungen → Kamera →
+Formate* auf **Maximale Kompatibilität** stellen, oder den Clip am Rechner nach MP4
+umwandeln.
+
+**Umwandeln geht am Handy nicht.** Dafür fehlt dem Pi ffmpeg, und ein Pi 3B wäre
+damit auch viele Minuten beschäftigt. Das bleibt dem Rechner vorbehalten.
+
+Wer lieber am Rechner arbeitet, kann Dateien weiterhin einfach in die Ordner auf dem
+Pi kopieren:
 
 ```
 ~/.config/Bar Display/media      Videos und Standbilder
@@ -495,6 +526,25 @@ Ordner auf dem Pi:
 
 Praktisch: Die Konfigurationsdatei hat auf allen Systemen dasselbe Format. Ihr könnt
 also am Rechner alles einrichten und `config.json` samt Ordnern auf den Pi kopieren.
+
+### PIN für die Bedienseite
+
+Die Bedienseite ist über das Netzwerk erreichbar, und seit sich darüber Dateien
+hochladen lassen, gehört sie geschützt. Ist unter *System* eine PIN hinterlegt, fragt
+die Seite beim Öffnen danach.
+
+![PIN-Abfrage am Handy](docs/screenshots/handy-pin.png)
+
+- **Lesen bleibt offen.** Die Anzeige selbst holt sich ihre Konfiguration über
+  dieselbe Schnittstelle und kann keine PIN eintippen.
+- **Ändern, Hochladen und Löschen verlangen die PIN.**
+- Die PIN steht zwar in der Konfiguration, wird aber nur an angemeldete Geräte
+  ausgeliefert — aus der offen lesbaren Fassung lässt sie sich nicht ablesen.
+- Die Anmeldung gilt einen Festivaltag lang und überlebt keinen Neustart des
+  Dienstes. Wird die PIN geändert, müssen sich alle neu anmelden.
+
+Ohne PIN bleibt alles wie bisher: jeder im selben WLAN darf ändern. Für eine Bar im
+abgeschlossenen Backstage-Netz ist das in Ordnung — im offenen Gäste-WLAN eher nicht.
 
 ### Die Uhr
 
@@ -649,6 +699,9 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
+| Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
+| Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
+| Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |
@@ -752,6 +805,10 @@ Zusammenfassung des Laufs.
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
 | `src/qr.js` | QR-Erzeugung, mitgeliefert statt nachgeladen |
 | `lib/zeitstatus.js` | fragt das System, ob die Uhr aus dem Netz kommt |
+| `lib/dateiname.js` | entschärft Dateinamen, von beiden Wegen genutzt |
+| `lib/hochladen.js` | nimmt Dateien entgegen, prüft Format und Platz |
+| `lib/anmeldung.js` | PIN-Schutz der Bedienseite im Netzwerk |
+| `src/upload.js` | Dateiauswahl und Hochladen am Handy |
 | `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows, Linux und macOS nach `vendor/`, mit Prüfsumme |
 | `build/` | Programmsymbole, aus dem L300-Logo erzeugt |
 | `.github/workflows/release.yml` | baut auf GitHub alle Pakete und hängt sie an ein Release |
