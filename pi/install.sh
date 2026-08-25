@@ -195,21 +195,23 @@ fi
 # ---------------------------------------------------------------------------
 sage "System auf Dauerbetrieb trimmen"
 
-# Ohne genug Speicher fuer die Grafikeinheit faellt der Pi bei 1080p auf
-# Dekodierung im Hauptprozessor zurueck - und die schafft ein Pi 3B nicht.
+# gpu_mem war hier frueher auf 128 gesetzt - das war ein Rat aus der Zeit des
+# alten Grafiktreibers. Aktuelles Raspberry Pi OS nutzt vc4-kms-v3d und verteilt
+# den Speicher selbst. Schlimmer: mit gesetztem gpu_mem kam der Treiber auf
+# einem Pi 3B gar nicht mehr hoch, /dev/dri verschwand, und die Vollbildanzeige
+# fand kein Grafikgeraet mehr. Deshalb wird die Zeile jetzt entfernt, auch bei
+# Geraeten, auf denen ein frueherer Lauf sie hinterlassen hat.
 BOOTCFG=""
 for k in /boot/firmware/config.txt /boot/config.txt; do
   [ -f "$k" ] && { BOOTCFG="$k"; break; }
 done
-if [ -n "$BOOTCFG" ]; then
-  if grep -q '^gpu_mem=' "$BOOTCFG"; then
-    sudo sed -i 's/^gpu_mem=.*/gpu_mem=128/' "$BOOTCFG"
-  else
-    echo 'gpu_mem=128' | sudo tee -a "$BOOTCFG" >/dev/null
-  fi
-  sage "gpu_mem=128 in $BOOTCFG gesetzt (wirkt nach dem Neustart)"
-else
-  warne "config.txt nicht gefunden - gpu_mem bitte von Hand auf 128 setzen."
+GPUMEM_HINWEIS=""
+if [ -n "$BOOTCFG" ] && grep -q '^gpu_mem=' "$BOOTCFG"; then
+  sudo sed -i '/^gpu_mem=/d' "$BOOTCFG"
+  sage "veraltete Zeile gpu_mem aus $BOOTCFG entfernt"
+  GPUMEM_HINWEIS="Die veraltete Einstellung gpu_mem wurde entfernt - sie hat den
+  Grafiktreiber blockiert. Das wirkt erst nach einem Neustart:
+      sudo reboot"
 fi
 
 # WLAN-Stromsparen verzoegert die Push-Verbindung zur Bedienseite: Durchsagen
@@ -321,6 +323,8 @@ cat <<ENDE
   $ZEITLAGE
 ${KONSOLE_HINWEIS:+
   $KONSOLE_HINWEIS
+}${GPUMEM_HINWEIS:+
+  $GPUMEM_HINWEIS
 }
   Nuetzliche Befehle:
       bar-display-konsole                      Anzeige anhalten, Konsole zurueck
@@ -336,7 +340,7 @@ ${KONSOLE_HINWEIS:+
   Ob die Videodekodierung in Hardware laeuft, verraet in Chromium die
   Adresse chrome://gpu (Zeile "Video Decode").
 
-  gpu_mem wirkt erst nach einem Neustart:
+  Nach Aenderungen an der Firmware hilft ein Neustart:
       sudo reboot
       sudo systemctl restart bar-display       Dienst neu starten
       journalctl -u bar-display -f             Protokoll ansehen

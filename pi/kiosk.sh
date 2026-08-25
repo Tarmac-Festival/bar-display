@@ -55,8 +55,19 @@ mkdir -p "$CACHE" 2>/dev/null || true
 # Was hier oft klemmt, steht sonst nirgends. Einmal ins Protokoll, damit man bei
 # einem Fehlstart nicht raten muss.
 echo "Starte Anzeige: cage=$CAGE chromium=$CHROMIUM port=$PORT"
-if [ ! -e /dev/dri/card0 ] && [ ! -e /dev/dri/card1 ]; then
-  echo "Warnung: keine Grafikschnittstelle unter /dev/dri gefunden." >&2
+# Bewusst genau hinsehen: ein blosses /dev/dri/cardN reicht nicht, das kann ein
+# reiner Render-Knoten ohne Bildausgabe sein. cage braucht ein Geraet mit
+# Anschluessen - die stehen als card*-* unter /sys/class/drm.
+if ! ls -d /sys/class/drm/card*-* >/dev/null 2>&1; then
+  echo "FEHLER: Kein Grafikgeraet mit Bildausgabe gefunden." >&2
+  if [ ! -d /dev/dri ]; then
+    echo "  /dev/dri gibt es gar nicht - der Grafiktreiber ist nicht geladen." >&2
+  fi
+  echo "  Haeufigste Ursache: eine Zeile gpu_mem= in der config.txt. Die stammt" >&2
+  echo "  vom alten Grafiktreiber und blockiert den heutigen. Entfernen mit:" >&2
+  echo "      sudo sed -i '/^gpu_mem=/d' /boot/firmware/config.txt && sudo reboot" >&2
+  echo "  Pruefen laesst es sich danach mit: ls /dev/dri/" >&2
+  exit 1
 fi
 if ! id -nG | grep -qw video; then
   echo "Warnung: Benutzer $(id -un) ist nicht in der Gruppe 'video'." >&2

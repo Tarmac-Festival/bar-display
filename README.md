@@ -713,8 +713,17 @@ Software, hilft das Herunterrechnen am meisten.
 
 Das Installationsskript nimmt außerdem folgende Einstellungen vor:
 
-- **`gpu_mem=128`** in der `config.txt`. Ohne genug Speicher für die
-  Grafikeinheit fällt der Pi bei 1080p auf den Hauptprozessor zurück.
+> **Finger weg von `gpu_mem`.** Diese Einstellung stammt aus der Zeit des alten
+> Grafiktreibers. Aktuelles Raspberry Pi OS nutzt `vc4-kms-v3d` und verteilt den
+> Speicher selbst — mit gesetztem `gpu_mem` kam der Treiber auf einem Pi 3B gar
+> nicht mehr hoch, `/dev/dri` verschwand und die Anzeige fand kein Grafikgerät.
+> Das Skript entfernt die Zeile deshalb, falls sie vorhanden ist. Steht sie noch
+> bei euch drin:
+>
+> ```bash
+> sudo sed -i '/^gpu_mem=/d' /boot/firmware/config.txt && sudo reboot
+> ```
+
 - **Chromium sparsam gestartet** — ein Renderprozess, Sparmodus für schwache
   Geräte, kein Crash-Reporter, kein Komponenten-Update, kein Hintergrundfunk.
 - **Zwischenspeicher im RAM** statt auf der SD-Karte. Die Karte ist im
@@ -798,6 +807,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
 | Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
+| Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät. Meist eine Zeile `gpu_mem=` in der `config.txt` – entfernen und neu starten |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
