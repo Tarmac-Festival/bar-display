@@ -635,6 +635,41 @@ Hinweis erscheint dann klein auf der Anzeige und im Klartext unter
 > sie einmalig von Hand zu stellen: `sudo date -s "2026-08-28 17:30"` — und danach
 > den Pi nicht vom Strom zu nehmen.
 
+### Wieder an den Pi kommen
+
+Läuft die Anzeige im Vollbild, ist der Bildschirm belegt und es gibt keine
+Eingabeaufforderung mehr. Zurück kommt man so:
+
+```bash
+bar-display-konsole
+```
+
+Das hält die Anzeige an und holt die Eingabeaufforderung zurück. Weiter geht es
+mit `bar-display-anzeige`. Beides muss man von irgendwo aufrufen können – dafür
+gibt es zwei Wege:
+
+- **Strg + Alt + F2** am Pi schaltet auf eine zweite Konsole, dort meldet man
+  sich normal an. Die Anzeige läuft dabei weiter.
+- **Über das Netzwerk** mit `ssh benutzer@<IP-des-Pi>`. Das ist der bequemere
+  Weg, gerade wenn an der Bar weder Tastatur noch Maus hängt.
+
+> **SSH am besten gleich einschalten**, solange man noch bequem drankommt:
+> `sudo raspi-config` → *Interface Options → SSH*. Danach erreicht man den Pi
+> von jedem Rechner im selben Netz.
+
+Der automatische Login auf `tty1` kommt nach dem Anhalten der Anzeige **nicht
+von allein zurück** – die Anzeige beendet ihn beim Start und startet ihn nicht
+wieder. `bar-display-konsole` erledigt beides in einem Zug.
+
+Ganz zurück zur Arbeitsfläche geht es mit:
+
+```bash
+sudo systemctl set-default graphical.target && sudo reboot
+```
+
+Für Timetable, Preise und Durchsagen braucht man das alles nicht – das läuft
+über die Bedienseite am Handy.
+
 ### Was der Pi leisten muss
 
 | | |

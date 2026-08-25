@@ -254,6 +254,28 @@ echo "erneuter Lauf des Einrichtungsskripts - das steht dann in den Hinweisen."
 AKTUELL
 sudo chmod +x /usr/local/bin/bar-display-update
 
+# Zurueck zur Eingabeaufforderung und wieder zur Anzeige. Ohne diese beiden
+# Befehle muesste man sich merken, dass der automatische Login nach dem Stoppen
+# der Anzeige nicht von allein zurueckkommt - Conflicts beendet ihn, startet ihn
+# aber nicht wieder.
+sudo tee /usr/local/bin/bar-display-konsole >/dev/null <<'KONSOLE'
+#!/usr/bin/env bash
+set -euo pipefail
+sudo systemctl stop bar-display-kiosk.service
+sudo systemctl start getty@tty1.service
+echo "Anzeige angehalten, Eingabeaufforderung ist zurueck."
+echo "Wieder anzeigen mit: bar-display-anzeige"
+KONSOLE
+sudo chmod +x /usr/local/bin/bar-display-konsole
+
+sudo tee /usr/local/bin/bar-display-anzeige >/dev/null <<'ANZEIGE'
+#!/usr/bin/env bash
+set -euo pipefail
+sudo systemctl start bar-display-kiosk.service
+echo "Anzeige laeuft wieder."
+ANZEIGE
+sudo chmod +x /usr/local/bin/bar-display-anzeige
+
 # ---------------------------------------------------------------------------
 ADRESSE="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
@@ -301,8 +323,14 @@ ${KONSOLE_HINWEIS:+
   $KONSOLE_HINWEIS
 }
   Nuetzliche Befehle:
+      bar-display-konsole                      Anzeige anhalten, Konsole zurueck
+      bar-display-anzeige                      Anzeige wieder starten
       bar-display-update                       neue Fassung holen
       timedatectl status                       Uhrzeit und Abgleich pruefen
+
+  Kommt man nicht mehr an den Pi: Strg + Alt + F2 gibt eine zweite Konsole.
+  Bequemer ist SSH - einschalten mit "sudo raspi-config" unter
+  Interface Options. Dann geht auch: ssh $BENUTZER@${ADRESSE:-<IP-des-Pi>}
 
   Laeuft die Anzeige ruckelig, hilft im Reiter "Anzeige" der Sparmodus.
   Ob die Videodekodierung in Hardware laeuft, verraet in Chromium die
