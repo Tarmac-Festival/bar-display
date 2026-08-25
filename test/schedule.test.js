@@ -12,7 +12,12 @@ const ctx = vm.createContext({ console, Date });
 vm.runInContext(code, ctx);
 const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster,
         fensterEnde, countdownText, aktiveDurchsage, durchsageTeile,
-        fotoAusschnitt, fotoStil, ausschnittIstStandard } = ctx;
+        fotoAusschnitt, fotoStil, ausschnittIstStandard,
+        mitgeliefertesLogo } = ctx;
+// Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
+// Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
+// Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
+const MITGELIEFERTE_LOGOS = vm.runInContext('MITGELIEFERTE_LOGOS', ctx);
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -191,6 +196,26 @@ check('Stil enthaelt keine Anfuehrungszeichen',
 
 const spielerQuelle = fs.readFileSync(path.join(__dirname, '..', 'src', 'player.js'), 'utf8');
 check('Player benutzt denselben Helfer', /fotoStil\(/.test(spielerQuelle), true);
+
+console.log('-- Logos --');
+check('leer meint das L300-Logo', mitgeliefertesLogo(''), 'branding/l300-logo.png');
+check('none meint gar keins', mitgeliefertesLogo('none'), null);
+check('mitgeliefert wird aufgeloest',
+      mitgeliefertesLogo('@tarmac-wortmarke.png'), 'branding/tarmac-wortmarke.png');
+check('eigene Datei ist nicht mitgeliefert', mitgeliefertesLogo('mein-logo.png'), null);
+check('undefined wie leer', mitgeliefertesLogo(undefined), 'branding/l300-logo.png');
+
+check('zwei Logos liegen bei', MITGELIEFERTE_LOGOS.length, 2);
+check('beide Dateien sind da', MITGELIEFERTE_LOGOS.every(function (l) {
+  return fs.existsSync(path.join(__dirname, '..', 'src', 'branding', l.datei));
+}), true);
+check('jedes hat eine Hoehe', MITGELIEFERTE_LOGOS.every(function (l) {
+  return typeof l.hoehe === 'number' && l.hoehe > 0 && l.hoehe <= 30;
+}), true);
+// Der Wert muss sich auf dieselbe Datei aufloesen, die in der Liste steht
+check('Wert und Datei passen zusammen', MITGELIEFERTE_LOGOS.every(function (l) {
+  return mitgeliefertesLogo(l.wert) === 'branding/' + l.datei;
+}), true);
 
 console.log('-- QR-Code --');
 // Die Bibliothek schneidet Zeichen standardmaessig auf ein Byte ab. Ohne die

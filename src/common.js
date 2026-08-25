@@ -272,3 +272,31 @@ function fotoStil(entry) {
   }
   return stil;
 }
+
+// ---------------------------------------------------------------------------
+// Mitgelieferte Logos
+// ---------------------------------------------------------------------------
+// settings.logo kennt vier Faelle:
+//   ''              das L300-Logo (so war es immer, bleibt der Standard)
+//   'none'          gar kein Logo, nur der Bar-Name
+//   '@datei.png'    eines der hier mitgelieferten Logos
+//   'datei.png'     ein eigenes, im Marken-Ordner der Bar
+//
+// hoehe ist ein Vorschlag in Prozent der Bildschirmhoehe. Eine breite
+// Wortmarke braucht eine kleinere Zahl als ein kompaktes Zeichen, sonst
+// stoesst sie an die Breitenbremse und wird ohnehin gedeckelt.
+const MITGELIEFERTE_LOGOS = [
+  { wert: '', datei: 'l300-logo.png', name: 'L300-Logo', hoehe: 9 },
+  { wert: '@tarmac-wortmarke.png', datei: 'tarmac-wortmarke.png',
+    name: 'TARMAC-Schriftzug', hoehe: 6 }
+];
+
+// Adresse eines mitgelieferten Logos, sonst null. Bewusst relativ: unter
+// Electron liegt die Seite in src/, am Pi faellt /branding auf src/branding
+// zurueck, wenn die Bar kein eigenes Logo hinterlegt hat.
+function mitgeliefertesLogo(wert) {
+  if (wert === 'none') return null;
+  if (!wert) return 'branding/l300-logo.png';
+  if (String(wert).charAt(0) === '@') return 'branding/' + String(wert).slice(1);
+  return null;
+}

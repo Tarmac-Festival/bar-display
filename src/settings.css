@@ -400,6 +400,27 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 .cropKasten input[type=range] { width: 100%; accent-color: var(--accent); }
 
 /* ------------------------------- Branding ---------------------------- */
+/* Auswahl der mitgelieferten Logos. Die Vorschauen stehen auf dunklem Grund,
+   weil beide Logos weiss auf durchsichtig sind - auf hellem waeren sie weg. */
+.logoAuswahl { display: flex; gap: 0.5rem; margin: 0.7rem 0; flex-wrap: wrap; }
+.logoAuswahl button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.logoAuswahl button img { height: 26px; width: auto; max-width: 110px; object-fit: contain; }
+.logoAuswahl button:hover { border-color: var(--accent); }
+.logoAuswahl button.gewaehlt { border-color: var(--accent); color: var(--fg); }
+
+
 .logoPreview {
   display: flex;
   align-items: center;

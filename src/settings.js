@@ -597,18 +597,6 @@ function wireButtons() {
     renderLogoPreview();
   });
 
-  const eigenesLogoWeg = () => {
-    const alt = state.settings.logo;
-    if (alt && alt !== 'none') window.api.removeLogo(alt);
-  };
-
-  $('logoDefault').addEventListener('click', () => {
-    if (state.settings.logo === '') return;
-    eigenesLogoWeg();
-    state.settings.logo = '';
-    markDirty();
-    renderLogoPreview();
-  });
 
   $('logoNone').addEventListener('click', () => {
     if (state.settings.logo === 'none') return;
@@ -731,6 +719,7 @@ function fillSettingsFields() {
   $('s_qrEnabled').checked = !!s.qrEnabled;
   $('s_sparmodus').checked = !!s.sparmodus;
   qrFelderAnpassen();
+  renderLogoAuswahl();
   renderLogoPreview();
   renderFontState();
   fillSpecialFields();
@@ -1167,12 +1156,56 @@ function renderLogoPreview() {
   const f = state.settings.logo;
   if (f === 'none') {
     box.textContent = 'kein Logo - nur der Bar-Name';
-  } else if (!f) {
-    box.innerHTML = '<img src="branding/l300-logo.png" alt="">' +
-      '<span class="logoTag">mitgeliefertes L300-Logo</span>';
+    return;
+  }
+  const mit = mitgeliefertesLogo(f);
+  if (mit) {
+    const eintrag = MITGELIEFERTE_LOGOS.find(l => l.wert === (f || ''));
+    box.innerHTML = '<img src="' + mit + '" alt="">' +
+      '<span class="logoTag">mitgeliefert: ' +
+      escapeHtml(eintrag ? eintrag.name : 'Logo') + '</span>';
   } else {
     box.innerHTML = '<img src="' + fileSrc(paths.brandDir, f) + '" alt="">';
   }
+
+  // Die Auswahl unter der Vorschau mitziehen
+  document.querySelectorAll('#logoAuswahl button').forEach(b => {
+    b.classList.toggle('gewaehlt', b.dataset.wert === (f || ''));
+  });
+}
+
+// Wechselt die Bar auf ein anderes Logo, wird ihre eigene Datei nicht mehr
+// gebraucht. Mitgelieferte Logos liegen in src/branding und gehoeren nicht ihr -
+// die duerfen auf keinen Fall geloescht werden.
+function eigenesLogoWeg() {
+  const alt = state.settings.logo;
+  if (alt && alt !== 'none' && !mitgeliefertesLogo(alt)) window.api.removeLogo(alt);
+}
+
+// Knopfreihe fuer die mitgelieferten Logos, aus der gemeinsamen Liste gebaut
+function renderLogoAuswahl() {
+  const box = $('logoAuswahl');
+  if (!box || box.dataset.wired) return;
+  box.dataset.wired = '1';
+  box.innerHTML = MITGELIEFERTE_LOGOS.map(l =>
+    '<button data-wert="' + escapeHtml(l.wert) + '" data-hoehe="' + l.hoehe + '">' +
+    '<img src="branding/' + escapeHtml(l.datei) + '" alt="">' +
+    '<span>' + escapeHtml(l.name) + '</span></button>').join('');
+
+  box.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      // Ein zuvor hochgeladenes eigenes Logo wird dabei aufgeraeumt
+      eigenesLogoWeg();
+      state.settings.logo = b.dataset.wert;
+      // Eine breite Wortmarke braucht eine andere Hoehe als ein kompaktes
+      // Zeichen - sonst laeuft sie in die Breitenbremse und wirkt winzig.
+      state.settings.logoHeight = Number(b.dataset.hoehe);
+      const feld = $('s_logoHeight');
+      if (feld) feld.value = state.settings.logoHeight;
+      markDirty();
+      renderLogoPreview();
+    });
+  });
 }
 
 async function renderDisplays() {

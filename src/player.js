@@ -529,8 +529,8 @@ function renderSlide(kind) {
 function logoUrl() {
   const f = cfg.settings.logo;
   if (f === 'none') return '';
-  if (!f) return 'branding/l300-logo.png';
-  return fileUrl(brandDir, f);
+  const mit = mitgeliefertesLogo(f);
+  return mit ? mit : fileUrl(brandDir, f);
 }
 
 function logoImg(cls) {

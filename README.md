@@ -39,7 +39,8 @@ Getränkepreise im Festival-Design.
 - **Häufigkeit einstellbar** – z. B. Timetable nach je 3 Beiträgen, Preise nach je 5.
 - **Festival-Design** in Purpur, Neongrün und Signalorange, mit Josefin Sans.
   Farben, Titel, Muster und Titelfläche sind einstellbar.
-- **Eigenes Logo**, mit dem L300-Logo als Standard.
+- **Zwei Logos liegen bei** – das L300-Zeichen und der TARMAC-Schriftzug –
+  und ein eigenes lässt sich jederzeit hochladen.
 - **Übergänge**: weiche Überblendung, harter Schnitt, Logo-Blende, Blob-Wisch.
 - **Zweiter Monitor** – die Anzeige kann auf einem eigenen Bildschirm laufen, während
   die Einstellungen auf dem Hauptbildschirm geöffnet bleiben.
@@ -419,8 +420,20 @@ sonst passt.
   erscheinen und wie lange sie stehen bleiben. `0` schaltet den jeweiligen Slide ab.
   Der Zähler läuft über die Runden hinweg weiter – „nach je 5 Beiträgen" greift also
   auch, wenn gerade nur 3 Clips aktiv sind.
-- **Logo**: eigenes Logo wählen, auf das L300-Standardlogo zurücksetzen oder ganz
-  abschalten. Die Höhe ist in Prozent der Bildschirmhöhe angegeben.
+- **Logo**: Zwei Logos sind mitgeliefert und mit einem Klick wählbar – das
+  **L300-Zeichen** und der **TARMAC-Schriftzug**. Beim Wechsel stellt sich die
+  Höhe passend mit ein: der Schriftzug ist mit 7,8:1 sehr breit und braucht eine
+  kleinere Zahl als das kompakte Zeichen. Daneben lässt sich ein eigenes Logo
+  hochladen oder das Logo ganz abschalten.
+
+  ![Logo-Auswahl](docs/screenshots/einstellungen-logo.png)
+
+  | L300-Zeichen | TARMAC-Schriftzug |
+  |---|---|
+  | ![Anzeige mit L300-Logo](docs/screenshots/logo-l300.png) | ![Anzeige mit dem Schriftzug](docs/screenshots/logo-wortmarke.png) |
+
+  Die Höhe ist in Prozent der Bildschirmhöhe angegeben. Sehr breite Logos werden
+  zusätzlich in der Breite gedeckelt, damit sie die Kopfzeile nicht sprengen.
 - **Beschriftung**: Bar-Name, Untertitel und die Titel beider Info-Slides. Lässt man den
   Bar-Namen leer, steht dort nur das Logo.
 - **Stil & Übergänge**: Fläche hinter dem Seitentitel (Blob, Balken oder ohne),
@@ -831,7 +844,7 @@ Zusammenfassung des Laufs.
 | `src/player.*` | die Vollbild-Anzeige: Schleife, Übergänge, Slides |
 | `src/settings.*` | das Einstellungsfenster |
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
-| `src/branding/` | das mitgelieferte L300-Standardlogo |
+| `src/branding/` | die mitgelieferten Logos (L300-Zeichen und TARMAC-Schriftzug) |
 | `test/schedule.test.js` | Tests |
 | `pi/server.js` | Webdienst für den Raspberry Pi |
 | `pi/install.sh` | Einrichtung auf dem Pi |
