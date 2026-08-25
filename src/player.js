@@ -48,6 +48,8 @@ async function boot() {
     restart();
   });
 
+  zeitPruefen();
+  setInterval(zeitPruefen, 60000);
   setInterval(tickClock, 1000);
   setInterval(durchsageTicken, 1000);
   setInterval(refreshVisibleSlide, 20000);
@@ -534,7 +536,8 @@ function footHtml(mitQr) {
   const qr = mitQr ? qrHtml() : '';
   const uhr = s.showClock
     ? '<div class="fussUhr"><span class="dot"></span>' +
-      escapeHtml(dateLine()) + ' &middot; <b data-clock>' + nowHHMM() + '</b></div>'
+      escapeHtml(dateLine()) + ' &middot; <b data-clock>' + nowHHMM() + '</b>' +
+      '<span class="uhrWarnung" title="Uhrzeit nicht abgeglichen">&#9888;</span></div>'
     : '';
   if (!qr && !uhr) return '';
   return '<div class="slideFoot' + (qr ? ' mitQr' : '') + '">' + qr + uhr + '</div>';
@@ -703,6 +706,27 @@ function fitToBox(layer) {
 function tickClock() {
   const txt = nowHHMM();
   document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = txt; });
+}
+
+// Steht die Systemuhr? Ein Pi ohne Zeitabgleich zeigt eine Uhrzeit, die voellig
+// plausibel aussieht und trotzdem falsch ist - und daran haengt der ganze
+// Timetable. Der Hinweis auf dem Bildschirm bleibt bewusst klein: Gaeste sollen
+// keine Fehlermeldung sehen, das Barpersonal aber merken, dass etwas nicht
+// stimmt. Deutlich im Klartext steht es in den Einstellungen unter System.
+let uhrUnsicher = false;
+
+async function zeitPruefen() {
+  if (!window.api || !window.api.zeitStatus) return;
+  try {
+    const z = await window.api.zeitStatus();
+    const schlecht = !!(z && z.pruefbar && z.synchronisiert === false);
+    if (schlecht === uhrUnsicher) return;
+    uhrUnsicher = schlecht;
+    document.body.classList.toggle('uhrUnsicher', schlecht);
+    if (schlecht) console.warn('[uhr] nicht aus dem Netz abgeglichen - Zeiten koennen falsch sein');
+  } catch (err) {
+    /* keine Auskunft moeglich: dann lieber nichts behaupten */
+  }
 }
 
 // Sichtbaren Info-Slide regelmaessig aktualisieren, damit "JETZT" live bleibt

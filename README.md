@@ -59,6 +59,9 @@ Getränkepreise im Festival-Design.
   die Schleife steht still. Schont das Gerät und spart Strom.
 - **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt – abschaltbar,
   ohne dass die Adresse verloren geht.
+- **Uhrzeit aus dem Netz** — der Raspberry Pi stellt seine Uhr gegen einen
+  Zeitserver. Klappt das nicht, sagt das Programm Bescheid, statt stillschweigend
+  mit der falschen Zeit zu arbeiten.
 
 ---
 
@@ -251,6 +254,21 @@ eingestellt werden — praktisch besonders am Raspberry Pi.
 
 ![Timetable auf einem hochkant montierten Bildschirm](docs/screenshots/anzeige-drehung.png)
 
+### Wenn die Uhr nicht steht
+
+Läuft die Systemuhr nicht gegen einen Zeitserver, färbt sich die Uhrzeit unten
+rechts orange und bekommt ein Warndreieck. Absichtlich klein — Gäste sollen keine
+Fehlermeldung sehen, das Barpersonal aber merken, dass etwas nicht stimmt. Im
+Klartext steht es unter *System → Uhrzeit*.
+
+![Anzeige mit Hinweis auf die ungestellte Uhr](docs/screenshots/anzeige-uhr-warnung.png)
+
+Warum das wichtig ist: **Timetable, Zeitfenster der Clips, Ruhezeit und geplante
+Durchsagen hängen alle an der Systemuhr.** Ein Raspberry Pi hat keine
+batteriegepufferte Uhr und startet ohne Netz mit der Zeit des letzten
+Herunterfahrens — das sieht völlig plausibel aus und ist trotzdem falsch. Mehr
+dazu unter [Raspberry Pi](#raspberry-pi).
+
 ### Übergänge
 
 Vier Varianten, einstellbar unter *Anzeige → Stil & Übergänge*:
@@ -272,11 +290,16 @@ Ohne hinterlegtes Logo erscheint bei beiden Logo-Varianten der Bar-Name.
 
 ## Die Einstellungen
 
+Die Reiter stehen nach Häufigkeit: **Durchsage, Timetable, Getränkepreise,
+Videos, Anzeige, System.** Vorn steht, was jeden Abend angefasst wird; hinten,
+was einmal beim Aufbau eingestellt wird. Beim Öffnen ist *Durchsage* aktiv —
+am Rechner wie am Handy.
+
 ### Durchsage
 
 ![Einstellungen Durchsage](docs/screenshots/einstellungen-durchsage.png)
 
-Der erste Reiter, und am Handy gleich geöffnet — dafür kommt man meistens her.
+Der erste Reiter — dafür kommt man meistens her.
 Text eintippen, **Jetzt anzeigen** — der Balken steht binnen einer Sekunde auf
 allen Bildschirmen, die an derselben Konfiguration hängen. **Ausblenden** nimmt
 ihn wieder weg. Beide Knöpfe speichern sofort, ohne den Speichern-Knopf oben.
@@ -390,6 +413,10 @@ sonst passt.
 
 - **Automatisch mit Windows starten**
 - **PIN** für die Einstellungen (nur Ziffern, leer = kein Schutz)
+- **Uhrzeit**: Datum, Uhrzeit und ob sie aus dem Netz abgeglichen ist. Unter
+  Windows und macOS steht dort nur die Zeit — diese Systeme haben eine
+  Hardware-Uhr und halten sie selbst in Ordnung. Auf einem Raspberry Pi ist das
+  die wichtigste Zeile im ganzen Fenster.
 - **Bildschirm**: auf welchem Monitor die Anzeige läuft. *Bildschirme nummerieren*
   blendet kurz eine große Ziffer auf jedem Schirm ein, damit die Zuordnung klar ist.
   Wird der gewählte Monitor abgezogen, wandert die Anzeige auf den Hauptbildschirm.
@@ -463,6 +490,40 @@ Ordner auf dem Pi:
 
 Praktisch: Die Konfigurationsdatei hat auf allen Systemen dasselbe Format. Ihr könnt
 also am Rechner alles einrichten und `config.json` samt Ordnern auf den Pi kopieren.
+
+### Die Uhr
+
+Ein Raspberry Pi hat **keine batteriegepufferte Uhr**. Ohne Abgleich aus dem Netz
+startet er mit der Zeit des letzten Herunterfahrens. Das sieht plausibel aus und
+ist trotzdem falsch — und daran hängt alles: Timetable, Zeitfenster der Clips,
+Ruhezeit und die geplanten Durchsagen greifen dann zur falschen Stunde, ohne dass
+irgendwo eine Fehlermeldung erscheint.
+
+Das Installationsskript richtet deshalb ein:
+
+- **systemd-timesyncd** holt die Zeit von `pool.ntp.org`, mit
+  `time.cloudflare.com` und `time.google.com` als Rückfall.
+- Zusätzlich wird **der eigene WLAN-Router** als Zeitquelle eingetragen. Auf einem
+  Flugplatz ohne Internet beantwortet der oft die Zeitanfrage — immer noch besser
+  als gar kein Abgleich.
+- **fake-hwclock** merkt sich die Zeit beim Herunterfahren, damit der Pi nach
+  einem Stromausfall wenigstens nicht im Jahr 1970 landet.
+
+Nach der Einrichtung sagt das Skript, ob der Abgleich durchgekommen ist. Später
+prüfen:
+
+```bash
+timedatectl status
+```
+
+Der Dienst startet absichtlich auch **ohne** geglückten Zeitabgleich — eine
+laufende Anzeige mit Warnhinweis ist besser als ein schwarzer Bildschirm. Der
+Hinweis erscheint dann klein auf der Anzeige und im Klartext unter
+*System → Uhrzeit*.
+
+> Ohne jeden Netzzugang kann sich der Pi die Zeit nirgends holen. Dann bleibt nur,
+> sie einmalig von Hand zu stellen: `sudo date -s "2026-08-28 17:30"` — und danach
+> den Pi nicht vom Strom zu nehmen.
 
 ### Was der Pi leisten muss
 
@@ -547,6 +608,8 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Geplante Durchsage erscheint nie | Status neben *aktiv* lesen: fehlt Text oder Wochentag? |
 | Countdown zählt nicht | `{zeit}` im Text und Haken bei *Countdown mitlaufen lassen* |
 | Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |
+| Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
+| Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |
@@ -649,6 +712,7 @@ Zusammenfassung des Laufs.
 | `pi/install.sh` | Einrichtung auf dem Pi |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
 | `src/qr.js` | QR-Erzeugung, mitgeliefert statt nachgeladen |
+| `lib/zeitstatus.js` | fragt das System, ob die Uhr aus dem Netz kommt |
 | `scripts/fetch-ffmpeg.js` | holt ffmpeg für Windows, Linux und macOS nach `vendor/`, mit Prüfsumme |
 | `build/` | Programmsymbole, aus dem L300-Logo erzeugt |
 | `.github/workflows/release.yml` | baut auf GitHub alle Pakete und hängt sie an ein Release |

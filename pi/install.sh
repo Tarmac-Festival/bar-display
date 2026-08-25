@@ -50,6 +50,34 @@ if [ "$NODE_HAUPT" -lt 16 ]; then
 fi
 
 # ---------------------------------------------------------------------------
+sage "Uhrzeit aus dem Netz beziehen"
+# Ein Raspberry Pi hat keine batteriegepufferte Uhr. Ohne Abgleich startet er mit
+# der Zeit des letzten Herunterfahrens - das sieht plausibel aus und ist trotzdem
+# falsch. Daran haengt hier alles: Timetable, Zeitfenster der Clips, Ruhezeit und
+# die geplanten Durchsagen.
+sudo apt-get install -y --no-install-recommends systemd-timesyncd fake-hwclock \
+  || warne "Zeitpakete liessen sich nicht installieren - bitte von Hand nachholen."
+
+# Neben den oeffentlichen Servern auch das eigene Netz fragen. Auf einem
+# Flugplatz ohne Internetzugang beantwortet oft der WLAN-Router die Zeitanfrage,
+# und das ist immer noch besser als gar kein Abgleich.
+GATEWAY="$(ip route show default 2>/dev/null | awk '/default/ {print $3; exit}')"
+sudo mkdir -p /etc/systemd/timesyncd.conf.d
+sudo tee /etc/systemd/timesyncd.conf.d/bar-display.conf >/dev/null <<ZEIT
+[Time]
+NTP=${GATEWAY:+$GATEWAY }pool.ntp.org
+FallbackNTP=time.cloudflare.com time.google.com
+ZEIT
+
+sudo systemctl enable --now systemd-timesyncd >/dev/null 2>&1 || true
+sudo timedatectl set-ntp true >/dev/null 2>&1 || true
+
+# fake-hwclock merkt sich die Zeit beim Herunterfahren. Kommt der Strom zurueck
+# und es ist kein Netz da, startet der Pi wenigstens nicht im Jahr 1970.
+sudo systemctl enable fake-hwclock >/dev/null 2>&1 || true
+sudo fake-hwclock save >/dev/null 2>&1 || true
+
+# ---------------------------------------------------------------------------
 sage "Programm nach $ZIEL holen"
 if [ -d "$ZIEL/.git" ]; then
   sudo git -C "$ZIEL" fetch --depth 1 origin main
@@ -65,8 +93,11 @@ sage "Dienst fuer die Anzeige einrichten"
 sudo tee /etc/systemd/system/bar-display.service >/dev/null <<DIENST
 [Unit]
 Description=Bar Display - Anzeige und Bedienseite
-After=network-online.target
+After=network-online.target time-sync.target
 Wants=network-online.target
+# Absichtlich nur After= und kein Requires= auf time-sync.target: ohne Netz
+# wuerde die Anzeige sonst gar nicht erst starten. Lieber eine laufende Anzeige
+# mit Warnhinweis als ein schwarzer Bildschirm.
 
 [Service]
 Type=simple
@@ -136,6 +167,20 @@ sudo chmod +x /usr/local/bin/bar-display-update
 
 # ---------------------------------------------------------------------------
 ADRESSE="$(hostname -I 2>/dev/null | awk '{print $1}')"
+
+# Kurz Zeit geben, der erste Abgleich braucht ein paar Sekunden
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ] && break
+  sleep 1
+done
+if [ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = "yes" ]; then
+  ZEITLAGE="Uhrzeit aus dem Netz abgeglichen: $(date '+%d.%m.%Y %H:%M')"
+else
+  ZEITLAGE="ACHTUNG: Uhrzeit noch nicht abgeglichen ($(date '+%d.%m.%Y %H:%M')).
+  Ohne richtige Uhr greifen Timetable, Zeitfenster, Ruhezeit und geplante
+  Durchsagen zur falschen Stunde. Pruefen mit: timedatectl status"
+fi
+
 sage "Fertig"
 cat <<ENDE
 
@@ -149,8 +194,11 @@ cat <<ENDE
       ~/.config/Bar Display/photos
       ~/.config/Bar Display/branding
 
+  $ZEITLAGE
+
   Nuetzliche Befehle:
       bar-display-update                       neue Fassung holen
+      timedatectl status                       Uhrzeit und Abgleich pruefen
       sudo systemctl restart bar-display       Dienst neu starten
       journalctl -u bar-display -f             Protokoll ansehen
       journalctl -u bar-display-kiosk -f       Protokoll der Anzeige

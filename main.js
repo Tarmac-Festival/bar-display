@@ -28,6 +28,8 @@ let settingsWin = null;
 // ---------------------------------------------------------------------------
 // Konfiguration
 // ---------------------------------------------------------------------------
+const { zeitStatus } = require('./lib/zeitstatus');
+
 const CONFIG_VERSION = 3;
 
 const DEFAULT_CONFIG = {
@@ -342,6 +344,8 @@ if (!gotLock) {
 // ---------------------------------------------------------------------------
 // IPC
 // ---------------------------------------------------------------------------
+ipcMain.handle('zeit:status', () => zeitStatus());
+
 ipcMain.handle('config:get', () => loadConfig());
 
 ipcMain.handle('config:save', (_e, cfg) => {

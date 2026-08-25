@@ -40,6 +40,7 @@ if (!window.api) {
 
   window.api = {
     paths: () => hole('/api/paths'),
+    zeitStatus: () => hole('/api/zeit'),
     getConfig: () => hole('/api/config'),
     saveConfig: (cfg) => hole('/api/config', {
       method: 'POST',

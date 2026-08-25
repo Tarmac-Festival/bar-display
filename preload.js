@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   onConfigChanged: (cb) => ipcRenderer.on('config:changed', (_e, cfg) => cb(cfg)),
 
   paths: () => ipcRenderer.invoke('app:paths'),
+  zeitStatus: () => ipcRenderer.invoke('zeit:status'),
 
   addMedia: () => ipcRenderer.invoke('media:add'),
   listMedia: () => ipcRenderer.invoke('media:list'),

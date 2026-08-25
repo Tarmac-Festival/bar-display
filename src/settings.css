@@ -176,6 +176,8 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 .dayPresets button { font-size: 11px; padding: 0.25rem 0.45rem; color: var(--muted); }
 
 /* --------------------------- Geplante Durchsagen --------------------- */
+.anStatus.fehler { border-color: var(--danger); color: var(--danger); font-weight: 700; }
+
 .planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
 .planRow {
   display: flex;

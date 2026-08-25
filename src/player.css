@@ -665,6 +665,11 @@ body.instant .layer { transition: none; }
 
 /* Der laufende Countdown. Feste Ziffernbreite, sonst zappelt der Text bei
    jedem Sekundenwechsel hin und her. */
+/* Zeigt nur, wenn die Systemuhr nicht aus dem Netz abgeglichen ist. */
+.uhrWarnung { display: none; margin-left: 0.4em; }
+body.uhrUnsicher .uhrWarnung { display: inline; color: var(--accent2); }
+body.uhrUnsicher .fussUhr b { color: var(--accent2); }
+
 .durchsageZeit {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;

@@ -80,10 +80,6 @@ function fuerBrowserAnpassen() {
   const karte = $('vorschauKarte');
   if (karte) { karte.style.display = ''; vorschauVerdrahten(); }
 
-  // Am Handy ist die Durchsage der haeufigste Grund, diese Seite zu oeffnen
-  const durchsageTab = document.querySelector('[data-tab=durchsage]');
-  if (durchsageTab) durchsageTab.click();
-
   const hinweis = document.createElement('p');
   hinweis.className = 'hint';
   hinweis.style.cssText = 'margin:0 0 1rem;padding:0.7rem 0.9rem;border-radius:9px;' +
@@ -136,6 +132,7 @@ function fillDurchsage() {
   if (document.activeElement !== feld) feld.value = a.text || '';
   durchsageStatus();
   renderPlaene();
+  fillUhr();
 
   if (!feld.dataset.wired) {
     feld.dataset.wired = '1';
@@ -178,6 +175,55 @@ function durchsageStatus() {
   }
   el.textContent = laeuft ? 'Durchsage läuft gerade' + bis : 'Keine Durchsage aktiv';
   el.classList.toggle('aktiv', laeuft);
+}
+
+// ---------------------------------------------------------------------------
+// Uhrzeit
+// ---------------------------------------------------------------------------
+// Am Raspberry Pi ist das die wichtigste Zeile im ganzen Fenster: ohne Abgleich
+// aus dem Netz sind Timetable, Zeitfenster, Ruhezeit und die geplanten
+// Durchsagen alle falsch, und zwar ohne dass es irgendwo auffaellt.
+async function fillUhr() {
+  const feld = $('uhrStatus');
+  const hinweis = $('uhrHinweis');
+  if (!feld) return;
+
+  if (!window.api || !window.api.zeitStatus) { $('uhrKarte').style.display = 'none'; return; }
+
+  let z = null;
+  try { z = await window.api.zeitStatus(); } catch (err) { /* siehe unten */ }
+
+  if (!z) {
+    feld.textContent = 'Uhrzeit nicht abfragbar';
+    feld.className = 'anStatus';
+    hinweis.textContent = '';
+    return;
+  }
+
+  if (!z.pruefbar) {
+    feld.textContent = z.anzeige;
+    feld.className = 'anStatus';
+    hinweis.textContent = 'Dieses System haelt seine Uhr selbst in Ordnung und hat eine '
+      + 'Hardware-Uhr. Hier gibt es nichts einzustellen.';
+    return;
+  }
+
+  if (z.synchronisiert) {
+    feld.textContent = z.anzeige + '  \u00b7  aus dem Netz abgeglichen';
+    feld.className = 'anStatus aktiv';
+    hinweis.textContent = 'Die Uhr wird laufend gegen einen Zeitserver gestellt. '
+      + 'Timetable, Zeitfenster, Ruhezeit und geplante Durchsagen stimmen damit.';
+    return;
+  }
+
+  feld.textContent = z.anzeige + '  \u00b7  NICHT abgeglichen';
+  feld.className = 'anStatus fehler';
+  hinweis.innerHTML = 'Der Zeitabgleich aus dem Netz ist bisher nicht durchgekommen. '
+    + 'Ein Raspberry Pi hat keine batteriegepufferte Uhr \u2013 die angezeigte Zeit '
+    + 'kann weit danebenliegen, obwohl sie plausibel aussieht. '
+    + '<b>Timetable, Zeitfenster der Clips, Ruhezeit und geplante Durchsagen greifen '
+    + 'dann zur falschen Stunde.</b><br>Meist fehlt schlicht der Weg ins Internet. '
+    + 'Pr\u00fcfen mit <code>timedatectl status</code> auf dem Pi.';
 }
 
 // ---------------------------------------------------------------------------

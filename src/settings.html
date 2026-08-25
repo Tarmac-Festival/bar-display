@@ -13,10 +13,10 @@
   <header id="topbar">
     <div class="brand">Bar Display <span id="version"></span></div>
     <nav id="tabs">
-      <button class="tab" data-tab="durchsage">Durchsage</button>
-      <button class="tab active" data-tab="videos">Videos</button>
+      <button class="tab active" data-tab="durchsage">Durchsage</button>
       <button class="tab" data-tab="timetable">Timetable</button>
       <button class="tab" data-tab="prices">Getr&auml;nkepreise</button>
+      <button class="tab" data-tab="videos">Videos</button>
       <button class="tab" data-tab="display">Anzeige</button>
       <button class="tab" data-tab="system">System</button>
     </nav>
@@ -28,7 +28,7 @@
 
   <main>
     <!-- ------------------------------------------------------------- -->
-    <section id="panel-durchsage" class="panel">
+    <section id="panel-durchsage" class="panel active">
       <div class="panelHead"><div>
         <h1>Durchsage</h1>
         <p class="hint">Legt sich sofort &uuml;ber die Anzeige, auf allen Bildschirmen,
@@ -96,25 +96,6 @@
            Durchsage hat immer Vorrang. Passen mehrere Pl&auml;ne gleichzeitig, gilt
            der oberste in der Liste.</p>
       </div>
-    </section>
-
-    <!-- ------------------------------------------------------------- -->
-    <section id="panel-videos" class="panel active">
-      <div class="panelHead">
-        <div>
-          <h1>Videos</h1>
-          <p class="hint">Videos und Standbilder laufen in dieser Reihenfolge als Endlosschleife.
-             Pro Beitrag l&auml;sst sich festlegen, an welchen Tagen und zu welchen Uhrzeiten er
-             mitl&auml;uft; Bilder bekommen zus&auml;tzlich eine eigene Standzeit.</p>
-        </div>
-        <div class="btnRow">
-          <button id="addVideos" class="primary">+ Videos &amp; Bilder hinzuf&uuml;gen</button>
-          <button id="openMedia">Medien-Ordner &ouml;ffnen</button>
-          <button id="checkMedia">Clips pr&uuml;fen &amp; umwandeln</button>
-        </div>
-      </div>
-      <div id="videoList" class="list"></div>
-      <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife. Oben auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
     </section>
 
     <!-- ------------------------------------------------------------- -->
@@ -200,6 +181,25 @@
                     placeholder="z.B. Ingwer, Limette und ordentlich Wumms. Nur solange der Vorrat reicht."></textarea>
         </label>
       </div>
+    </section>
+
+    <!-- ------------------------------------------------------------- -->
+    <section id="panel-videos" class="panel">
+      <div class="panelHead">
+        <div>
+          <h1>Videos</h1>
+          <p class="hint">Videos und Standbilder laufen in dieser Reihenfolge als Endlosschleife.
+             Pro Beitrag l&auml;sst sich festlegen, an welchen Tagen und zu welchen Uhrzeiten er
+             mitl&auml;uft; Bilder bekommen zus&auml;tzlich eine eigene Standzeit.</p>
+        </div>
+        <div class="btnRow">
+          <button id="addVideos" class="primary">+ Videos &amp; Bilder hinzuf&uuml;gen</button>
+          <button id="openMedia">Medien-Ordner &ouml;ffnen</button>
+          <button id="checkMedia">Clips pr&uuml;fen &amp; umwandeln</button>
+        </div>
+      </div>
+      <div id="videoList" class="list"></div>
+      <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife. Oben auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
     </section>
 
     <!-- ------------------------------------------------------------- -->
@@ -418,6 +418,12 @@
           </label>
           <p class="hint">Notausg&auml;nge, falls die Anzeige mal klemmt:
              <b>Strg + Alt + S</b> &ouml;ffnet die Einstellungen, <b>Strg + Alt + Q</b> beendet das Programm.</p>
+        </div>
+
+        <div class="card" id="uhrKarte">
+          <h2>Uhrzeit</h2>
+          <div id="uhrStatus" class="anStatus">wird gepr&uuml;ft &hellip;</div>
+          <p class="hint" id="uhrHinweis" style="margin-top:0.7rem"></p>
         </div>
 
         <div class="card">

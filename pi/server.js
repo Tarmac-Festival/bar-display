@@ -58,6 +58,8 @@ const TYPEN = {
 // ---------------------------------------------------------------------------
 // Konfiguration - dasselbe Format wie die Electron-Fassung
 // ---------------------------------------------------------------------------
+const { zeitStatus } = require('../lib/zeitstatus');
+
 const VERSION_KONFIG = 3;
 
 const STANDARD = {
@@ -255,6 +257,10 @@ const server = http.createServer(async (req, res) => {
         userDir: USER_DIR, configPath: CONFIG_PATH,
         version: require('../package.json').version
       });
+    }
+
+    if (pfad === '/api/zeit') {
+      return zeitStatus().then(z => json(res, z));
     }
 
     if (pfad === '/api/config' && req.method === 'GET') {
