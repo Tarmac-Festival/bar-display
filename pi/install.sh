@@ -214,6 +214,23 @@ if [ -n "$BOOTCFG" ] && grep -q '^gpu_mem=' "$BOOTCFG"; then
       sudo reboot"
 fi
 
+# Ohne dtoverlay=vc4-kms-v3d gibt es keinen Grafiktreiber und damit kein
+# /dev/dri - die Vollbildanzeige findet dann nichts, worauf sie zeichnen kann.
+# Auf einem Standard-Raspberry-Pi-OS steht die Zeile drin; fehlt sie, ist an der
+# config.txt etwas passiert. Wir schreiben hier bewusst nichts hinein: am
+# Bootbereich zu raten kann ein Geraet unstartbar machen.
+BOOT_HINWEIS=""
+if [ -n "$BOOTCFG" ] && ! grep -q '^dtoverlay=vc4-kms-v3d' "$BOOTCFG"; then
+  warne "In $BOOTCFG fehlt die Zeile dtoverlay=vc4-kms-v3d."
+  BOOT_HINWEIS="ACHTUNG: In $BOOTCFG fehlt dtoverlay=vc4-kms-v3d. Ohne diese Zeile
+  gibt es keinen Grafiktreiber, /dev/dri bleibt leer und die Anzeige startet nicht.
+  Ist die Datei leer oder unvollstaendig, hilft der Standardinhalt aus der
+  Anleitung im Wiki (Abschnitt Raspberry Pi)."
+elif [ -n "$BOOTCFG" ] && [ ! -s "$BOOTCFG" ]; then
+  warne "$BOOTCFG ist leer."
+  BOOT_HINWEIS="ACHTUNG: $BOOTCFG ist leer. Ohne Inhalt startet die Grafik nicht."
+fi
+
 # WLAN-Stromsparen verzoegert die Push-Verbindung zur Bedienseite: Durchsagen
 # vom Handy kaemen sonst mit Verspaetung an.
 sudo tee /etc/systemd/system/bar-display-wlan.service >/dev/null <<'WLAN'
@@ -325,6 +342,8 @@ ${KONSOLE_HINWEIS:+
   $KONSOLE_HINWEIS
 }${GPUMEM_HINWEIS:+
   $GPUMEM_HINWEIS
+}${BOOT_HINWEIS:+
+  $BOOT_HINWEIS
 }
   Nuetzliche Befehle:
       bar-display-konsole                      Anzeige anhalten, Konsole zurueck

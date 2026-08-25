@@ -635,6 +635,57 @@ Hinweis erscheint dann klein auf der Anzeige und im Klartext unter
 > sie einmalig von Hand zu stellen: `sudo date -s "2026-08-28 17:30"` — und danach
 > den Pi nicht vom Strom zu nehmen.
 
+### Wenn kein Bild kommt
+
+Meldet das Protokoll `Found 0 GPUs` oder `Unable to create the wlroots backend`,
+findet die Anzeige kein Grafikgerät. Erste Prüfung:
+
+```bash
+ls /dev/dri/
+```
+
+Kommt dort „nicht gefunden", ist der Grafiktreiber nicht geladen. Dann muss in
+`/boot/firmware/config.txt` diese Zeile stehen:
+
+```
+dtoverlay=vc4-kms-v3d
+```
+
+Fehlt sie oder ist die Datei leer, hilft der Standardinhalt von Raspberry Pi OS:
+
+```bash
+sudo tee /boot/firmware/config.txt > /dev/null <<'ENDE'
+# For more options and information see http://rptl.io/configtxt
+dtparam=audio=on
+camera_auto_detect=1
+display_auto_detect=1
+auto_initramfs=1
+dtoverlay=vc4-kms-v3d
+max_framebuffers=2
+disable_fw_kms_setup=1
+arm_64bit=1
+disable_overscan=1
+arm_boost=1
+
+[cm4]
+otg_mode=1
+
+[cm5]
+dtoverlay=dwc2,dr_mode=host
+
+[all]
+ENDE
+```
+
+Vor dem Neustart nachsehen, ob es angekommen ist – `wc -c /boot/firmware/config.txt`
+sollte einige hundert Bytes melden. Dann `sudo reboot`.
+
+> **Vorsicht bei Befehlen mit `>`.** Ein versehentliches Größerzeichen hinter
+> einem Befehl leitet die Ausgabe um und **kürzt die genannte Datei auf null**.
+> Genau so kann eine `config.txt` leer werden. Das Einrichtungsskript warnt
+> inzwischen, wenn die Zeile fehlt – reparieren tut es sie bewusst nicht, denn
+> am Bootbereich zu raten kann ein Gerät unstartbar machen.
+
 ### Wieder an den Pi kommen
 
 Läuft die Anzeige im Vollbild, ist der Bildschirm belegt und es gibt keine
