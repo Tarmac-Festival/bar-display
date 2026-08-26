@@ -1142,7 +1142,19 @@ body.spar .lichtSpanne.laeuft .lz { color: var(--accent2); }
 /* ------------------------------------------------------------------ */
 /* Eine Gruppe im Karten-Stil braucht mehr Breite als eine Getraenkespalte -
    sonst quetscht sich das Foto neben zwei Woerter. */
-.priceGrid .priceCat.karten { flex-basis: 26em; }
+/* ---------------------------------------------------------------- */
+/* Eine einzige Gruppe                                                */
+/* ---------------------------------------------------------------- */
+/* Dann gehoert ihr der ganze Schirm - so gross wie der Spezialshot, der aus
+   demselben Grund gross ist: er steht allein da. */
+.priceGrid.nurEine .priceCat h2 { font-size: 2.1em; margin-bottom: 0.7em; }
+.priceGrid.nurEine .priceItem { font-size: 2.4em; padding: 0.32em 0; }
+.priceGrid.nurEine .essKarte { padding: 0.5em 0; gap: 0.9em; }
+.priceGrid.nurEine .essFoto { width: 5.4em; height: 5.4em; border-radius: 0.7em; }
+.priceGrid.nurEine .essKopf { font-size: 2.4em; }
+.priceGrid.nurEine .essBeschreibung { font-size: 1.5em; }
+.priceGrid.nurEine .gruppenSpezial { margin-top: 1em; padding: 0.8em 1em 0.9em; }
+.priceGrid.nurEine .gsTag { font-size: 1.5em; }
 
 .essKarte,
 .gruppenSpezial .gsInhalt {

@@ -963,7 +963,11 @@ function renderLicht() {
 function renderPrices() {
   const s = cfg.settings;
   const cats = preisGruppen(cfg.prices);
-  let body = '<div class="priceGrid">';
+  // Eine einzelne Gruppe hat den ganzen Bildschirm fuer sich. Sie ist ohnehin
+  // schon ueber die volle Breite - aber in der Groesse, die fuer drei Spalten
+  // nebeneinander gedacht ist, und steht dann verloren in der Mitte.
+  // fitToBox() hilft hier nicht: es verkleinert nur, es vergroessert nie.
+  let body = '<div class="priceGrid' + (cats.length === 1 ? ' nurEine' : '') + '">';
   for (const c of cats) {
     const stil = preisStil(c);
     body += '<div class="priceCat ' + stil + '"><h2>' + escapeHtml(c.category) + '</h2>';

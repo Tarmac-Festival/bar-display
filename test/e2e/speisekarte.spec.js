@@ -237,3 +237,64 @@ test.describe('Eintragen auf der Bedienseite', () => {
     await bildGeladen(bild);
   });
 });
+
+test.describe('Eine einzige Gruppe', () => {
+  // Feste Fenstergroesse: die Schwellen unten sind Pixel, und die haengen sonst
+  // von der Voreinstellung des Testlaufs ab.
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+  });
+
+  test('nimmt die volle Breite und wird groesser', async ({ page, bar }) => {
+    karte(bar, {
+      prices: [{ id: 'g', category: 'Vom Grill', stil: 'karten', items: [
+        { id: 'i', name: 'Halloumi-Burger', price: '8,50', photo: 'burger.png',
+          text: 'Gegrillter Halloumi, Rucola, hausgemachte Aioli' } ] }]
+    });
+    await page.goto(bar.adresse + '/');
+    await expect(page.locator('.priceGrid')).toHaveClass(/nurEine/);
+
+    const m = await page.evaluate(() => {
+      const g = document.querySelector('.priceGrid').getBoundingClientRect();
+      const c = document.querySelector('.priceCat').getBoundingClientRect();
+      const f = document.querySelector('.essFoto').getBoundingClientRect();
+      const n = document.querySelector('.essKopf');
+      return { anteil: c.width / g.width,
+               foto: f.width,
+               schrift: parseFloat(getComputedStyle(n).fontSize) };
+    });
+    expect(m.anteil).toBeGreaterThan(0.99);
+    // Deutlich groesser als im mehrspaltigen Fall - sonst steht sie verloren
+    // in der Mitte, denn fitToBox() verkleinert nur, es vergroessert nie.
+    expect(m.foto).toBeGreaterThan(90);
+    expect(m.schrift).toBeGreaterThan(40);
+  });
+
+  test('bei zwei Gruppen bleibt es bei der Spaltenbreite', async ({ page, bar }) => {
+    karte(bar);
+    await page.goto(bar.adresse + '/');
+    await expect(page.locator('.priceGrid')).not.toHaveClass(/nurEine/);
+
+    const m = await page.evaluate(() => {
+      const g = document.querySelector('.priceGrid').getBoundingClientRect();
+      const c = document.querySelector('.priceCat').getBoundingClientRect();
+      return { anteil: c.width / g.width,
+               foto: document.querySelector('.essFoto').getBoundingClientRect().width };
+    });
+    expect(m.anteil).toBeLessThan(0.6);
+    expect(m.foto).toBeLessThan(90);
+  });
+
+  test('eine Gruppe mit Punktlinie wird ebenfalls gross', async ({ page, bar }) => {
+    karte(bar, {
+      prices: [{ id: 'g', category: 'Bier', stil: 'liste', items: [
+        { id: 'a', name: 'Pils', size: '0,5 l', price: '4,00' },
+        { id: 'b', name: 'Radler', size: '0,5 l', price: '4,00' } ] }]
+    });
+    await page.goto(bar.adresse + '/');
+
+    const schrift = await page.locator('.priceItem').first()
+      .evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    expect(schrift).toBeGreaterThan(40);
+  });
+});

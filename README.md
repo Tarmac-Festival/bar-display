@@ -598,6 +598,12 @@ Foto. Ein reiner Essenstand stellt einfach alle Gruppen um.
 Die Fotos liegen im selben Ordner wie die Act-Fotos und werden genauso behandelt:
 quadratisch beschnitten, mit demselben Ausschnitt-Editor, vom Handy hochladbar.
 
+**Gibt es nur eine Gruppe**, gehört ihr der ganze Bildschirm: sie läuft über die
+volle Breite und wird deutlich größer gesetzt — wie der Spezialshot, der aus
+demselben Grund groß ist. Genau der Fall für einen Stand, der nur eine Karte hat.
+
+![Eine einzige Gruppe](docs/screenshots/anzeige-speisekarte-einzeln.png)
+
 **Etwas hervorheben** kann jede Gruppe für sich — *Shot des Abends* bei den
 Getränken, *Tagesgericht* beim Essen, beides gleichzeitig. Überschrift, Name,
 Größe, Preis, Beschreibung und optional ein Foto. Eine Gruppe, in der nur das
