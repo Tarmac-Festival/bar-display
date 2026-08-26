@@ -274,6 +274,8 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
    ganze Breite fuellen wie die Listen darunter. */
 .card.schmal { max-width: 780px; margin-bottom: 1rem; }
 .dreiCol { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 1rem; }
+/* Eine Zahl braucht kein Feld ueber die halbe Seite. */
+.card.schmal .field input[type=number] { max-width: 220px; }
 
 .planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
 .planRow {
