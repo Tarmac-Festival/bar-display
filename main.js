@@ -57,7 +57,10 @@ const DEFAULT_CONFIG = {
     fernPort: 8080,
     fernHinweis: true,       // Adresse beim Start kurz auf der Anzeige zeigen
     sparmodus: false,        // schwache Geraete: Muster, Schatten und Blenden weg
-    transition: 'fade',      // fade | cut | logo | wipe
+    // fade | cut | schwarz | zoom | schieben | wipe | logo | mix
+    transition: 'fade',
+    // Bei 'mix' wechseln sich diese ab, siehe uebergangBeutel() in common.js
+    uebergaenge: ['fade', 'zoom', 'schieben', 'wipe', 'logo'],
     transitionMs: 900,
     qrEnabled: false,        // QR-Code auf dem Timetable ein-/ausschalten
     qrUrl: '',               // Adresse; bleibt erhalten, auch wenn abgeschaltet

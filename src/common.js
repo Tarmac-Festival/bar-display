@@ -477,3 +477,65 @@ function rundeBauen(opt) {
 
   return { items, zaehler };
 }
+
+// ---------------------------------------------------------------------------
+// Uebergaenge zwischen zwei Beitraegen
+// ---------------------------------------------------------------------------
+// Immer dieselbe Blende wird auf Dauer eintoenig, deshalb laesst sich
+// "Abwechselnd" einstellen. Dann wird nicht einfach gewuerfelt: die angehakten
+// Uebergaenge kommen der Reihe nach in einen gemischten Beutel und werden
+// daraus gezogen. So kommt jeder gleich oft dran, und keiner zweimal
+// hintereinander - auch nicht an der Nahtstelle zwischen zwei Beuteln.
+const UEBERGAENGE = [
+  { wert: 'fade',     name: 'Weiche \u00dcberblendung' },
+  { wert: 'cut',      name: 'Harter Schnitt' },
+  { wert: 'schwarz',  name: 'Kurz auf Schwarz' },
+  { wert: 'zoom',     name: 'Heranziehen' },
+  { wert: 'schieben', name: 'Schub zur Seite' },
+  { wert: 'wipe',     name: 'Blob-Wisch' },
+  { wert: 'logo',     name: 'Logo-Blende' }
+];
+
+const UEBERGANG_WERTE = UEBERGAENGE.map(u => u.wert);
+
+function istUebergang(wert) {
+  return UEBERGANG_WERTE.indexOf(wert) >= 0;
+}
+
+/** Welche Uebergaenge sind fuer "Abwechselnd" angehakt? */
+function uebergangsAuswahl(settings) {
+  const s = settings || {};
+  const gewaehlt = Array.isArray(s.uebergaenge)
+    ? s.uebergaenge.filter(istUebergang) : [];
+  // Gar nichts angehakt hiesse: kein Wechsel mehr. Dann lieber die weiche
+  // Blende, statt dass der Bildschirm stehenbleibt.
+  return gewaehlt.length ? gewaehlt : ['fade'];
+}
+
+/**
+ * Ein gemischter Beutel aus der Auswahl. `zuletzt` ist der Uebergang, der
+ * gerade lief - er soll nicht gleich noch einmal an die Reihe kommen.
+ * `zufall` nur zum Pruefen; sonst Math.random.
+ */
+function uebergangBeutel(auswahl, zuletzt, zufall) {
+  const liste = (auswahl || []).filter(istUebergang);
+  if (!liste.length) return ['fade'];
+  if (liste.length === 1) return liste.slice();
+
+  const wuerfel = typeof zufall === 'function' ? zufall : Math.random;
+  const beutel = liste.slice();
+  for (let i = beutel.length - 1; i > 0; i--) {
+    const j = Math.floor(wuerfel() * (i + 1));
+    const merk = beutel[i];
+    beutel[i] = beutel[j];
+    beutel[j] = merk;
+  }
+
+  // Nahtstelle: der erste des neuen Beutels darf nicht der letzte des alten
+  // sein, sonst kaeme derselbe Uebergang doch zweimal hintereinander.
+  if (beutel[0] === zuletzt) {
+    beutel[0] = beutel[1];
+    beutel[1] = zuletzt;
+  }
+  return beutel;
+}

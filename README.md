@@ -45,7 +45,8 @@ Getränkepreise im Festival-Design.
   Farben, Titel, Muster und Titelfläche sind einstellbar.
 - **Zwei Logos liegen bei** – das L300-Zeichen und der TARMAC-Schriftzug –
   und ein eigenes lässt sich jederzeit hochladen.
-- **Übergänge**: weiche Überblendung, harter Schnitt, Logo-Blende, Blob-Wisch.
+- **Übergänge**: sieben Varianten – oder **abwechselnd**, dann wechseln sich die
+  angehakten ab, ohne dass zweimal hintereinander derselbe kommt.
 - **Zweiter Monitor** – die Anzeige kann auf einem eigenen Bildschirm laufen, während
   die Einstellungen auf dem Hauptbildschirm geöffnet bleiben.
 - **Jedes Bildschirmformat** – 16:9, 16:10, 4:3, Ultrawide und Hochformat.
@@ -327,20 +328,43 @@ dazu unter [Raspberry Pi](#raspberry-pi).
 
 ### Übergänge
 
-Vier Varianten, einstellbar unter *Anzeige → Stil & Übergänge*:
+Einstellbar unter *Anzeige → Stil & Übergänge*:
 
 | Übergang | Beschreibung |
 |---|---|
 | Weiche Überblendung | Beitrag blendet in den nächsten über (Standard) |
 | Harter Schnitt | Ohne Überblendung |
-| Logo-Blende | Eine Fläche mit dem Logo zieht auf und wieder weg |
+| Kurz auf Schwarz | Das Bild geht kurz auf Schwarz, wie im Kino zwischen zwei Szenen |
+| Heranziehen | Das neue Bild kommt leicht vergrößert herein und setzt sich |
+| Schub zur Seite | Das neue Bild schiebt das alte seitlich hinaus |
 | Blob-Wisch | Eine organische Form fährt mit dem Logo durchs Bild |
+| Logo-Blende | Eine Fläche mit dem Logo zieht auf und wieder weg |
 
 Ohne hinterlegtes Logo erscheint bei beiden Logo-Varianten der Bar-Name.
 
 | Logo-Blende | Blob-Wisch |
 |---|---|
 | ![Logo-Blende](docs/screenshots/uebergang-logo.png) | ![Blob-Wisch](docs/screenshots/uebergang-wisch.png) |
+
+#### Abwechselnd
+
+Immer dieselbe Blende wird über einen Abend hinweg eintönig. Steht die Auswahl
+auf **Abwechselnd**, erscheint darunter eine Liste mit Häkchen — welche
+mitmachen sollen, entscheidet ihr.
+
+Gewürfelt wird dabei nicht einfach: die angehakten Übergänge kommen gemischt in
+einen Beutel und werden daraus gezogen. Ist der Beutel leer, wird neu gemischt.
+Das heißt:
+
+- jeder Übergang kommt **gleich oft** dran, nicht zufällig mal häufiger,
+- **nie zweimal hintereinander derselbe** — auch nicht beim Übergang von einem
+  Beutel zum nächsten.
+
+Mindestens ein Häkchen muss stehen bleiben; sonst gäbe es keinen Wechsel mehr.
+
+Der **Sparmodus** überstimmt die Auswahl: auf schwacher Hardware wird hart
+geschnitten, egal was angehakt ist. Blenden sind auf einem Raspberry Pi der
+teuerste Teil der ganzen Anzeige.
 
 ---
 
@@ -536,7 +560,9 @@ sonst passt.
 - **Beschriftung**: Bar-Name, Untertitel und die Titel beider Info-Slides. Lässt man den
   Bar-Namen leer, steht dort nur das Logo.
 - **Stil & Übergänge**: Fläche hinter dem Seitentitel (Blob, Balken oder ohne),
-  Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang.
+  Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang. Bei
+  *Abwechselnd* erscheint darunter die Liste, welche mitmachen sollen —
+  siehe [Übergänge](#übergänge).
 - **Farben & Schrift**: Hintergrund-, Akzent- und Signalfarbe, zwei Voreinstellungen,
   optional eine eigene Schriftdatei.
 - **Sparmodus**: schaltet Hintergrundmuster, Schatten, die Form hinter dem

@@ -15,11 +15,13 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         fotoAusschnitt, fotoStil, ausschnittIstStandard,
         mitgeliefertesLogo, durchsageStil, laufDauer,
         datumParsen, datumAnzeige, zeitParsen, zeitAnzeige,
-        wirksameHaeufigkeit, rundeBauen } = ctx;
+        wirksameHaeufigkeit, rundeBauen,
+        istUebergang, uebergangsAuswahl, uebergangBeutel } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
 const MITGELIEFERTE_LOGOS = vm.runInContext('MITGELIEFERTE_LOGOS', ctx);
+const UEBERGAENGE = vm.runInContext('UEBERGAENGE', ctx);
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -406,6 +408,65 @@ runde = rundeBauen({ aktiv: [], hatTimetable: true, hatPreise: true,
 check('ohne Beitraege nur die Infos', kurz(runde.items), ['timetable', 'prices']);
 check('ohne alles bleibt der Leerlauf',
       kurz(rundeBauen({ aktiv: [], zaehler: 0 }).items), ['idle']);
+
+console.log('');
+console.log('-- Uebergaenge --');
+
+check('bekannte Uebergaenge', UEBERGAENGE.map(u => u.wert),
+      ['fade', 'cut', 'schwarz', 'zoom', 'schieben', 'wipe', 'logo']);
+check('jeder hat einen Namen', UEBERGAENGE.every(u => !!u.name), true);
+check('fade ist einer', istUebergang('fade'), true);
+check('quatsch ist keiner', istUebergang('quatsch'), false);
+check('mix ist kein einzelner Uebergang', istUebergang('mix'), false);
+
+// Auswahl fuer "Abwechselnd"
+check('nichts angehakt -> weiche Blende', uebergangsAuswahl({}), ['fade']);
+check('leere Liste -> weiche Blende', uebergangsAuswahl({ uebergaenge: [] }), ['fade']);
+check('Unsinn faellt raus',
+      uebergangsAuswahl({ uebergaenge: ['zoom', 'quatsch', 'wipe'] }), ['zoom', 'wipe']);
+check('nur Unsinn -> weiche Blende',
+      uebergangsAuswahl({ uebergaenge: ['quatsch'] }), ['fade']);
+
+// Der Beutel: gemischt, aber vollstaendig
+const wuerfelAus = (folge) => { let i = 0; return () => folge[i++ % folge.length]; };
+
+let beutel = uebergangBeutel(['fade', 'zoom', 'wipe', 'logo'], '', wuerfelAus([0, 0, 0, 0]));
+check('alle sind drin', beutel.slice().sort(), ['fade', 'logo', 'wipe', 'zoom']);
+check('und keiner doppelt', beutel.length, new Set(beutel).size);
+
+// Nahtstelle: der erste darf nicht der zuletzt gelaufene sein
+for (const w of ['fade', 'zoom', 'wipe', 'logo']) {
+  for (const folge of [[0, 0, 0], [0.9, 0.9, 0.9], [0.5, 0.1, 0.7]]) {
+    const b = uebergangBeutel(['fade', 'zoom', 'wipe', 'logo'], w, wuerfelAus(folge));
+    if (b[0] === w) { fail++; console.log('  FEHLER Nahtstelle: ' + w + ' kaeme zweimal'); }
+    else pass++;
+  }
+}
+
+check('ein einziger angehakter kommt eben immer',
+      uebergangBeutel(['zoom'], 'zoom'), ['zoom']);
+check('leere Auswahl faellt auf die weiche Blende zurueck',
+      uebergangBeutel([], ''), ['fade']);
+check('Unsinn in der Auswahl wird aussortiert',
+      uebergangBeutel(['zoom', 'quatsch'], '', wuerfelAus([0, 0])).slice().sort(), ['zoom']);
+
+// Ueber viele Runden hinweg soll jeder gleich oft drankommen
+(function () {
+  const auswahl = ['fade', 'zoom', 'schieben', 'wipe'];
+  const zaehler = {};
+  let zuletzt = '';
+  let vorrat = [];
+  let zweimalHintereinander = 0;
+  for (let i = 0; i < 400; i++) {
+    if (!vorrat.length) vorrat = uebergangBeutel(auswahl, zuletzt);
+    const jetzt = vorrat.shift();
+    if (jetzt === zuletzt) zweimalHintereinander++;
+    zaehler[jetzt] = (zaehler[jetzt] || 0) + 1;
+    zuletzt = jetzt;
+  }
+  check('nie zweimal hintereinander derselbe', zweimalHintereinander, 0);
+  check('jeder kommt gleich oft dran', auswahl.map(w => zaehler[w]), [100, 100, 100, 100]);
+})();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
 process.exit(fail ? 1 : 0);

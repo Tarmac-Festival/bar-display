@@ -221,3 +221,72 @@ test.describe('Hochladen', () => {
     expect(anzahl).toBe(0);
   });
 });
+
+test.describe('Uebergaenge einstellen', () => {
+  async function anzeigeReiter(page, bar) {
+    bar.konfig(beispiel());
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+  }
+
+  test('die Auswahl erscheint erst bei "Abwechselnd"', async ({ page, bar }) => {
+    await anzeigeReiter(page, bar);
+
+    await expect(page.locator('#uebergangsWahl')).toBeHidden();
+    await page.locator('#s_transition').selectOption('mix');
+    await expect(page.locator('#uebergangsWahl')).toBeVisible();
+
+    // Alle sieben stehen zur Wahl
+    await expect(page.locator('#uebergangsListe input[type=checkbox]')).toHaveCount(7);
+
+    await page.locator('#s_transition').selectOption('fade');
+    await expect(page.locator('#uebergangsWahl')).toBeHidden();
+  });
+
+  test('ein Haken landet in der Konfiguration', async ({ page, bar }) => {
+    await anzeigeReiter(page, bar);
+    await page.locator('#s_transition').selectOption('mix');
+
+    const schwarz = page.locator('[data-uebergang=schwarz]');
+    await expect(schwarz).not.toBeChecked();
+    await schwarz.check();
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.locator('#dirty')).toBeHidden();
+
+    const s = bar.lies().settings;
+    expect(s.transition).toBe('mix');
+    expect(s.uebergaenge).toContain('schwarz');
+  });
+
+  test('der letzte Haken laesst sich nicht entfernen', async ({ page, bar }) => {
+    bar.konfig(beispiel({ settings: { transition: 'mix', uebergaenge: ['zoom'] } }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+
+    const zoom = page.locator('[data-uebergang=zoom]');
+    await expect(zoom).toBeChecked();
+    // Bewusst click() statt uncheck(): uncheck() bestuende darauf, dass der
+    // Haken hinterher weg ist - und genau das soll hier nicht passieren.
+    await zoom.click();
+
+    // Ohne einen einzigen Uebergang gaebe es keinen Wechsel mehr - der Haken
+    // springt zurueck und die Seite sagt, warum.
+    await expect(page.locator('#toast')).toContainText('Mindestens ein Übergang');
+    await expect(zoom).toBeChecked();
+  });
+
+  test('die Reihenfolge in der Konfiguration bleibt die der Liste', async ({ page, bar }) => {
+    bar.konfig(beispiel({ settings: { transition: 'mix', uebergaenge: ['logo'] } }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+
+    await page.locator('[data-uebergang=fade]').check();
+    await page.locator('[data-uebergang=zoom]').check();
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.locator('#dirty')).toBeHidden();
+
+    // fade steht in der Liste vor zoom, zoom vor logo - unabhaengig davon, in
+    // welcher Reihenfolge angehakt wurde.
+    expect(bar.lies().settings.uebergaenge).toEqual(['fade', 'zoom', 'logo']);
+  });
+});

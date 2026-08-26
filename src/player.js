@@ -35,6 +35,11 @@ const nurVorschau = new URLSearchParams(location.search).has('vorschau');
 let letzteSkala = {};
 let letzterSlideStand = '';
 
+// Bei "Abwechselnd": der gemischte Vorrat und was zuletzt lief. Siehe
+// uebergangBeutel() in common.js.
+let uebergangsBeutel = [];
+let letzterUebergang = '';
+
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
@@ -94,6 +99,8 @@ function applyTheme() {
   // gilt dann nicht mehr.
   skalaVergessen();
   letzterSlideStand = '';
+  // Wurde die Auswahl der Uebergaenge geaendert, gilt der alte Vorrat nicht mehr
+  uebergangsBeutel = [];
   document.body.classList.toggle('spar', !!s.sparmodus);
   root.setProperty('--bg', s.bgColor || '#450b6f');
   root.setProperty('--accent', s.accent || '#74ff40');
@@ -506,15 +513,35 @@ function pickLayer(type) {
   return pool[0] === currentLayer ? pool[1] : pool[0];
 }
 
+// Welcher Uebergang kommt als naechstes?
+//
+// Wichtig: genau einmal pro Wechsel aufrufen. Bei "Abwechselnd" zieht jeder
+// Aufruf einen aus dem Beutel - zweimal fragen hiesse einen ueberspringen.
+//
 // Im Sparmodus wird hart geschnitten, egal was eingestellt ist. Blenden und
 // Vorhaenge sind auf einem Pi der teuerste Teil der ganzen Anzeige.
-function uebergang() {
-  if (cfg.settings.sparmodus) return 'cut';
-  return cfg.settings.transition || 'fade';
+function naechsterUebergang() {
+  const s = cfg.settings;
+  if (s.sparmodus) return 'cut';
+
+  if (s.transition !== 'mix') {
+    return istUebergang(s.transition) ? s.transition : 'fade';
+  }
+
+  if (!uebergangsBeutel.length) {
+    uebergangsBeutel = uebergangBeutel(uebergangsAuswahl(s), letzterUebergang);
+  }
+  letzterUebergang = uebergangsBeutel.shift();
+  return letzterUebergang;
 }
 
 function fadeMs() {
-  return uebergang() === 'cut' ? 0 : (cfg.settings.fadeMs || 700);
+  return Number(cfg.settings.fadeMs) || 700;
+}
+
+// Dauer der bewegten Uebergaenge - Vorhang, Schub, Heranziehen
+function animationMs() {
+  return Math.max(200, Number(cfg.settings.transitionMs) || 900);
 }
 
 function cleanupLayer(el) {
@@ -532,9 +559,16 @@ function cleanupLayer(el) {
 }
 
 function crossfade(next) {
-  const mode = uebergang();
-  if (mode === 'logo' || mode === 'wipe') return curtainSwap(next, mode);
+  const modus = naechsterUebergang();
+  // Steht mit im Protokoll, damit sich am Pi nachsehen laesst, was tatsaechlich
+  // lief - bei "Abwechselnd" ist das sonst nicht nachvollziehbar.
+  console.log('[uebergang]', modus);
+  if (modus === 'cut') return swapNow(next);
+  if (modus === 'logo' || modus === 'wipe' || modus === 'schwarz') return vorhangWechsel(next, modus);
+  if (modus === 'zoom' || modus === 'schieben') return bewegterWechsel(next, modus);
 
+  // Weiche Ueberblendung: die beiden Ebenen liegen uebereinander, die CSS-Regel
+  // auf .layer erledigt den Rest.
   const prev = currentLayer;
   next.style.zIndex = '2';
   next.classList.add('show');
@@ -574,16 +608,20 @@ function curtainMarkHtml() {
   return '<div class="curtainName">' + escapeHtml(cfg.settings.barName || '') + '</div>';
 }
 
-function curtainSwap(next, mode) {
-  const total = Math.max(300, Number(cfg.settings.transitionMs) || 900);
-  const half = Math.round(total / 2);
+// Uebergaenge, bei denen sich etwas vor das Bild schiebt: Logo-Blende,
+// Blob-Wisch und die kurze Schwarzblende. Der Wechsel selbst passiert
+// unsichtbar dahinter.
+function vorhangWechsel(next, mode) {
+  const half = Math.round(animationMs() / 2);
   const c = document.getElementById('curtain');
   const mark = c.querySelector('.curtainMark');
   const easing = 'cubic-bezier(0.66, 0, 0.34, 1)';
 
   mark.getAnimations().forEach(a => a.cancel());
   c.className = 'active ' + mode;
-  mark.innerHTML = curtainMarkHtml();
+  // Bei der Schwarzblende steht bewusst nichts drauf - wie im Kino zwischen
+  // zwei Szenen.
+  mark.innerHTML = mode === 'schwarz' ? '' : curtainMarkHtml();
 
   // Vorhang zuziehen ...
   const inKf = mode === 'wipe'
@@ -603,6 +641,49 @@ function curtainSwap(next, mode) {
       c.className = '';
     };
   };
+}
+
+// Uebergaenge, bei denen sich die Ebenen selbst bewegen.
+//
+//   schieben  das neue Bild schiebt das alte zur Seite hinaus
+//   zoom      das neue Bild kommt leicht vergroessert herein und setzt sich
+//
+// Bewegt wird nur transform und opacity - das kostet den Pi am wenigsten.
+function bewegterWechsel(next, modus) {
+  const dauer = animationMs();
+  const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+  const prev = currentLayer;
+
+  next.style.zIndex = '2';
+  next.classList.add('show');
+  currentLayer = next;
+
+  // Die Deckkraft wird hier ausdruecklich mitgefuehrt, sonst mischt die
+  // CSS-Blende auf .layer mit und der Schub sieht verwaschen aus.
+  const rein = modus === 'schieben'
+    ? [{ transform: 'translateX(100%)', opacity: 1 }, { transform: 'translateX(0)', opacity: 1 }]
+    : [{ transform: 'scale(1.08)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }];
+  const raus = modus === 'schieben'
+    ? [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(-100%)', opacity: 1 }]
+    : [{ opacity: 1 }, { opacity: 0 }];
+
+  next.animate(rein, { duration: dauer, easing, fill: 'backwards' });
+
+  if (prev && prev !== next) {
+    prev.style.zIndex = '1';
+    const weg = prev.animate(raus, { duration: dauer, easing, fill: 'forwards' });
+    weg.onfinish = () => {
+      if (currentLayer === prev) return;   // inzwischen wieder dran
+      // Erst unsichtbar schalten, dann die Animation loesen. Andersherum
+      // spraenge die alte Ebene fuer einen Moment zurueck ins Bild.
+      document.body.classList.add('instant');
+      prev.classList.remove('show');
+      prev.getAnimations().forEach(a => a.cancel());
+      prev.style.transform = '';
+      cleanupLayer(prev);
+      setTimeout(() => document.body.classList.remove('instant'), 60);
+    };
+  }
 }
 
 function fileUrl(dir, file) {

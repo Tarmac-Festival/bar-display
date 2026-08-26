@@ -379,13 +379,23 @@
           <label class="field">
             <span>&Uuml;bergang zwischen den Beitr&auml;gen</span>
             <select id="s_transition">
+              <option value="mix">Abwechselnd &ndash; unten ausw&auml;hlen</option>
               <option value="fade">Weiche &Uuml;berblendung</option>
               <option value="cut">Harter Schnitt</option>
+              <option value="schwarz">Kurz auf Schwarz</option>
+              <option value="zoom">Heranziehen</option>
+              <option value="schieben">Schub zur Seite</option>
+              <option value="wipe">Blob-Wisch</option>
               <option value="logo">Logo-Blende</option>
-              <option value="wipe">Blob-Wisch mit Logo</option>
             </select>
             <em>Logo-Blende und Blob-Wisch zeigen euer Logo; ohne Logo erscheint der Bar-Name.</em>
           </label>
+          <div id="uebergangsWahl" class="uebergaenge hidden">
+            <span class="uLabel">Welche sollen sich abwechseln?</span>
+            <div id="uebergangsListe"></div>
+            <em class="uHinweis">Sie kommen der Reihe nach dran, in wechselnder
+              Folge &ndash; und nie zweimal hintereinander derselbe.</em>
+          </div>
           <label class="checkline" style="margin-top:0.9rem">
             <input type="checkbox" id="s_sparmodus"> <span>Sparmodus f&uuml;r schwache Ger&auml;te</span>
           </label>
@@ -394,8 +404,11 @@
              Raspberry Pi: die Anzeige wirkt flacher, l&auml;uft daf&uuml;r deutlich
              ruhiger. Die Einstellungen dar&uuml;ber bleiben erhalten.</p>
           <label class="field">
-            <span>Dauer von Logo-Blende / Blob-Wisch (Millisekunden)</span>
+            <span>Dauer der bewegten &Uuml;berg&auml;nge (Millisekunden)</span>
             <input type="number" min="300" max="4000" step="100" id="s_transitionMs">
+            <em>Gilt f&uuml;r Logo-Blende, Blob-Wisch, Schub, Heranziehen und
+              die Schwarzblende. Die weiche &Uuml;berblendung hat ihre eigene
+              Dauer weiter rechts.</em>
           </label>
         </div>
 

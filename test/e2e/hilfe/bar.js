@@ -140,6 +140,16 @@ function schleifeMitschreiben(seite) {
   return lauf;
 }
 
+/** Sammelt, welche Uebergaenge die Anzeige tatsaechlich benutzt hat. */
+function uebergaengeMitschreiben(seite) {
+  const lauf = [];
+  seite.on('console', (m) => {
+    const t = m.text();
+    if (t.startsWith('[uebergang]')) lauf.push(t.replace('[uebergang] ', '').trim());
+  });
+  return lauf;
+}
+
 /** Wartet, bis das Bild wirklich geladen ist - nicht nur, bis es im HTML steht. */
 async function bildGeladen(fund) {
   await basis.expect.poll(
@@ -149,4 +159,4 @@ async function bildGeladen(fund) {
 }
 
 module.exports = { test, expect: basis.expect, beispiel, schleifeMitschreiben,
-                   bildGeladen, PNG, HEVC, WURZEL };
+                   uebergaengeMitschreiben, bildGeladen, PNG, HEVC, WURZEL };

@@ -90,7 +90,8 @@ body[data-rotation="270"] { --u: min(1vh, 1.85vw); }
   inset: 0;
   opacity: 0;
   transition: opacity var(--fade) ease-in-out;
-  will-change: opacity;
+  /* transform kommt bei "Schub zur Seite" und "Heranziehen" dazu */
+  will-change: opacity, transform;
 }
 .layer.show { opacity: 1; }
 
@@ -611,6 +612,16 @@ body.instant .layer { transition: none; }
   position: absolute;
   inset: 0;
   opacity: 0;
+}
+
+/* Kurz auf Schwarz: wie im Kino zwischen zwei Szenen - ohne Logo, ohne Name.
+   Bewusst wirklich Schwarz und nicht die Hintergrundfarbe: der kurze Moment
+   soll als Pause wirken, nicht als weitere Farbfläche. */
+#curtain.schwarz .curtainMark {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background-color: #000;
 }
 
 /* Blob-Wisch: organische Form fährt von rechts durchs Bild */

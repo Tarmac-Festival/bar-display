@@ -878,6 +878,7 @@ function fillSettingsFields() {
   const s = state.settings;
   for (const k of NUM_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   for (const k of TEXT_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
+  renderUebergaenge();
   $('s_showClock').checked = !!s.showClock;
   $('s_qrEnabled').checked = !!s.qrEnabled;
   $('s_sparmodus').checked = !!s.sparmodus;
@@ -910,6 +911,8 @@ function fillSettingsFields() {
       if (k === 'pin') v = v.replace(/\D/g, '');
       if (el.value !== v) el.value = v;
       state.settings[k] = v;
+      // "Abwechselnd" blendet die Auswahl darunter ein, alles andere sie aus
+      if (k === 'transition') renderUebergaenge();
       markDirty();
     });
   }
@@ -1356,6 +1359,54 @@ function fillSpecialFields() {
       markDirty();
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Welche Uebergaenge sollen sich abwechseln?
+// ---------------------------------------------------------------------------
+// Die Haken stehen nur unter "Abwechselnd" - bei einem fest gewaehlten
+// Uebergang gibt es nichts abzuwechseln.
+function renderUebergaenge() {
+  const kasten = $('uebergangsWahl');
+  const liste = $('uebergangsListe');
+  if (!kasten || !liste) return;
+
+  const s = state.settings;
+  kasten.classList.toggle('hidden', s.transition !== 'mix');
+  const an = uebergangsAuswahl(s);
+
+  liste.innerHTML = '';
+  for (const u of UEBERGAENGE) {
+    const zeile = document.createElement('label');
+    zeile.className = 'uWahl';
+    zeile.innerHTML = '<input type="checkbox" data-uebergang="' + u.wert + '">' +
+                      '<span>' + escapeHtml(u.name) + '</span>';
+    const haken = zeile.querySelector('input');
+    haken.checked = an.indexOf(u.wert) >= 0;
+    haken.addEventListener('change', () => uebergangUmschalten(u.wert, haken.checked));
+    liste.appendChild(zeile);
+  }
+}
+
+function uebergangUmschalten(wert, an) {
+  const s = state.settings;
+  const jetzt = Array.isArray(s.uebergaenge) ? s.uebergaenge.slice() : uebergangsAuswahl(s);
+  const drin = jetzt.indexOf(wert);
+
+  if (an && drin < 0) jetzt.push(wert);
+  if (!an && drin >= 0) jetzt.splice(drin, 1);
+
+  // Ohne einen einzigen Haken gaebe es keinen Wechsel mehr. Der letzte bleibt
+  // deshalb stehen - und der Haken springt sichtbar zurueck.
+  if (!jetzt.length) {
+    toast('Mindestens ein Übergang muss angehakt bleiben', true);
+    renderUebergaenge();
+    return;
+  }
+
+  // In der Reihenfolge der Liste halten, damit die Konfiguration lesbar bleibt
+  s.uebergaenge = UEBERGAENGE.map(u => u.wert).filter(w => jetzt.indexOf(w) >= 0);
+  markDirty();
 }
 
 function renderLogoPreview() {
