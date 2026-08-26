@@ -425,3 +425,55 @@ function zeitAnzeige(hhmm) {
   const m = String(hhmm == null ? '' : hhmm).match(/^(\d{1,2}):(\d{2})$/);
   return m ? zweistellig(+m[1]) + ':' + m[2] : '';
 }
+
+// ---------------------------------------------------------------------------
+// Eine Runde der Schleife zusammenstellen
+// ---------------------------------------------------------------------------
+// Die Beitraege laufen in ihrer Reihenfolge, dazwischen kommen Timetable und
+// Preise. Wie oft, steht im jeweiligen Reiter: "zeigen nach je ... Beitraegen".
+//
+// Gibt es weniger Beitraege als die eingestellte Zahl, laesst sich die
+// Haeufigkeit nicht wortwoertlich einhalten - bei zwei Bildern und "nach je 3"
+// muesste ein Bild ein zweites Mal laufen, bevor der Timetable kommt. Genau das
+// sah man auf dem Schirm: dieselben zwei Bilder immer wieder, dazwischen viel
+// zu selten eine Information. Deshalb wird die Haeufigkeit auf die Zahl der
+// vorhandenen Beitraege gedeckelt - dann laeuft jeder Beitrag einmal, danach
+// kommt die Information.
+function wirksameHaeufigkeit(jede, anzahl) {
+  const e = Math.floor(Number(jede) || 0);
+  if (e <= 0 || !anzahl) return 0;      // 0 = gar nicht zeigen
+  return Math.min(e, anzahl);
+}
+
+/**
+ * aktiv           die Beitraege, die gerade laufen duerfen
+ * hatTimetable    gibt es ueberhaupt Acts?
+ * hatPreise       gibt es ueberhaupt Preise?
+ * zaehler         Stand des Beitragszaehlers; laeuft ueber die Runden hinweg
+ *                 weiter, sonst erschiene "nach je 5" bei 3 Beitraegen nie
+ */
+function rundeBauen(opt) {
+  const o = opt || {};
+  const aktiv = o.aktiv || [];
+  const ttJede = o.hatTimetable ? wirksameHaeufigkeit(o.timetableEvery, aktiv.length) : 0;
+  const prJede = o.hatPreise ? wirksameHaeufigkeit(o.pricesEvery, aktiv.length) : 0;
+
+  let zaehler = Number(o.zaehler) || 0;
+  const items = [];
+
+  for (const v of aktiv) {
+    items.push({ type: 'video', video: v });
+    zaehler++;
+    if (ttJede && zaehler % ttJede === 0) items.push({ type: 'timetable' });
+    if (prJede && zaehler % prJede === 0) items.push({ type: 'prices' });
+  }
+
+  if (items.length === 0) {
+    // Kein Beitrag aktiv -> wenigstens die Informationen zeigen
+    if (o.hatTimetable) items.push({ type: 'timetable' });
+    if (o.hatPreise) items.push({ type: 'prices' });
+    if (items.length === 0) items.push({ type: 'idle' });
+  }
+
+  return { items, zaehler };
+}

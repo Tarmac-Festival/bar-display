@@ -407,6 +407,27 @@ Bildschirm, verschieben geht mit den Pfeilen links.
   ob ein Clip läuft, kann nur das Gerät beantworten, das ihn zeigen soll — nicht
   der Browser eines Handys nebenan.
 
+### Wie oft die Info-Slides kommen
+
+Timetable und Preisliste laufen zwischen den Beiträgen mit; wie oft, steht im
+jeweiligen Reiter unter *Wie oft und wie lange*. Der Zähler läuft über die
+Runden hinweg weiter — sonst käme „nach je 5 Beiträgen" bei drei Beiträgen nie.
+
+Sind es **weniger Beiträge als die eingestellte Zahl**, lässt sich die Häufigkeit
+nicht wörtlich einhalten: bei zwei Bildern und „nach je 3" müsste ein Bild ein
+zweites Mal laufen, bevor der Timetable kommt. Genau so sah es auch aus —
+dieselben zwei Bilder immer wieder, dazwischen viel zu selten eine Information.
+Deshalb wird die Häufigkeit auf die Zahl der vorhandenen Beiträge gedeckelt:
+
+| Beiträge | Einstellung | Was läuft |
+|---|---|---|
+| 2 | nach je 3 | Bild 1 · Bild 2 · **Timetable** · Bild 1 · Bild 2 · **Timetable** … |
+| 1 | nach je 5 | Bild · **Timetable** · Bild · **Timetable** … |
+| 6 | nach je 3 | Bild 1–3 · **Timetable** · Bild 4–6 · **Timetable** … |
+
+Jeder Beitrag läuft also einmal, danach kommt die Information — kein Beitrag
+wird wiederholt, nur damit die Rechnung aufgeht.
+
 ### Timetable
 
 ![Einstellungen Timetable](docs/screenshots/einstellungen-timetable.png)
@@ -437,9 +458,9 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
 - **Wie oft und wie lange**: nach wie vielen Beiträgen der Timetable erscheint,
   wie lange er stehen bleibt und wie viele kommende Acts er zeigt. `0` schaltet
-  ihn ganz ab. **Bilder zählen als Beitrag mit** – bei zwei Bildern und „nach je
-  3 Beiträgen" kommt der Timetable also etwa jede dritte Standzeit, nicht jede.
-  Der Zähler läuft über die Runden hinweg weiter.
+  ihn ganz ab. **Bilder zählen als Beitrag mit.** Gibt es weniger Beiträge als
+  die eingestellte Zahl, kommt der Timetable am Ende jeder Runde — siehe
+  [Wie oft die Info-Slides kommen](#wie-oft-die-info-slides-kommen).
 - **Foto**: Klick auf *+ Foto* wählt ein Bild, Klick auf die Miniatur tauscht es,
   das rote × entfernt es.
 - **Ausschnitt**: der kleine Knopf unten rechts auf der Miniatur öffnet die
@@ -483,6 +504,11 @@ zur Bilddatei: dasselbe Foto kann bei zwei Acts unterschiedlich sitzen, und beim
 Gruppen wie *Bier*, *Alkoholfrei* oder *Longdrinks*, darin je ein Getränk pro Zeile mit
 Name, Größe und Preis. Die Größe darf leer bleiben. Die Reihenfolge der Gruppen lässt
 sich mit den Pfeilen ändern.
+
+Oben steht **Wie oft und wie lange**: nach wie vielen Beiträgen die Preisliste
+erscheint und wie lange sie stehen bleibt. `0` schaltet sie ab. Es gilt dasselbe
+wie beim Timetable — siehe
+[Wie oft die Info-Slides kommen](#wie-oft-die-info-slides-kommen).
 
 Ganz unten steht die Karte **Spezialshot**. Einmal den Haken setzen, dann Überschrift,
 Name, Größe, Preis und Beschreibung eintragen – fertig. Ohne Haken erscheint das Band

@@ -323,31 +323,22 @@ function clearTimers() {
 function buildPlaylist() {
   const now = new Date();
   const s = cfg.settings;
-  const active = nurVorschau ? [] : (cfg.videos || []).filter(v => isVideoActive(v, now));
-
-  const hasTT = (cfg.timetable || []).length > 0;
   const sp = cfg.special || {};
-  const hasPR = (cfg.prices || []).some(c => (c.items || []).length > 0) ||
-                (sp.enabled && sp.name);
 
-  const items = [];
-  for (const v of active) {
-    items.push({ type: 'video', video: v });
-    videoCounter++;
-    // Zähler läuft ueber Rundengrenzen hinweg weiter - sonst würde z.B. bei
-    // 3 Videos und "Preise nach je 5 Videos" die Preisliste nie erscheinen
-    if (hasTT && s.timetableEvery > 0 && videoCounter % s.timetableEvery === 0) items.push({ type: 'timetable' });
-    if (hasPR && s.pricesEvery > 0 && videoCounter % s.pricesEvery === 0) items.push({ type: 'prices' });
-  }
+  // Das Zusammenstellen selbst steht in common.js - dort laesst es sich ohne
+  // Bildschirm pruefen.
+  const runde = rundeBauen({
+    aktiv: nurVorschau ? [] : (cfg.videos || []).filter(v => isVideoActive(v, now)),
+    hatTimetable: (cfg.timetable || []).length > 0,
+    hatPreise: (cfg.prices || []).some(c => (c.items || []).length > 0) ||
+               !!(sp.enabled && sp.name),
+    timetableEvery: s.timetableEvery,
+    pricesEvery: s.pricesEvery,
+    zaehler: videoCounter
+  });
 
-  if (items.length === 0) {
-    // Keine Videos aktiv -> wenigstens die Infos zeigen
-    if (hasTT) items.push({ type: 'timetable' });
-    if (hasPR) items.push({ type: 'prices' });
-    if (items.length === 0) items.push({ type: 'idle' });
-  }
-
-  playlist = items;
+  videoCounter = runde.zaehler;
+  playlist = runde.items;
 }
 
 // ---------------------------------------------------------------------------

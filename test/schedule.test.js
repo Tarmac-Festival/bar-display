@@ -14,7 +14,8 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         fensterEnde, countdownText, aktiveDurchsage, durchsageTeile,
         fotoAusschnitt, fotoStil, ausschnittIstStandard,
         mitgeliefertesLogo, durchsageStil, laufDauer,
-        datumParsen, datumAnzeige, zeitParsen, zeitAnzeige } = ctx;
+        datumParsen, datumAnzeige, zeitParsen, zeitAnzeige,
+        wirksameHaeufigkeit, rundeBauen } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -346,6 +347,65 @@ const qrTest = qrcode(0, 'M');
 qrTest.addData('https://tarmac-festival.de/de-DE/');
 qrTest.make();
 check('Modulanzahl fuer die Festivaladresse', qrTest.getModuleCount(), 29);
+
+console.log('');
+console.log('-- Runde der Schleife --');
+
+// Kurzschrift: 'v:eins' fuer einen Beitrag, 'timetable'/'prices' fuer die Infos
+const kurz = (items) => items.map(i => i.type === 'video' ? 'v:' + i.video.file : i.type);
+const bei = (...namen) => namen.map(n => ({ file: n, enabled: true, always: true }));
+
+// Die Haeufigkeit kann nicht groesser sein als die Zahl der Beitraege - sonst
+// muesste ein Beitrag ein zweites Mal laufen, nur damit die Rechnung aufgeht.
+check('Haeufigkeit 3 bei 5 Beitraegen', wirksameHaeufigkeit(3, 5), 3);
+check('Haeufigkeit 3 bei 2 Beitraegen', wirksameHaeufigkeit(3, 2), 2);
+check('Haeufigkeit 5 bei 1 Beitrag', wirksameHaeufigkeit(5, 1), 1);
+check('Haeufigkeit 0 heisst aus', wirksameHaeufigkeit(0, 5), 0);
+check('ohne Beitraege nichts zu takten', wirksameHaeufigkeit(3, 0), 0);
+check('krumme Eingabe wird abgeschnitten', wirksameHaeufigkeit('2.7', 9), 2);
+
+// Genau der Fall von der Bar: zwei Bilder, Timetable "nach je 3"
+let runde = rundeBauen({ aktiv: bei('eins.jpg', 'zwei.jpg'), hatTimetable: true,
+                         timetableEvery: 3, pricesEvery: 0, zaehler: 0 });
+check('zwei Beitraege, Timetable nach je 3', kurz(runde.items),
+      ['v:eins.jpg', 'v:zwei.jpg', 'timetable']);
+check('kein Beitrag doppelt in der Runde',
+      new Set(kurz(runde.items).filter(x => x.startsWith('v:'))).size, 2);
+
+// Und in der naechsten Runde genauso - der Zaehler laeuft weiter
+runde = rundeBauen({ aktiv: bei('eins.jpg', 'zwei.jpg'), hatTimetable: true,
+                     timetableEvery: 3, pricesEvery: 0, zaehler: runde.zaehler });
+check('naechste Runde gleich', kurz(runde.items), ['v:eins.jpg', 'v:zwei.jpg', 'timetable']);
+
+// Ein einziger Beitrag: er darf nicht dreimal laufen, bis etwas kommt
+runde = rundeBauen({ aktiv: bei('nur.jpg'), hatTimetable: true, hatPreise: true,
+                     timetableEvery: 3, pricesEvery: 5, zaehler: 0 });
+check('ein Beitrag, beide Infos', kurz(runde.items), ['v:nur.jpg', 'timetable', 'prices']);
+
+// Genug Beitraege: dann gilt die Einstellung wortwoertlich
+runde = rundeBauen({ aktiv: bei('a', 'b', 'c', 'd', 'e', 'f'), hatTimetable: true,
+                     hatPreise: true, timetableEvery: 3, pricesEvery: 5, zaehler: 0 });
+check('sechs Beitraege, 3 und 5', kurz(runde.items),
+      ['v:a', 'v:b', 'v:c', 'timetable', 'v:d', 'v:e', 'prices', 'v:f', 'timetable']);
+check('Zaehler steht am Rundenende', runde.zaehler, 6);
+
+// Weniger Beitraege als die Zahl: gedeckelt, statt einen Beitrag zu wiederholen
+runde = rundeBauen({ aktiv: bei('a', 'b', 'c'), hatTimetable: false, hatPreise: true,
+                     timetableEvery: 0, pricesEvery: 5, zaehler: 0 });
+check('drei Beitraege, Preise nach je 5', kurz(runde.items),
+      ['v:a', 'v:b', 'v:c', 'prices']);
+
+// Abgeschaltet bleibt abgeschaltet
+runde = rundeBauen({ aktiv: bei('a', 'b'), hatTimetable: true, hatPreise: true,
+                     timetableEvery: 0, pricesEvery: 0, zaehler: 0 });
+check('0 zeigt gar nichts', kurz(runde.items), ['v:a', 'v:b']);
+
+// Ohne Beitraege wenigstens die Informationen
+runde = rundeBauen({ aktiv: [], hatTimetable: true, hatPreise: true,
+                     timetableEvery: 3, pricesEvery: 5, zaehler: 0 });
+check('ohne Beitraege nur die Infos', kurz(runde.items), ['timetable', 'prices']);
+check('ohne alles bleibt der Leerlauf',
+      kurz(rundeBauen({ aktiv: [], zaehler: 0 }).items), ['idle']);
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
 process.exit(fail ? 1 : 0);
