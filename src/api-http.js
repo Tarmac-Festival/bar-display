@@ -47,6 +47,7 @@ if (!window.api) {
   window.api = {
     paths: () => hole('/api/paths'),
     zeitStatus: () => hole('/api/zeit'),
+    fernInfo: () => hole('/api/fern'),
     getConfig: () => hole('/api/config'),
     saveConfig: (cfg) => hole('/api/config', {
       method: 'POST',

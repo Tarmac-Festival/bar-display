@@ -15,6 +15,7 @@ Getränkepreise im Festival-Design.
 - [Bedienung](#bedienung)
 - [Die Anzeige](#die-anzeige)
 - [Die Einstellungen](#die-einstellungen)
+- [Bedienung vom Handy](#bedienung-vom-handy)
 - [Mehrere Bars ausstatten](#mehrere-bars-ausstatten)
 - [Raspberry Pi](#raspberry-pi)
 - [Unterstützte Formate](#unterstützte-formate)
@@ -66,8 +67,11 @@ Getränkepreise im Festival-Design.
   Zeitserver. Klappt das nicht, sagt das Programm Bescheid, statt stillschweigend
   mit der falschen Zeit zu arbeiten.
 - **Sparmodus** für schwache Geräte — ein Schalter statt drei Einstellungen.
-- **Dateien vom Handy** — Clips, Fotos, Logo und Schrift lassen sich am
-  Raspberry Pi direkt über die Bedienseite hochladen, ohne Rechner.
+- **Bedienung vom Handy auf jedem System** — Windows, Linux, macOS und
+  Raspberry Pi bieten dieselbe Bedienseite im Netzwerk an. Die Adresse steht
+  unter *System* und erscheint beim Start eine Minute lang auf der Anzeige.
+- **Dateien vom Handy** — Clips, Fotos, Logo und Schrift lassen sich direkt über
+  die Bedienseite hochladen, ohne Rechner.
 - **PIN für die Bedienseite** — im Netzwerk darf nur ändern, wer sie kennt.
 
 ---
@@ -464,6 +468,8 @@ sonst passt.
 - **PIN** für die Einstellungen (nur Ziffern, leer = kein Schutz). Sie schützt
   zweierlei: das Einstellungsfenster am Bildschirm und die Bedienseite im
   Netzwerk — siehe [Raspberry Pi](#raspberry-pi).
+- **Bedienung vom Handy**: Adresse, QR-Code, Port und der Startbildhinweis –
+  siehe [Bedienung vom Handy](#bedienung-vom-handy).
 - **Uhrzeit**: Datum, Uhrzeit und ob sie aus dem Netz abgeglichen ist. Unter
   Windows und macOS steht dort nur die Zeit — diese Systeme haben eine
   Hardware-Uhr und halten sie selbst in Ordnung. Auf einem Raspberry Pi ist das
@@ -473,6 +479,42 @@ sonst passt.
   Wird der gewählte Monitor abgezogen, wandert die Anzeige auf den Hauptbildschirm.
 - **Konfiguration sichern / laden** als JSON-Datei
 - **Programm beenden**
+
+---
+
+## Bedienung vom Handy
+
+Jede Fassung — Windows, Linux, macOS und Raspberry Pi — bietet dieselbe
+Bedienseite im Netzwerk an. Damit lassen sich Timetable, Preise, Durchsagen und
+alle Texte vom Handy ändern, ohne an den Bar-Rechner zu gehen. Änderungen
+erscheinen **sofort** auf der Anzeige.
+
+Die Adresse steht unter *System → Bedienung vom Handy*, mit QR-Code zum
+Abscannen:
+
+![Bedienung vom Handy im Reiter System](docs/screenshots/einstellungen-system.png)
+
+Beim Start blendet die Anzeige sie außerdem eine Minute lang ein, damit niemand
+die Adresse des Rechners heraussuchen muss:
+
+![Adresse beim Start](docs/screenshots/anzeige-starthinweis.png)
+
+| Einstellung | Bedeutung |
+|---|---|
+| **Bedienseite im Netzwerk anbieten** | Schaltet den Dienst ein und aus |
+| **Port** | Standard 8080. Ist er belegt, meldet die Karte das im Klartext |
+| **Adresse beim Start einblenden** | Der Hinweis oben, eine Minute lang |
+
+> **Ohne PIN darf jeder ändern, der im selben Netz ist.** Die PIN unter
+> *System → Start & Schutz* schützt beides: das Einstellungsfenster am Gerät und
+> die Bedienseite im Netz. Im offenen Gäste-WLAN gehört sie gesetzt.
+>
+> Gelesen werden darf immer — die Anzeige holt sich ihre Konfiguration über
+> dieselbe Schnittstelle und kann keine PIN eintippen. Ändern, Hochladen und
+> Löschen verlangen sie.
+
+Auf der Bedienseite selbst sind die Schalter dafür ausgeblendet: wer den Dienst
+von dort abschaltet, sägt den Ast ab, auf dem er sitzt.
 
 ---
 
@@ -533,8 +575,9 @@ die Vollbildanzeige. Nach dem Neustart läuft alles von allein.
 
 ### Bedienung vom Handy
 
-Am Pi gibt es keine Tastatur. Die Einstellungen laufen deshalb über das Netzwerk —
-im selben WLAN im Browser aufrufen:
+Am Pi gibt es keine Tastatur. Die Einstellungen laufen deshalb über das Netzwerk.
+Das geht inzwischen auf jedem System gleich, siehe
+[Bedienung vom Handy](#bedienung-vom-handy) — im selben WLAN im Browser aufrufen:
 
 ```
 http://<IP-des-Pi>:8080/einstellungen
@@ -867,6 +910,8 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
+| Bedienseite vom Handy nicht erreichbar | *System → Bedienung vom Handy*: eingeschaltet? Adresse und Port stimmen? Firewall des Rechners? |
+| „Port 8080 ist schon belegt" | Anderen Port eintragen – oder läuft das Programm zweimal? |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
@@ -966,7 +1011,8 @@ Zusammenfassung des Laufs.
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
 | `src/branding/` | die mitgelieferten Logos (L300-Zeichen und TARMAC-Schriftzug) |
 | `test/schedule.test.js` | Tests |
-| `pi/server.js` | Webdienst für den Raspberry Pi |
+| `lib/webserver.js` | der Webdienst, von Electron und vom Pi gestartet |
+| `pi/server.js` | startet den Dienst auf dem Pi und verwaltet dort die Konfiguration |
 | `pi/install.sh` | Einrichtung auf dem Pi |
 | `pi/kiosk.sh` | startet die Vollbildanzeige, wartet vorher auf den Webdienst |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |

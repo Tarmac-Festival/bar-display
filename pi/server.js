@@ -9,12 +9,15 @@
 // dieselben Dateien aus wie die Electron-Fassung, und Chromium zeigt sie im
 // Kiosk-Modus an. Die Anzeige selbst (src/player.*) ist unverändert dieselbe.
 //
-// Zusätzlich bedient er die Einstellungsseite fürs Handy im selben WLAN.
+// Der HTTP-Teil steckt in lib/webserver.js, weil ihn inzwischen auch die
+// Electron-Fassung startet. Hier bleibt nur, was den Pi ausmacht: die Ablage
+// der Konfiguration, denn dort gibt es keinen Hauptprozess, der sie verwaltet.
 
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
+const webserver = require('../lib/webserver');
 
 const PORT = Number(process.env.PORT) || 8080;
 
@@ -28,39 +31,20 @@ function standardOrdner() {
   if (process.platform === 'darwin') {
     return path.join(os.homedir(), 'Library', 'Application Support', 'Bar Display');
   }
-  return path.join(os.homedir(), '.config', 'Bar Display');
+  return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'),
+                   'Bar Display');
 }
 
 const USER_DIR = process.env.BARDISPLAY_DIR || standardOrdner();
-const MEDIA_DIR = path.join(USER_DIR, 'media');
-const PHOTO_DIR = path.join(USER_DIR, 'photos');
-const BRAND_DIR = path.join(USER_DIR, 'branding');
-const FONT_DIR = path.join(USER_DIR, 'fonts');
-const CONFIG_PATH = path.join(USER_DIR, 'config.json');
-const BACKUP_PATH = path.join(USER_DIR, 'config.backup.json');
-
-const SRC_DIR = path.join(__dirname, '..', 'src');
-
-const TYPEN = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml',
-  '.avif': 'image/avif', '.bmp': 'image/bmp',
-  '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.webm': 'video/webm',
-  '.ogv': 'video/ogg', '.mov': 'video/quicktime', '.mkv': 'video/x-matroska',
-  '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff': 'font/woff', '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8'
+const ORDNER = {
+  user: USER_DIR,
+  media: path.join(USER_DIR, 'media'),
+  photo: path.join(USER_DIR, 'photos'),
+  brand: path.join(USER_DIR, 'branding'),
+  font: path.join(USER_DIR, 'fonts'),
+  config: path.join(USER_DIR, 'config.json')
 };
-
-// ---------------------------------------------------------------------------
-// Konfiguration - dasselbe Format wie die Electron-Fassung
-// ---------------------------------------------------------------------------
-const { zeitStatus } = require('../lib/zeitstatus');
-const { entgegennehmen, formatHinweis } = require('../lib/hochladen');
-const anmeldung = require('../lib/anmeldung');
+const BACKUP_PATH = path.join(USER_DIR, 'config.backup.json');
 
 const VERSION_KONFIG = 3;
 
@@ -99,7 +83,7 @@ function tiefMischen(basis, drueber) {
 }
 
 function ordnerAnlegen() {
-  for (const d of [MEDIA_DIR, PHOTO_DIR, BRAND_DIR, FONT_DIR]) {
+  for (const d of [ORDNER.media, ORDNER.photo, ORDNER.brand, ORDNER.font]) {
     fs.mkdirSync(d, { recursive: true });
   }
 }
@@ -125,7 +109,7 @@ function migrieren(roh) {
 
 function konfigLesen() {
   try {
-    const roh = migrieren(JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8').replace(/^﻿/, '')));
+    const roh = migrieren(JSON.parse(fs.readFileSync(ORDNER.config, 'utf8').replace(/^﻿/, '')));
     return tiefMischen(STANDARD, roh);
   } catch (err) {
     return JSON.parse(JSON.stringify(STANDARD));
@@ -136,293 +120,18 @@ function konfigSchreiben(cfg) {
   ordnerAnlegen();
   const gemischt = tiefMischen(STANDARD, cfg || {});
   try {
-    if (fs.existsSync(CONFIG_PATH)) fs.copyFileSync(CONFIG_PATH, BACKUP_PATH);
+    if (fs.existsSync(ORDNER.config)) fs.copyFileSync(ORDNER.config, BACKUP_PATH);
   } catch (e) { /* egal */ }
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(gemischt, null, 2), 'utf8');
+  fs.writeFileSync(ORDNER.config, JSON.stringify(gemischt, null, 2), 'utf8');
   return gemischt;
 }
 
 // ---------------------------------------------------------------------------
-// Angemeldete Anzeigen, damit Änderungen sofort ankommen
-// ---------------------------------------------------------------------------
-const lauscher = new Set();
-
-function verkuenden(cfg) {
-  const nachricht = 'event: config\ndata: ' + JSON.stringify(cfg) + '\n\n';
-  for (const res of lauscher) {
-    try { res.write(nachricht); } catch (e) { lauscher.delete(res); }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Dateien ausliefern
-// ---------------------------------------------------------------------------
-function ausliefern(res, datei, req) {
-  let stat;
-  try { stat = fs.statSync(datei); } catch (e) { return fehler(res, 404, 'Nicht gefunden'); }
-  if (!stat.isFile()) return fehler(res, 404, 'Nicht gefunden');
-
-  const typ = TYPEN[path.extname(datei).toLowerCase()] || 'application/octet-stream';
-
-  // Videos brauchen Bereichsanfragen, sonst springt der Browser nicht und
-  // beginnt bei grossen Dateien erst nach vollstaendigem Laden.
-  const bereich = req.headers.range;
-  if (bereich) {
-    const treffer = /^bytes=(\d*)-(\d*)$/.exec(bereich);
-    if (treffer) {
-      let von = treffer[1] ? parseInt(treffer[1], 10) : 0;
-      let bis = treffer[2] ? parseInt(treffer[2], 10) : stat.size - 1;
-      if (isNaN(von) || von < 0) von = 0;
-      if (isNaN(bis) || bis >= stat.size) bis = stat.size - 1;
-      if (von > bis) return fehler(res, 416, 'Bereich ungueltig');
-      res.writeHead(206, {
-        'Content-Type': typ,
-        'Content-Length': bis - von + 1,
-        'Content-Range': 'bytes ' + von + '-' + bis + '/' + stat.size,
-        'Accept-Ranges': 'bytes'
-      });
-      return fs.createReadStream(datei, { start: von, end: bis }).pipe(res);
-    }
-  }
-
-  res.writeHead(200, {
-    'Content-Type': typ,
-    'Content-Length': stat.size,
-    'Accept-Ranges': 'bytes',
-    'Cache-Control': 'no-cache'
-  });
-  fs.createReadStream(datei).pipe(res);
-}
-
-function fehler(res, code, text) {
-  res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end(text);
-}
-
-// Schreiben verlangt die PIN, sofern eine gesetzt ist. Lesen bleibt offen -
-// die Anzeige im Kiosk-Browser kann keine PIN eintippen und braucht die
-// Konfiguration trotzdem.
-function darfSchreiben(req, res) {
-  const cfg = konfigLesen();
-  if (!(cfg.settings.pin || '').trim()) return true;
-  if (anmeldung.angemeldet(req)) return true;
-  json(res, { ok: false, fehler: 'Bitte erst die PIN eingeben.' }, 401);
-  return false;
-}
-
-function json(res, daten, code = 200) {
-  const koerper = JSON.stringify(daten);
-  res.writeHead(code, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(koerper)
-  });
-  res.end(koerper);
-}
-
-// Nur Dateien innerhalb des erlaubten Ordners herausgeben
-function sicherJoin(basis, rest) {
-  const ziel = path.join(basis, path.normalize(rest).replace(/^([.][.][\\/])+/, ''));
-  const echt = path.resolve(ziel);
-  if (echt !== path.resolve(basis) && !echt.startsWith(path.resolve(basis) + path.sep)) return null;
-  return echt;
-}
-
-function koerperLesen(req) {
-  return new Promise((resolve, reject) => {
-    let daten = '';
-    let zuViel = false;
-    req.on('data', (stueck) => {
-      daten += stueck;
-      if (daten.length > 40 * 1024 * 1024) { zuViel = true; req.destroy(); }
-    });
-    req.on('end', () => zuViel ? reject(new Error('zu gross')) : resolve(daten));
-    req.on('error', reject);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Achtung: nicht "/fonts" verwenden - unter src/fonts liegt die mitgelieferte
-// Josefin Sans, auf die player.css per @font-face verweist. Eine eigene Schrift
-// der Bar wird deshalb unter /eigeneschrift ausgeliefert.
-const ORDNER = {
-  '/media': MEDIA_DIR,
-  '/photos': PHOTO_DIR,
-  '/branding': BRAND_DIR,
-  '/eigeneschrift': FONT_DIR
-};
-
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
-  const pfad = decodeURIComponent(url.pathname);
-
-  try {
-    if (pfad === '/' || pfad === '/anzeige') {
-      return ausliefern(res, path.join(SRC_DIR, 'player.html'), req);
-    }
-    if (pfad === '/einstellungen') {
-      return ausliefern(res, path.join(SRC_DIR, 'settings.html'), req);
-    }
-
-    if (pfad === '/api/paths') {
-      return json(res, {
-        mode: 'http',
-        mediaDir: '/media', photoDir: '/photos',
-        brandDir: '/branding', fontDir: '/eigeneschrift',
-        userDir: USER_DIR, configPath: CONFIG_PATH,
-        version: require('../package.json').version
-      });
-    }
-
-    if (pfad === '/api/zeit') {
-      // Bewusst await: ein returntes Versprechen laeuft am try/catch vorbei,
-      // und eine unbehandelte Ablehnung beendet in Node den ganzen Prozess.
-      // Der Dienst wuerde dann bei jeder Zeitabfrage neu starten.
-      return json(res, await zeitStatus());
-    }
-
-    // Die PIN steht in der Konfiguration - wer sie nicht kennt, bekommt sie
-    // hier auch nicht zu lesen.
-    if (pfad === '/api/config' && req.method === 'GET') {
-      const cfg = konfigLesen();
-      return json(res, anmeldung.angemeldet(req) ? cfg : anmeldung.ohnePin(cfg));
-    }
-
-    if (pfad === '/api/status') {
-      const cfg = konfigLesen();
-      return json(res, {
-        pinAktiv: !!(cfg.settings.pin || '').trim(),
-        angemeldet: anmeldung.angemeldet(req)
-      });
-    }
-
-    if (pfad === '/api/anmelden' && req.method === 'POST') {
-      const cfg = konfigLesen();
-      const erwartet = (cfg.settings.pin || '').trim();
-      if (!erwartet) return json(res, { ok: true, pinAktiv: false });
-
-      const eingabe = JSON.parse(await koerperLesen(req) || '{}').pin;
-      if (!anmeldung.pinStimmt(eingabe, erwartet)) {
-        return json(res, { ok: false, fehler: 'PIN stimmt nicht.' }, 401);
-      }
-      res.setHeader('Set-Cookie', anmeldung.cookieKopf(anmeldung.anmelden()));
-      return json(res, { ok: true });
-    }
-
-    if (pfad === '/api/config' && req.method === 'POST') {
-      if (!darfSchreiben(req, res)) return;
-      const roh = await koerperLesen(req);
-      const neu = JSON.parse(roh);
-      const alt = konfigLesen();
-
-      // Wer die Konfiguration ungeschuetzt gelesen hat, bekam sie ohne PIN und
-      // mit der Marke pinAktiv. Schickt er sie so zurueck, wuerde die echte PIN
-      // stillschweigend verschwinden - also an der Marke erkennen und behalten.
-      // Eine bewusst geleerte PIN kommt ohne die Marke, weil sie nur beim
-      // Ausblenden gesetzt wird.
-      if (neu.settings && neu.settings.pinAktiv && !(neu.settings.pin || '').trim()) {
-        neu.settings.pin = alt.settings.pin;
-      }
-      if (neu.settings) delete neu.settings.pinAktiv;
-      const gespeichert = konfigSchreiben(neu);
-      // Wurde die PIN geaendert, gelten alte Anmeldungen nicht mehr
-      if ((gespeichert.settings.pin || '') !== (alt.settings.pin || '')) anmeldung.abmeldenAlle();
-      verkuenden(gespeichert);
-      return json(res, gespeichert);
-    }
-
-    // ---- Datei vom Handy entgegennehmen ---------------------------------
-    if (pfad === '/api/upload' && req.method === 'POST') {
-      if (!darfSchreiben(req, res)) return;
-      const art = url.searchParams.get('art') || '';
-      const ordner = { media: MEDIA_DIR, photo: PHOTO_DIR, logo: BRAND_DIR, font: FONT_DIR }[art];
-      if (!ordner) return json(res, { ok: false, fehler: 'Unbekannte Art.' }, 400);
-
-      ordnerAnlegen();
-      try {
-        const erg = await entgegennehmen(req, art, url.searchParams.get('name') || '', ordner);
-        const hinweis = art === 'media' ? formatHinweis(path.join(ordner, erg.name)) : null;
-        return json(res, { ok: true, file: erg.name, groesse: erg.groesse, hinweis });
-      } catch (err) {
-        return json(res, { ok: false, fehler: err.message }, 400);
-      }
-    }
-
-    // ---- Unbenutzte Act-Fotos wegraeumen --------------------------------
-    if (pfad === '/api/aufraeumen' && req.method === 'POST') {
-      if (!darfSchreiben(req, res)) return;
-      ordnerAnlegen();
-      const benutzt = new Set((konfigLesen().timetable || []).map(e => e.photo).filter(Boolean));
-      let weg = 0;
-      for (const f of fs.readdirSync(PHOTO_DIR)) {
-        if (benutzt.has(f)) continue;
-        try { fs.unlinkSync(path.join(PHOTO_DIR, f)); weg++; } catch (e) { /* egal */ }
-      }
-      return json(res, { ok: true, weg });
-    }
-
-    // ---- Datei wieder loeschen ------------------------------------------
-    if (pfad === '/api/loeschen' && req.method === 'POST') {
-      if (!darfSchreiben(req, res)) return;
-      const art = url.searchParams.get('art') || '';
-      const ordner = { media: MEDIA_DIR, photo: PHOTO_DIR, logo: BRAND_DIR, font: FONT_DIR }[art];
-      if (!ordner) return json(res, { ok: false, fehler: 'Unbekannte Art.' }, 400);
-      const name = path.basename(String(url.searchParams.get('name') || ''));
-      const ziel = path.join(ordner, name);
-      if (!name || path.dirname(path.resolve(ziel)) !== path.resolve(ordner)) {
-        return json(res, { ok: false, fehler: 'Ungueltiger Name.' }, 400);
-      }
-      try { fs.unlinkSync(ziel); } catch (e) { return json(res, { ok: false, fehler: e.message }, 400); }
-      return json(res, { ok: true });
-    }
-
-    if (pfad === '/api/media') {
-      ordnerAnlegen();
-      return json(res, fs.readdirSync(MEDIA_DIR));
-    }
-
-    if (pfad === '/api/canconvert') {
-      return json(res, false);   // Umwandeln passiert am Rechner, nicht auf dem Pi
-    }
-
-    if (pfad === '/api/events') {
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive'
-      });
-      res.write('retry: 3000\n\n');
-      lauscher.add(res);
-      const puls = setInterval(() => { try { res.write(': puls\n\n'); } catch (e) { /* egal */ } }, 25000);
-      req.on('close', () => { clearInterval(puls); lauscher.delete(res); });
-      return;
-    }
-
-    // Medien, Fotos, Logo, Schrift
-    for (const [praefix, ordner] of Object.entries(ORDNER)) {
-      if (pfad.startsWith(praefix + '/')) {
-        const rest = pfad.slice(praefix.length + 1);
-        const datei = sicherJoin(ordner, rest);
-        if (!datei) return fehler(res, 403, 'Nicht erlaubt');
-
-        // Das mitgelieferte L300-Logo liegt in src/branding, nicht im Ordner der
-        // Bar. Ohne diesen Rueckfall zeigt der Player unter Electron das
-        // Standardlogo (relativer Pfad ab src/) und am Pi nichts.
-        if (!fs.existsSync(datei) && praefix === '/branding') {
-          const mitgeliefert = sicherJoin(path.join(SRC_DIR, 'branding'), rest);
-          if (mitgeliefert && fs.existsSync(mitgeliefert)) return ausliefern(res, mitgeliefert, req);
-        }
-        return ausliefern(res, datei, req);
-      }
-    }
-
-    // alles Übrige aus src/ (player.js, player.css, Schriften, Standardlogo ...)
-    const datei = sicherJoin(SRC_DIR, pfad.replace(/^\//, ''));
-    if (!datei) return fehler(res, 403, 'Nicht erlaubt');
-    return ausliefern(res, datei, req);
-
-  } catch (err) {
-    return fehler(res, 500, 'Fehler: ' + err.message);
-  }
+const { server } = webserver.erstellen({
+  ordner: ORDNER,
+  lesen: konfigLesen,
+  schreiben: konfigSchreiben,
+  version: require('../package.json').version
 });
 
 // Letztes Netz: ein einzelner Fehler in einer Anfrage darf nicht die ganze
@@ -438,16 +147,10 @@ process.on('uncaughtException', (fehler) => {
 
 ordnerAnlegen();
 server.listen(PORT, () => {
-  const adressen = [];
-  for (const liste of Object.values(os.networkInterfaces())) {
-    for (const n of liste || []) {
-      if (n.family === 'IPv4' && !n.internal) adressen.push(n.address);
-    }
-  }
   console.log('Bar Display läuft.');
   console.log('  Anzeige      : http://localhost:' + PORT + '/');
-  for (const a of adressen) {
+  for (const a of webserver.adressen()) {
     console.log('  Einstellungen: http://' + a + ':' + PORT + '/einstellungen');
   }
-  console.log('  Datenablage  : ' + USER_DIR);
+  console.log('  Datenablage  : ' + ORDNER.user);
 });

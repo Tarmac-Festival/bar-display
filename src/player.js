@@ -55,6 +55,7 @@ async function boot() {
     restart();
   });
 
+  starthinweisZeigen();
   zeitPruefen();
   setInterval(zeitPruefen, 60000);
   // Aendert sich die Fenstergroesse, passt die gemerkte Skalierung nicht mehr
@@ -763,6 +764,47 @@ function fitToBox(layer) {
 function tickClock() {
   const txt = nowHHMM();
   document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = txt; });
+}
+
+// ---------------------------------------------------------------------------
+// Adresse der Bedienseite beim Start
+// ---------------------------------------------------------------------------
+// Ohne diesen Hinweis muss jemand erst die IP des Bar-Rechners heraussuchen,
+// bevor er vom Handy etwas aendern kann. Deshalb steht sie nach dem Start eine
+// Minute lang auf dem Bildschirm und verschwindet dann von allein.
+const STARTHINWEIS_MS = 60000;
+
+async function starthinweisZeigen() {
+  if (nurVorschau) return;
+  if (!window.api || !window.api.fernInfo) return;
+
+  let f = null;
+  try { f = await window.api.fernInfo(); } catch (err) { return; }
+  if (!f || !f.hinweis) return;
+
+  const kasten = document.getElementById('starthinweis');
+  if (!kasten) return;
+
+  let text;
+  if (f.fehler) {
+    text = '<div class="shTitel">Fernbedienung nicht gestartet</div>' +
+           '<div class="shAdresse">' + escapeHtml(f.fehler) + '</div>';
+  } else if (!f.gewuenscht) {
+    return;
+  } else if (!f.adressen.length) {
+    text = '<div class="shTitel">Bedienung vom Handy</div>' +
+           '<div class="shAdresse">Keine Netzwerkverbindung</div>';
+  } else {
+    // Mehrere Adressen kommen vor (WLAN und Kabel). Alle zeigen, damit man die
+    // richtige erwischt, statt zu raten.
+    text = '<div class="shTitel">Bedienung vom Handy im selben Netz</div>' +
+      f.adressen.map(a => '<div class="shAdresse">http://' + escapeHtml(a) +
+        ':' + f.port + '/einstellungen</div>').join('');
+  }
+
+  kasten.querySelector('.shInner').innerHTML = text;
+  kasten.classList.add('an');
+  setTimeout(() => kasten.classList.remove('an'), STARTHINWEIS_MS);
 }
 
 // Steht die Systemuhr? Ein Pi ohne Zeitabgleich zeigt eine Uhrzeit, die voellig

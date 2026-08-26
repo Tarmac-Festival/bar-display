@@ -232,6 +232,73 @@ function durchsageStatus() {
 }
 
 // ---------------------------------------------------------------------------
+// Bedienung vom Handy
+// ---------------------------------------------------------------------------
+// Die Adresse muss man sehen koennen, sonst sucht jemand die IP des Bar-
+// Rechners von Hand heraus. Der QR-Code daneben spart auch noch das Abtippen.
+async function fillFern() {
+  const karte = $('fernKarte');
+  const feld = $('fernAdresse');
+  if (!karte || !feld) return;
+
+  // Im Browserbetrieb sitzt man schon auf der Bedienseite - dort nur die Lage
+  // zeigen, aber nichts zum Ein- und Ausschalten anbieten: wer den Dienst von
+  // dort abschaltet, saegt den Ast ab, auf dem er sitzt.
+  if (paths.mode === 'http') {
+    karte.querySelectorAll('label, .hint').forEach(el => { el.style.display = 'none'; });
+  }
+
+  if (!window.api.fernInfo) { karte.style.display = 'none'; return; }
+
+  let f = null;
+  try { f = await window.api.fernInfo(); } catch (e) { /* gleich */ }
+  const qr = $('fernQr');
+  if (qr) qr.innerHTML = '';
+
+  if (!f) {
+    feld.textContent = 'Nicht abfragbar';
+    feld.className = 'anStatus';
+    return;
+  }
+  if (f.fehler) {
+    feld.textContent = f.fehler;
+    feld.className = 'anStatus fehler';
+    return;
+  }
+  if (!f.gewuenscht) {
+    feld.textContent = 'Abgeschaltet - vom Handy ist nichts erreichbar';
+    feld.className = 'anStatus';
+    return;
+  }
+  if (!f.adressen.length) {
+    feld.textContent = 'Keine Netzwerkverbindung gefunden';
+    feld.className = 'anStatus fehler';
+    return;
+  }
+
+  const urls = f.adressen.map(a => 'http://' + a + ':' + f.port + '/einstellungen');
+  feld.textContent = urls.join('   ');
+  feld.className = 'anStatus aktiv';
+  if (qr) qr.innerHTML = qrBild(urls[0]);
+}
+
+// Kleiner QR-Code zur ersten Adresse. Dieselbe Bibliothek wie auf der Anzeige.
+function qrBild(text) {
+  if (typeof qrcode !== 'function') return '';
+  try {
+    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) {
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    }
+    const q = qrcode(0, 'M');
+    q.addData(text);
+    q.make();
+    return q.createSvgTag({ cellSize: 3, margin: 1, scalable: true });
+  } catch (e) {
+    return '';
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Uhrzeit
 // ---------------------------------------------------------------------------
 // Am Raspberry Pi ist das die wichtigste Zeile im ganzen Fenster: ohne Abgleich
@@ -718,6 +785,10 @@ function fillSettingsFields() {
   $('s_showClock').checked = !!s.showClock;
   $('s_qrEnabled').checked = !!s.qrEnabled;
   $('s_sparmodus').checked = !!s.sparmodus;
+  $('s_fernbedienung').checked = s.fernbedienung !== false;
+  $('s_fernHinweis').checked = s.fernHinweis !== false;
+  $('s_fernPort').value = Number(s.fernPort) || 8080;
+  fillFern();
   qrFelderAnpassen();
   renderLogoAuswahl();
   renderLogoPreview();
@@ -749,6 +820,25 @@ function fillSettingsFields() {
   if (!$('s_showClock').dataset.wired) {
     $('s_showClock').dataset.wired = '1';
     $('s_showClock').addEventListener('change', (e) => { state.settings.showClock = e.target.checked; markDirty(); });
+  }
+  for (const [id, feld] of [['s_fernbedienung', 'fernbedienung'], ['s_fernHinweis', 'fernHinweis']]) {
+    const el = $(id);
+    if (el && !el.dataset.wired) {
+      el.dataset.wired = '1';
+      el.addEventListener('change', (e) => {
+        state.settings[feld] = e.target.checked;
+        markDirty();
+        if (feld === 'fernbedienung') fillFern();
+      });
+    }
+  }
+  if (!$('s_fernPort').dataset.wired) {
+    $('s_fernPort').dataset.wired = '1';
+    $('s_fernPort').addEventListener('input', () => {
+      const n = parseInt($('s_fernPort').value, 10);
+      state.settings.fernPort = (n >= 1024 && n <= 65535) ? n : 8080;
+      markDirty();
+    });
   }
   if (!$('s_sparmodus').dataset.wired) {
     $('s_sparmodus').dataset.wired = '1';

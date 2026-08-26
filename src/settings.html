@@ -427,6 +427,28 @@
              <b>Strg + Alt + S</b> &ouml;ffnet die Einstellungen, <b>Strg + Alt + Q</b> beendet das Programm.</p>
         </div>
 
+        <div class="card" id="fernKarte">
+          <h2>Bedienung vom Handy</h2>
+          <label class="checkline">
+            <input type="checkbox" id="s_fernbedienung"> <span>Bedienseite im Netzwerk anbieten</span>
+          </label>
+          <div id="fernAdresse" class="anStatus">wird gepr&uuml;ft &hellip;</div>
+          <div id="fernQr" class="fernQr"></div>
+          <div class="twoCol">
+            <label class="field">
+              <span>Port</span>
+              <input type="number" id="s_fernPort" min="1024" max="65535" step="1">
+            </label>
+            <label class="checkline" style="align-self:end;margin-bottom:0.9rem">
+              <input type="checkbox" id="s_fernHinweis"> <span>Adresse beim Start einblenden</span>
+            </label>
+          </div>
+          <p class="hint">Damit lassen sich Timetable, Preise und Durchsagen vom Handy
+             im selben Netz &auml;ndern. <b>Ohne PIN darf das jeder, der im Netz ist.</b>
+             Die PIN oben links sch&uuml;tzt beides: das Einstellungsfenster hier und
+             die Bedienseite im Netz.</p>
+        </div>
+
         <div class="card" id="uhrKarte">
           <h2>Uhrzeit</h2>
           <div id="uhrStatus" class="anStatus">wird gepr&uuml;ft &hellip;</div>
@@ -484,6 +506,7 @@
 
   <div id="toast" class="toast hidden"></div>
 
+  <script src="qr.js"></script>
   <script src="upload.js"></script>
   <script src="api-http.js"></script>
   <script src="common.js"></script>

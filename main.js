@@ -30,6 +30,7 @@ let settingsWin = null;
 // ---------------------------------------------------------------------------
 const { zeitStatus } = require('./lib/zeitstatus');
 const { sicherName } = require('./lib/dateiname');
+const webserver = require('./lib/webserver');
 
 const CONFIG_VERSION = 3;
 
@@ -48,6 +49,9 @@ const DEFAULT_CONFIG = {
     pattern: 'dots',         // none | dots | confetti
     rotation: 0,             // 0 | 90 | 180 | 270
     displayId: '',           // leer = Hauptbildschirm
+    fernbedienung: true,     // Bedienseite fuers Handy im Netz anbieten
+    fernPort: 8080,
+    fernHinweis: true,       // Adresse beim Start kurz auf der Anzeige zeigen
     sparmodus: false,        // schwache Geraete: Muster, Schatten und Blenden weg
     transition: 'fade',      // fade | cut | logo | wipe
     transitionMs: 900,
@@ -285,6 +289,94 @@ function broadcastConfig(cfg) {
 }
 
 // ---------------------------------------------------------------------------
+// Bedienseite fuers Handy
+// ---------------------------------------------------------------------------
+// Denselben Dienst wie auf dem Raspberry Pi, nur im Electron-Prozess. Wichtig
+// dabei: die Konfiguration wird nicht vom Dienst selbst geschrieben, sondern
+// ueber loadConfig/saveConfig hier - sonst haetten zwei Stellen dieselbe Datei
+// in der Hand und wuerden sich gegenseitig ueberschreiben.
+let fernDienst = null;
+let fernFehler = '';
+
+function fernOrdner() {
+  return { user: USER_DIR, media: MEDIA_DIR, photo: PHOTO_DIR,
+           brand: BRAND_DIR, font: FONT_DIR, config: CONFIG_PATH };
+}
+
+function fernStarten(cfg) {
+  const s = (cfg || loadConfig()).settings;
+  const port = Number(s.fernPort) || 8080;
+
+  // Reihenfolge zaehlt: erst die Frage, ob der Dienst ueberhaupt laufen soll.
+  // Andersherum griff die Abkuerzung "laeuft schon auf dem richtigen Port" auch
+  // dann, wenn gerade abgeschaltet wurde - und er lief einfach weiter.
+  if (!s.fernbedienung) { fernStoppen(); return; }
+  if (fernDienst && fernDienst.port === port) return;   // laeuft schon richtig
+  fernStoppen();
+
+  try {
+    const gebaut = webserver.erstellen({
+      ordner: fernOrdner(),
+      lesen: loadConfig,
+      // Das Handy speichert -> hier ablegen und die Fenster auffrischen. Der
+      // Dienst schickt danach von sich aus die Meldung an andere Handys.
+      schreiben: (neu) => { const m = saveConfig(neu); broadcastConfig(m); return m; },
+      version: app.getVersion()
+    });
+    gebaut.ordnerAnlegen();
+
+    gebaut.server.on('error', (err) => {
+      fernFehler = err && err.code === 'EADDRINUSE'
+        ? 'Port ' + port + ' ist schon belegt.'
+        : 'Dienst nicht gestartet: ' + (err && err.message);
+      console.warn('[fernbedienung] ' + fernFehler);
+      fernDienst = null;
+    });
+
+    gebaut.server.listen(port, () => {
+      fernFehler = '';
+      console.log('[fernbedienung] laeuft auf Port ' + port);
+    });
+    fernDienst = { port, server: gebaut.server, verkuenden: gebaut.verkuenden };
+  } catch (err) {
+    fernFehler = String(err && err.message);
+    console.warn('[fernbedienung] ' + fernFehler);
+  }
+}
+
+function fernStoppen() {
+  if (!fernDienst) return;
+  try {
+    fernDienst.server.close();
+    // close() nimmt nur neue Verbindungen weg. Offene bleiben bestehen - und
+    // ein Handy mit dauerhafter Verbindung fuer die Meldungen hat immer eine.
+    if (typeof fernDienst.server.closeAllConnections === 'function') {
+      fernDienst.server.closeAllConnections();
+    }
+  } catch (e) { /* egal */ }
+  fernDienst = null;
+}
+
+// Aenderungen aus dem Einstellungsfenster an die Handys weitergeben
+function fernVerkuenden(cfg) {
+  if (fernDienst && fernDienst.verkuenden) {
+    try { fernDienst.verkuenden(cfg); } catch (e) { /* egal */ }
+  }
+}
+
+function fernInfo() {
+  const s = loadConfig().settings;
+  return {
+    aktiv: !!fernDienst,
+    gewuenscht: !!s.fernbedienung,
+    hinweis: s.fernHinweis !== false,
+    port: fernDienst ? fernDienst.port : (Number(s.fernPort) || 8080),
+    adressen: webserver.adressen(),
+    fehler: fernFehler
+  };
+}
+
+// ---------------------------------------------------------------------------
 // App-Lifecycle
 // ---------------------------------------------------------------------------
 const gotLock = app.requestSingleInstanceLock();
@@ -307,6 +399,7 @@ if (!gotLock) {
     ensureDirs();
     Menu.setApplicationMenu(null);
     createPlayerWindow();
+    fernStarten();
 
     // Notausgang, falls die Oberfläche mal hängt
     if (!globalShortcut.register('Control+Alt+S', openSettings)) {
@@ -323,6 +416,7 @@ if (!gotLock) {
 
   app.on('will-quit', () => globalShortcut.unregisterAll());
   app.on('window-all-closed', () => app.quit());
+  app.on('will-quit', fernStoppen);
 }
 
 // ---------------------------------------------------------------------------
@@ -330,11 +424,15 @@ if (!gotLock) {
 // ---------------------------------------------------------------------------
 ipcMain.handle('zeit:status', () => zeitStatus());
 
+ipcMain.handle('fern:info', () => fernInfo());
+
 ipcMain.handle('config:get', () => loadConfig());
 
 ipcMain.handle('config:save', (_e, cfg) => {
   const saved = saveConfig(cfg);
   broadcastConfig(saved);
+  fernVerkuenden(saved);
+  fernStarten(saved);
   if (playerWin && !playerWin.isDestroyed()) {
     const target = targetDisplay(saved);
     // nur umziehen, wenn sich der Bildschirm wirklich ändert - sonst würde das

@@ -178,6 +178,11 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 /* --------------------------- Geplante Durchsagen --------------------- */
 .anStatus.fehler { border-color: var(--danger); color: var(--danger); font-weight: 700; }
 
+/* QR-Code zur Bedienseite - spart das Abtippen der Adresse am Handy */
+.fernQr { margin: 0.8rem 0; }
+.fernQr svg { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 6px; }
+.fernQr:empty { display: none; }
+
 /* ---------------------- Hochladen vom Handy -------------------------- */
 /* Ein Video ueber WLAN dauert Minuten. Ohne Rueckmeldung haelt das jeder
    fuer haengen geblieben, also ein Balken, der immer sichtbar bleibt. */

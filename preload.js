@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
 
   paths: () => ipcRenderer.invoke('app:paths'),
   zeitStatus: () => ipcRenderer.invoke('zeit:status'),
+  fernInfo: () => ipcRenderer.invoke('fern:info'),
 
   addMedia: () => ipcRenderer.invoke('media:add'),
   listMedia: () => ipcRenderer.invoke('media:list'),

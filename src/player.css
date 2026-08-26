@@ -669,6 +669,52 @@ body.instant .layer { transition: none; }
 /* Der laufende Countdown. Feste Ziffernbreite, sonst zappelt der Text bei
    jedem Sekundenwechsel hin und her. */
 /* ------------------------------------------------------------------ */
+/* Adresse der Bedienseite beim Start                                    */
+/* ------------------------------------------------------------------ */
+/* Unten links, damit es die Uhr rechts und den Timetable links oben nicht
+   verdeckt. Liegt unter der Durchsage: eine echte Meldung ist wichtiger. */
+/* Mittig ueber der Fusszeile: unten links sitzt der QR-Code, unten rechts die
+   Uhr - beide waren vorher verdeckt. Die Mitte ist auf beiden Info-Slides frei. */
+#starthinweis {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 13vh;
+  z-index: 17;
+  display: none;
+  text-align: center;
+  font-size: calc(var(--u) * 0.95);
+}
+#starthinweis.an { display: block; }
+#starthinweis .shInner {
+  display: inline-block;
+  text-align: left;
+  padding: 1.1em 1.6em;
+  border-radius: 0.7em;
+  border-left: 0.3em solid var(--accent);
+  background: rgba(0, 0, 0, 0.72);
+  animation: shRein 500ms ease-out;
+}
+#starthinweis .shTitel {
+  font-size: 1.15em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.35em;
+}
+#starthinweis .shAdresse {
+  font-size: 1.7em;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes shRein {
+  from { opacity: 0; transform: translateY(1em); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ------------------------------------------------------------------ */
 /* Sparmodus                                                            */
 /* ------------------------------------------------------------------ */
 /* Fuer schwache Geraete, vor allem den Raspberry Pi. Weg kommt alles, was
