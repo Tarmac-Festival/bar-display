@@ -231,8 +231,10 @@ function durchsageStil(quelle) {
   return { modus, tempo };
 }
 
-// Wie lange braucht ein Durchlauf? Haengt an der Textlaenge, damit die
-// Geschwindigkeit gleich bleibt und nicht der lange Text schneller wirkt.
+// Wie lange braucht ein Durchlauf? strecke ist der Weg, den der Text
+// zuruecklegt - von rechts ausserhalb des Bildes bis links wieder hinaus, also
+// Fensterbreite plus Textbreite. Dadurch bleibt die Geschwindigkeit gleich,
+// statt dass ein langer Text schneller durchhuscht.
 function laufDauer(breitePx, fensterPx, tempo) {
   const proSekunde = LAUF_TEMPO[tempo] || LAUF_TEMPO.normal;
   if (!breitePx || !fensterPx) return 12;

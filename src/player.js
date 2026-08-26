@@ -59,7 +59,14 @@ async function boot() {
   zeitPruefen();
   setInterval(zeitPruefen, 60000);
   // Aendert sich die Fenstergroesse, passt die gemerkte Skalierung nicht mehr
-  window.addEventListener('resize', () => { skalaVergessen(); letzterSlideStand = ''; });
+  window.addEventListener('resize', () => {
+    skalaVergessen();
+    letzterSlideStand = '';
+    // Die Laufschrift misst Fenster- und Textbreite - nach einer
+    // Groessenaenderung stimmen beide nicht mehr.
+    durchsageStand = '';
+    sonderzustaende();
+  });
 
   setInterval(tickClock, 1000);
   setInterval(durchsageTicken, 1000);
@@ -165,6 +172,8 @@ function durchsageAufbauen(el, d) {
     t.zeit ? '<b class="durchsageZeit">--:--</b>' : escapeHtml(t.text)
   ).join('');
 
+  el.classList.toggle('lauf', d.modus === 'lauf');
+
   if (d.modus !== 'lauf') {
     ziel.className = 'durchsageText';
     ziel.removeAttribute('style');
@@ -172,20 +181,26 @@ function durchsageAufbauen(el, d) {
     return;
   }
 
-  // Laufschrift: der Inhalt steht zweimal hintereinander und die Spur wandert
-  // um genau die Haelfte nach links. Am Ende sitzt das zweite Stueck exakt da,
-  // wo das erste begann - dadurch laeuft es ohne sichtbaren Sprung weiter.
+  // Laufschrift wie bei einem Nachrichtensender: der Text beginnt rechts
+  // ausserhalb des Bildes, wandert nach links durch und verschwindet links
+  // wieder. Erst danach faengt er von vorn an.
+  //
+  // Bewusst nur ein Textstueck: bei kurzem Text standen vorher zwei Kopien
+  // gleichzeitig auf dem Balken, und beim Start "ploppte" der Text einfach da,
+  // statt hereinzulaufen.
   ziel.className = 'durchsageText lauf';
-  ziel.innerHTML = '<div class="laufSpur">' +
-    '<span class="laufStueck">' + inhalt + '</span>' +
-    '<span class="laufStueck" aria-hidden="true">' + inhalt + '</span>' +
-    '</div>';
+  ziel.innerHTML = '<div class="laufSpur"><span class="laufStueck">' + inhalt + '</span></div>';
 
   const spur = ziel.querySelector('.laufSpur');
   const stueck = ziel.querySelector('.laufStueck');
-  const dauer = laufDauer(stueck.getBoundingClientRect().width,
-                          ziel.getBoundingClientRect().width, d.tempo);
-  spur.style.animationDuration = dauer + 's';
+  const fenster = ziel.getBoundingClientRect().width;
+  const breite = stueck.getBoundingClientRect().width;
+
+  // Die Strecke ist Fensterbreite plus Textbreite: von ganz rechts draussen bis
+  // ganz links draussen.
+  spur.style.setProperty('--laufStart', Math.round(fenster) + 'px');
+  spur.style.setProperty('--laufEnde', '-' + Math.round(breite) + 'px');
+  spur.style.animationDuration = laufDauer(fenster + breite, fenster, d.tempo) + 's';
 }
 
 function durchsageTicken() {

@@ -666,29 +666,29 @@ body.instant .layer { transition: none; }
   max-width: 88%;
 }
 
-/* Laufschrift wie bei einem Nachrichtensender. Der Inhalt steht zweimal in der
-   Spur; sie wandert um die Haelfte nach links und faengt dann von vorn an -
-   dadurch entsteht ein durchgehender Lauf ohne Sprung. */
+/* Laufschrift wie bei einem Nachrichtensender: der Text kommt rechts ins Bild,
+   zieht durch und verlaesst es links. Start- und Endpunkt setzt die Anzeige in
+   Pixeln, weil sie von der gemessenen Text- und Fensterbreite abhaengen. */
+#durchsage.lauf { padding-left: 0; padding-right: 0; }
+
 .durchsageText.lauf {
-  max-width: 100%;
+  max-width: none;
+  width: 100%;
   overflow: hidden;
 }
 .durchsageText.lauf .laufSpur {
-  display: flex;
-  width: max-content;
+  display: inline-block;
+  white-space: nowrap;
   animation-name: laufen;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
   will-change: transform;
 }
-.durchsageText.lauf .laufStueck {
-  white-space: nowrap;
-  padding-right: 6vw;
-}
+.durchsageText.lauf .laufStueck { white-space: nowrap; }
 
 @keyframes laufen {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translateX(var(--laufStart, 100%)); }
+  to { transform: translateX(var(--laufEnde, -100%)); }
 }
 
 /* Der laufende Countdown. Feste Ziffernbreite, sonst zappelt der Text bei

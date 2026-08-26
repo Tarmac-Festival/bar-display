@@ -120,6 +120,25 @@
           <button id="ttImport">Timetable &uuml;bernehmen&hellip;</button>
         </div>
       </div>
+      <div class="card schmal">
+        <h2>Wie oft und wie lange</h2>
+        <div class="dreiCol">
+          <label class="field">
+            <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
+            <input type="number" min="0" max="50" id="s_timetableEvery">
+            <em>0 = gar nicht zeigen. Bilder z&auml;hlen als Beitrag mit.</em>
+          </label>
+          <label class="field">
+            <span>Standzeit (Sekunden)</span>
+            <input type="number" min="3" max="300" id="s_timetableDuration">
+          </label>
+          <label class="field">
+            <span>Wie viele kommende Acts</span>
+            <input type="number" min="1" max="12" id="s_timetableMaxNext">
+          </label>
+        </div>
+      </div>
+
       <table id="ttTable" class="grid">
         <thead>
           <tr>
@@ -149,6 +168,21 @@
           <button id="addCat" class="primary">+ Gruppe hinzuf&uuml;gen</button>
         </div>
       </div>
+      <div class="card schmal">
+        <h2>Wie oft und wie lange</h2>
+        <div class="dreiCol">
+          <label class="field">
+            <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
+            <input type="number" min="0" max="50" id="s_pricesEvery">
+            <em>0 = gar nicht zeigen. Bilder z&auml;hlen als Beitrag mit.</em>
+          </label>
+          <label class="field">
+            <span>Standzeit (Sekunden)</span>
+            <input type="number" min="3" max="300" id="s_pricesDuration">
+          </label>
+        </div>
+      </div>
+
       <div id="priceList" class="list"></div>
       <div id="priceEmpty" class="empty hidden">Noch keine Preisgruppen angelegt.</div>
 
@@ -203,6 +237,15 @@
           <button id="checkMedia">Clips pr&uuml;fen &amp; umwandeln</button>
         </div>
       </div>
+      <div class="card schmal">
+        <h2>Standzeit f&uuml;r Bilder</h2>
+        <label class="field">
+          <span>Sekunden</span>
+          <input type="number" min="2" max="300" id="s_imageDuration">
+          <em>Gilt f&uuml;r alle Bilder ohne eigene Standzeit weiter unten.</em>
+        </label>
+      </div>
+
       <div id="videoList" class="list"></div>
       <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife. Oben auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
     </section>
@@ -213,37 +256,6 @@
         <p class="hint">H&auml;ufigkeit und Standzeit der Info-Slides sowie das Erscheinungsbild.</p></div></div>
 
       <div class="cards">
-        <div class="card">
-          <h2>Info-Slides in der Schleife</h2>
-          <label class="field">
-            <span>Timetable zeigen nach je&hellip; Videos</span>
-            <input type="number" min="0" max="50" id="s_timetableEvery">
-            <em>0 = Timetable gar nicht zeigen</em>
-          </label>
-          <label class="field">
-            <span>Timetable Standzeit (Sekunden)</span>
-            <input type="number" min="3" max="300" id="s_timetableDuration">
-          </label>
-          <label class="field">
-            <span>Preise zeigen nach je&hellip; Videos</span>
-            <input type="number" min="0" max="50" id="s_pricesEvery">
-            <em>0 = Preisliste gar nicht zeigen</em>
-          </label>
-          <label class="field">
-            <span>Preise Standzeit (Sekunden)</span>
-            <input type="number" min="3" max="300" id="s_pricesDuration">
-          </label>
-          <label class="field">
-            <span>Wie viele kommende Acts anzeigen</span>
-            <input type="number" min="1" max="12" id="s_timetableMaxNext">
-          </label>
-          <label class="field">
-            <span>Standzeit f&uuml;r Bilder (Sekunden)</span>
-            <input type="number" min="2" max="300" id="s_imageDuration">
-            <em>Gilt f&uuml;r alle Bilder ohne eigene Standzeit.</em>
-          </label>
-        </div>
-
         <div class="card">
           <h2>Logo</h2>
           <div id="logoPreview" class="logoPreview">kein Logo hinterlegt</div>

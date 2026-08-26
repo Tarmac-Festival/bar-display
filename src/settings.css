@@ -270,6 +270,11 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 #pinSchirm .pinFehler { min-height: 1.2em; color: var(--danger); font-size: 13px; margin-bottom: 0.7rem; }
 #pinSchirm button { width: 100%; }
 
+/* Schmale Karte fuer die Einstellungen oben in einem Reiter - soll nicht die
+   ganze Breite fuellen wie die Listen darunter. */
+.card.schmal { max-width: 780px; margin-bottom: 1rem; }
+.dreiCol { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 1rem; }
+
 .planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
 .planRow {
   display: flex;
@@ -501,14 +506,18 @@ textarea { resize: vertical; min-height: 66px; line-height: 1.45; font-family: i
     z-index: 30;
   }
   .brand { font-size: 14px; }
+  /* flex-basis schlaegt width: die Grundregel setzt flex:1, also basis 0 - damit
+     passte die Leiste immer in die Restbreite und rutschte nie in eine eigene
+     Zeile. Sie stand dann zusammengequetscht neben dem Speichern-Knopf. */
   #tabs {
     order: 3;
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    gap: 0.3rem;
   }
-  .tab { white-space: nowrap; padding: 0.5rem 0.7rem; }
+  /* Sechs Reiter passen nicht in eine Handybreite. Umbrechen statt schieben:
+     dann ist jeder mit einem Griff erreichbar, ohne seitliches Wischen. */
+  .tab { white-space: nowrap; padding: 0.5rem 0.75rem; flex: 0 0 auto; }
   .topActions { margin-left: auto; }
   #saveBtn { padding: 0.6rem 1.1rem; }
 

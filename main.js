@@ -322,7 +322,10 @@ function fernStarten(cfg) {
       // Das Handy speichert -> hier ablegen und die Fenster auffrischen. Der
       // Dienst schickt danach von sich aus die Meldung an andere Handys.
       schreiben: (neu) => { const m = saveConfig(neu); broadcastConfig(m); return m; },
-      version: app.getVersion()
+      version: app.getVersion(),
+      // Damit sich der Bildschirm auch vom Handy waehlen laesst
+      displays: displayListe,
+      nummerieren: displaysNummerieren
     });
     gebaut.ordnerAnlegen();
 
@@ -710,7 +713,9 @@ ipcMain.handle('settings:close', () => {
 ipcMain.handle('app:quit', () => app.quit());
 
 // --- Bildschirme -----------------------------------------------------------
-ipcMain.handle('displays:list', () => {
+// Als eigene Funktionen, weil sie nicht nur ueber IPC gebraucht werden: die
+// Bedienseite fuers Handy fragt dieselben Dinge ueber das Netz ab.
+function displayListe() {
   const primary = screen.getPrimaryDisplay();
   const aktiv = targetDisplay(loadConfig());
   return screen.getAllDisplays().map((d, i) => ({
@@ -721,10 +726,11 @@ ipcMain.handle('displays:list', () => {
     primary: d.id === primary.id,
     aktiv: d.id === aktiv.id
   }));
-});
+}
+ipcMain.handle('displays:list', displayListe);
 
 // Blendet auf jedem Bildschirm kurz eine große Nummer ein
-ipcMain.handle('displays:identify', () => {
+function displaysNummerieren() {
   const fenster = screen.getAllDisplays().map((d, i) => {
     const w = new BrowserWindow({
       x: d.bounds.x + Math.round((d.bounds.width - 320) / 2),
@@ -749,7 +755,8 @@ ipcMain.handle('displays:identify', () => {
   });
   setTimeout(() => fenster.forEach(w => { if (!w.isDestroyed()) w.close(); }), 2500);
   return fenster.length;
-});
+}
+ipcMain.handle('displays:identify', displaysNummerieren);
 
 // Linux kennt kein setLoginItemSettings - dort legt man eine .desktop-Datei
 // in ~/.config/autostart ab.

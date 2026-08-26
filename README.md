@@ -233,13 +233,12 @@ Zwei Möglichkeiten, für jede Durchsage einzeln einstellbar:
 
 ![Laufschrift über einem Clip](docs/screenshots/anzeige-lauftext.png)
 
-Die Laufschrift läuft ohne Sprung: der Text steht zweimal hintereinander in der
-Spur, und wenn die zweite Fassung dort ankommt, wo die erste anfing, beginnt
-sie wieder von vorn. Das Tempo gibt es in **langsam**, **normal** und
-**schnell** – gerechnet in Bildschirmbreiten pro Sekunde, damit dieselbe
-Einstellung auf einem großen Fernseher und auf einem kleinen Bildschirm gleich
-schnell wirkt. Ein längerer Text braucht entsprechend länger, statt schneller
-durchzuhuschen.
+Die Laufschrift beginnt rechts außerhalb des Bildes, zieht über die volle
+Breite durch und verschwindet links wieder – danach fängt sie von vorn an. Das
+Tempo gibt es in **langsam**, **normal** und **schnell** – gerechnet in
+Bildschirmbreiten pro Sekunde, damit dieselbe Einstellung auf einem großen
+Fernseher und auf einem kleinen Bildschirm gleich schnell wirkt. Ein längerer
+Text braucht entsprechend länger, statt schneller durchzuhuschen.
 
 Ein Countdown läuft dabei ganz normal mit.
 
@@ -415,6 +414,11 @@ Das gilt überall gleich: Timetable, Zeitfenster der Clips, geplante Durchsagen
 und Ruhezeit. Der gerade laufende
 Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
+- **Wie oft und wie lange**: nach wie vielen Beiträgen der Timetable erscheint,
+  wie lange er stehen bleibt und wie viele kommende Acts er zeigt. `0` schaltet
+  ihn ganz ab. **Bilder zählen als Beitrag mit** – bei zwei Bildern und „nach je
+  3 Beiträgen" kommt der Timetable also etwa jede dritte Standzeit, nicht jede.
+  Der Zähler läuft über die Runden hinweg weiter.
 - **Foto**: Klick auf *+ Foto* wählt ein Bild, Klick auf die Miniatur tauscht es,
   das rote × entfernt es.
 - **Ausschnitt**: der kleine Knopf unten rechts auf der Miniatur öffnet die
@@ -468,10 +472,6 @@ sonst passt.
 
 ![Einstellungen Anzeige](docs/screenshots/einstellungen-anzeige.png)
 
-- **Info-Slides in der Schleife**: nach wie vielen Beiträgen Timetable und Preise
-  erscheinen und wie lange sie stehen bleiben. `0` schaltet den jeweiligen Slide ab.
-  Der Zähler läuft über die Runden hinweg weiter – „nach je 5 Beiträgen" greift also
-  auch, wenn gerade nur 3 Clips aktiv sind.
 - **Logo**: Zwei Logos sind mitgeliefert und mit einem Klick wählbar – das
   **L300-Zeichen** und der **TARMAC-Schriftzug**. Beim Wechsel stellt sich die
   Höhe passend mit ein: der Schriftzug ist mit 7,8:1 sehr breit und braucht eine
@@ -538,7 +538,9 @@ alle Texte vom Handy ändern, ohne an den Bar-Rechner zu gehen. Änderungen
 erscheinen **sofort** auf der Anzeige.
 
 Die Adresse steht unter *System → Bedienung vom Handy*, mit QR-Code zum
-Abscannen:
+Abscannen. Hat der Rechner mehrere Netzwerkverbindungen, werden **VPN-Zugänge
+und virtuelle Anschlüsse** (WSL, VirtualBox, Hyper-V) herausgefiltert – deren
+Adressen sehen brauchbar aus, führen vom Handy aus aber ins Leere:
 
 ![Bedienung vom Handy im Reiter System](docs/screenshots/einstellungen-system.png)
 
@@ -562,7 +564,10 @@ die Adresse des Rechners heraussuchen muss:
 > Löschen verlangen sie.
 
 Auf der Bedienseite selbst sind die Schalter dafür ausgeblendet: wer den Dienst
-von dort abschaltet, sägt den Ast ab, auf dem er sitzt.
+von dort abschaltet, sägt den Ast ab, auf dem er sitzt. Ebenso der Autostart –
+den stellt man am Gerät ein, nicht aus der Ferne. **Der Bildschirm lässt sich
+dagegen auch vom Handy wählen**, samt *Bildschirme nummerieren*; am Raspberry Pi
+gibt es nichts zu wählen, dort verschwindet die Karte.
 
 ---
 

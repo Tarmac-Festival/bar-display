@@ -290,6 +290,45 @@ check('Wert und Datei passen zusammen', MITGELIEFERTE_LOGOS.every(function (l) {
   return mitgeliefertesLogo(l.wert) === 'branding/' + l.datei;
 }), true);
 
+console.log('-- Netzwerkadressen --');
+const webserver = require(path.join(__dirname, '..', 'lib', 'webserver.js'));
+const netzeMitVpn = {
+  'ProtonVPN':  [{ family: 'IPv4', internal: false, address: '10.2.0.2' }],
+  'Ethernet 6': [{ family: 'IPv4', internal: false, address: '192.168.178.44' }],
+  'Loopback Pseudo-Interface 1': [{ family: 'IPv4', internal: true, address: '127.0.0.1' }]
+};
+check('VPN faellt raus, das Heimnetz bleibt',
+      webserver.adressenAus(netzeMitVpn), ['192.168.178.44']);
+
+check('Schleifenadresse taucht nie auf',
+      webserver.adressenAus({ 'Loopback': [{ family: 'IPv4', internal: true, address: '127.0.0.1' }] }), []);
+
+check('IPv6 wird uebergangen', webserver.adressenAus({
+  'Ethernet': [{ family: 'IPv6', internal: false, address: 'fd90::1' },
+               { family: 'IPv4', internal: false, address: '192.168.1.5' }] }), ['192.168.1.5']);
+
+// Manche Systeme melden family als Zahl statt als Text
+check('family als Zahl geht auch', webserver.adressenAus({
+  'Ethernet': [{ family: 4, internal: false, address: '192.168.1.5' }] }), ['192.168.1.5']);
+
+check('192.168 kommt vor 10.x', webserver.adressenAus({
+  'LAN1': [{ family: 'IPv4', internal: false, address: '10.0.0.5' }],
+  'LAN2': [{ family: 'IPv4', internal: false, address: '192.168.0.5' }] }),
+  ['192.168.0.5', '10.0.0.5']);
+
+check('Adresse ohne DHCP steht hinten', webserver.adressenAus({
+  'LAN1': [{ family: 'IPv4', internal: false, address: '169.254.3.4' }],
+  'LAN2': [{ family: 'IPv4', internal: false, address: '10.0.0.5' }] }),
+  ['10.0.0.5', '169.254.3.4']);
+
+// Lieber eine unbrauchbare Adresse als gar keine Auskunft
+check('gibt es nur virtuelle, werden sie doch gezeigt', webserver.adressenAus({
+  'vEthernet (WSL)': [{ family: 'IPv4', internal: false, address: '172.20.0.1' }] }),
+  ['172.20.0.1']);
+
+check('keine Schnittstellen, keine Adressen', webserver.adressenAus({}), []);
+check('nichts uebergeben faellt nicht um', webserver.adressenAus(null), []);
+
 console.log('-- QR-Code --');
 // Die Bibliothek schneidet Zeichen standardmaessig auf ein Byte ab. Ohne die
 // Umstellung auf UTF-8 werden Umlaute unlesbar - das ist einmal passiert.

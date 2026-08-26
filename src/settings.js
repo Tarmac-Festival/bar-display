@@ -119,14 +119,15 @@ function fuerBrowserAnpassen() {
     const el = $(id);
     if (el) el.style.display = 'none';
   }
-  // Karten, die im Browser nichts nützen, ganz weg
-  for (const id of ['s_autostart', 's_displayId']) {
-    const el = $(id);
-    const karte = el && el.closest('.card');
-    if (karte) karte.style.display = 'none';
-  }
-  const nummerieren = $('identifyDisplays');
-  if (nummerieren) nummerieren.style.display = 'none';
+  // Autostart betrifft das Geraet, an dem die Anzeige haengt - vom Handy aus
+  // laesst sich das nicht sinnvoll setzen.
+  const autoKarte = $('s_autostart') && $('s_autostart').closest('.card');
+  if (autoKarte) autoKarte.style.display = 'none';
+
+  // Die Bildschirmauswahl bleibt: welcher Monitor die Anzeige zeigt, will man
+  // auch vom Handy umstellen koennen. Sie wird nur ausgeblendet, wenn es gar
+  // nichts zu waehlen gibt - am Raspberry Pi etwa.
+  bildschirmKarteAnpassen();
 
   // Die Vorschau gibt es nur im Browserbetrieb - am Rechner steht die Anzeige
   // ohnehin daneben.
@@ -1348,10 +1349,20 @@ function renderLogoAuswahl() {
   });
 }
 
+// Ohne waehlbare Bildschirme ist die Karte nur Ballast.
+function bildschirmKarteAnpassen() {
+  const sel = $('s_displayId');
+  const karte = sel && sel.closest('.card');
+  if (!karte) return;
+  const leer = sel.options.length === 0;
+  karte.style.display = leer ? 'none' : '';
+}
+
 async function renderDisplays() {
   const sel = $('s_displayId');
-  const liste = await window.api.listDisplays();
-  if (!liste.length) return;      // im Browser gibt es keine Monitorliste
+  let liste = [];
+  try { liste = await window.api.listDisplays(); } catch (e) { /* dann eben keine */ }
+  if (!liste.length) { bildschirmKarteAnpassen(); return; }
   sel.innerHTML = liste.map(d =>
     '<option value="' + d.id + '">Bildschirm ' + d.nummer + ' – ' + d.breite + '×' + d.hoehe +
     (d.primary ? ' (Hauptbildschirm)' : '') + '</option>').join('');

@@ -61,8 +61,9 @@ if (!window.api) {
     openSettings: async () => { window.location.href = '/einstellungen'; },
     closeSettings: async () => {},
     quit: async () => {},
-    listDisplays: async () => [],
-    identifyDisplays: async () => 0,
+    listDisplays: () => hole('/api/displays').catch(() => []),
+    identifyDisplays: () => fetch('/api/displays/nummerieren', { method: 'POST' })
+      .then(r => r.json()).then(a => (a && a.anzahl) || 0).catch(() => 0),
     getAutostart: async () => true,
     setAutostart: async () => true,
     // Dateien kommen hier nicht aus einem Systemdialog, sondern aus der
