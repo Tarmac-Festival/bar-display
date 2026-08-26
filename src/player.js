@@ -826,42 +826,46 @@ function renderTimetable() {
   // dann fangen alle Act-Namen auf derselben Kante an
   const anyPhoto = view.next.some(x => x.entry.photo);
 
-  // Acts und Lichtphasen in einer Liste, nach Uhrzeit sortiert
-  const zeilen = timetableZeilen(view, fenster, now);
+  const zeilen = timetableZeilen(view);
+
+  // Eigene Spalte fuer die Lichtphasen - nur wenn es welche gibt, sonst
+  // stuende dort eine leere Spalte im Weg.
+  const mitLicht = zeilen.some(x => lichtSpuren(x.se, fenster).length > 0);
 
   if (zeilen.length) {
     body += '<div class="ttLabel">' + (view.current ? 'ALS N&Auml;CHSTES' : 'DEMN&Auml;CHST') + '</div>';
-    body += '<div class="ttList">';
+    body += '<div class="ttList' + (mitLicht ? ' mitLicht' : '') + '">';
     for (const x of zeilen) {
       const e = x.eintrag;
       const when = timeLabel(x.se.start) + (x.se.end ? '&ndash;' + timeLabel(x.se.end) : '');
+      const spuren = mitLicht ? lichtSpuren(x.se, fenster) : [];
 
-      if (x.art === 'licht') {
-        // Eigene Zeile mit der echten Zeitspanne. Sie weicht bewusst von den
-        // Spielzeiten ab und darf deshalb nicht an einen Act angehaengt werden.
-        body += '<div class="ttRow licht">' +
-          '<div class="when">' + when + '</div>' +
-          '<div class="act">' + (anyPhoto ? '<span class="ttThumb empty"></span>' : '') +
-            lichtZeichen() + '<span>Starke Lichteffekte</span></div>' +
-          '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +
-          (e.note ? '<div class="info">' + escapeHtml(e.note) + '</div>' : '') +
-          '</div>';
-        continue;
-      }
-
-      body += '<div class="ttRow' + (x.licht ? ' hatLicht' : '') + '">' +
+      body += '<div class="ttRow' + (spuren.length ? ' hatLicht' : '') + '">' +
         '<div class="when">' + when + '</div>' +
+        (mitLicht ? lichtSpurHtml(spuren) : '') +
         '<div class="act">' +
           (e.photo ? '<span class="ttThumb"><img src="' + photoUrl(e.photo) +
                      '" alt="" style="' + fotoStil(e) + '"></span>'
                    : (anyPhoto ? '<span class="ttThumb empty"></span>' : '')) +
-          '<span>' + escapeHtml(e.act) + '</span>' +
-          (x.licht ? lichtZeichen() : '') + '</div>' +
+          '<span>' + escapeHtml(e.act) + '</span></div>' +
         '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +
         (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') +
         '</div>';
     }
     body += '</div>';
+
+    // Phasen, zu denen kein Act danebensteht - in einer Pause etwa. Sie
+    // duerfen nicht unter den Tisch fallen, nur weil die Spalte sie nicht
+    // aufnehmen kann.
+    const offen = lichtOhneZeile(zeilen, fenster, now).filter(f => f.se.start > now);
+    if (offen.length) {
+      body += '<div class="lichtSonst">' + lichtZeichen() +
+        '<span>Au&szlig;erdem starke Lichteffekte: ' +
+        offen.map(f => timeLabel(f.se.start) + '&ndash;' + timeLabel(f.se.end) +
+                       (f.eintrag.note ? ' (' + escapeHtml(f.eintrag.note) + ')' : ''))
+             .join(' &middot; ') +
+        '</span></div>';
+    }
   }
 
   if (!view.current && !zeilen.length) {
@@ -873,6 +877,38 @@ function renderTimetable() {
   return '<div class="slideInner">' +
     headHtml(s.timetableTitle || 'TIMETABLE', s.timetableSubtitle) +
     '<div class="slideBody">' + body + '</div>' + footHtml(true) + '</div>';
+}
+
+// Die Lichtspalte einer Zeile.
+//
+// Der Balken sitzt genau dort, wo die Phase innerhalb der Zeile liegt - faengt
+// das Licht mitten im Set an, faengt auch der Balken mittendrin an. Genau das
+// war mit einer eigenen Zeile nicht zu sehen.
+//
+// Beschriftet wird nur die Zeile, in der die Phase beginnt; laeuft sie ueber
+// mehrere Acts, laeuft der Balken einfach durch.
+function lichtSpurHtml(spuren) {
+  if (!spuren.length) return '<div class="lichtSpur"></div>';
+
+  let inhalt = '';
+  for (const s of spuren) {
+    const oben = (s.von * 100).toFixed(2);
+    const hoch = Math.max(0, (s.bis - s.von) * 100).toFixed(2);
+    inhalt += '<span class="lichtBalken' +
+      (s.beginntHier ? ' beginnt' : '') + (s.endetHier ? ' endet' : '') +
+      '" style="top:' + oben + '%;height:' + hoch + '%"></span>';
+
+    if (s.beginntHier) {
+      inhalt += '<span class="lichtMarke" style="top:' + oben + '%">' +
+        lichtZeichen() +
+        '<span class="lmZeit">' + timeLabel(s.fenster.se.start) + '&ndash;' +
+        timeLabel(s.fenster.se.end) + '</span>' +
+        (s.fenster.eintrag.note
+          ? '<span class="lmNote">' + escapeHtml(s.fenster.eintrag.note) + '</span>' : '') +
+        '</span>';
+    }
+  }
+  return '<div class="lichtSpur">' + inhalt + '</div>';
 }
 
 // Das Warnzeichen sitzt auf einer hellen Plakette. Die gelieferte Grafik ist

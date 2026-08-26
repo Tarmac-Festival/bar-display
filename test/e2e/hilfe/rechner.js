@@ -40,13 +40,26 @@ const test = basis.test.extend({
     // Vorab-Konfiguration, damit das Programm nicht mit dem Standardport 8080
     // startet - der ist auf einem Entwicklungsrechner gern belegt.
     const port = await freierPort();
+
+    // Der Act muss gerade laufen, sonst zeigt die Anzeige zu Recht "Programm
+    // durch". Unter Electron laesst sich die Uhr nicht stellen wie im Browser,
+    // also rechnen wir die Zeiten ab jetzt.
+    const jetzt = new Date();
+    const zweistellig = (n) => String(n).padStart(2, '0');
+    const uhr = (versatzMinuten) => {
+      const t = new Date(jetzt.getTime() + versatzMinuten * 60000);
+      return zweistellig(t.getHours()) + ':' + zweistellig(t.getMinutes());
+    };
+    const heute = jetzt.getFullYear() + '-' + zweistellig(jetzt.getMonth() + 1) +
+                  '-' + zweistellig(jetzt.getDate());
+
     ablage.schreiben({
       settings: {
         fernbedienung: true, fernPort: port, fernHinweis: false,
         transition: 'cut', fadeMs: 0, imageDuration: 3, qrEnabled: false,
         timetableEvery: 3, timetableDuration: 3, pricesEvery: 0
       },
-      timetable: [{ date: '2026-08-26', start: '21:00', end: '23:00',
+      timetable: [{ date: heute, start: uhr(-60), end: uhr(120),
                     act: 'Nachtflug', info: 'DJ-Set', photo: '' }]
     });
 

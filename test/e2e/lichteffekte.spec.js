@@ -29,54 +29,87 @@ function programm(zusatz) {
 }
 
 test.describe('Kennzeichnung im Timetable', () => {
-  test('betroffener Act bekommt das Zeichen, der andere nicht', async ({ page, bar }) => {
-    bar.konfig(programm());
-    await zeitStellen(page, FREITAG_20_UHR);
-    await page.goto(bar.adresse + '/');
-
-    const zeilen = page.locator('.ttRow');
-    await expect(zeilen).toHaveCount(3);       // zwei Acts, eine Lichtphase
-
-    // Die Vorband spielt 21-23 Uhr, das Licht faengt erst 23:30 an
-    const vorband = zeilen.filter({ hasText: 'Vorband' });
-    await expect(vorband).not.toHaveClass(/hatLicht/);
-    await expect(vorband.locator('.lichtZeichen')).toHaveCount(0);
-
-    // Nachtflug spielt 23-01:30 und wird getroffen
-    const nachtflug = zeilen.filter({ hasText: 'Nachtflug' });
-    await expect(nachtflug).toHaveClass(/hatLicht/);
-    await expect(nachtflug.locator('.lichtZeichen')).toHaveCount(1);
-  });
-
-  test('die Lichtphase steht als eigene Zeile mit ihrer echten Zeit',
+  test('die Lichtphase steht in einer eigenen Spalte, nicht in einer eigenen Zeile',
     async ({ page, bar }) => {
       bar.konfig(programm());
       await zeitStellen(page, FREITAG_20_UHR);
       await page.goto(bar.adresse + '/');
 
-      const licht = page.locator('.ttRow.licht');
-      await expect(licht).toHaveCount(1);
-      // Die eigene Zeitspanne, nicht die des Acts (23:00-01:30)
-      await expect(licht.locator('.when')).toHaveText('23:30–01:00');
-      await expect(licht).toContainText('Starke Lichteffekte');
-      await expect(licht).toContainText('Hauptbühne');
+      // Nur die beiden Acts - die Lichtphase reisst die Liste nicht auseinander
+      await expect(page.locator('.ttRow')).toHaveCount(2);
+      await expect(page.locator('.ttList')).toHaveClass(/mitLicht/);
+
+      // Die Vorband spielt 21-23 Uhr, das Licht faengt erst 23:30 an
+      const vorband = page.locator('.ttRow').filter({ hasText: 'Vorband' });
+      await expect(vorband).not.toHaveClass(/hatLicht/);
+      await expect(vorband.locator('.lichtBalken')).toHaveCount(0);
+
+      // Nachtflug spielt 23-01:30 und wird getroffen
+      const nachtflug = page.locator('.ttRow').filter({ hasText: 'Nachtflug' });
+      await expect(nachtflug).toHaveClass(/hatLicht/);
+      await expect(nachtflug.locator('.lichtBalken')).toHaveCount(1);
+      // Beschriftet mit der eigenen Zeitspanne, nicht mit der des Acts
+      await expect(nachtflug.locator('.lmZeit')).toHaveText('23:30–01:00');
+      await expect(nachtflug.locator('.lmNote')).toHaveText('Hauptbühne');
     });
 
-  test('die Zeilen stehen in der richtigen Reihenfolge', async ({ page, bar }) => {
-    bar.konfig(programm());
+  test('der Balken sitzt versetzt - dort, wo die Phase wirklich anfaengt',
+    async ({ page, bar }) => {
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+
+      // Nachtflug 23:00-01:30, Licht 23:30-01:00: der Balken muss auf einem
+      // Fuenftel der Zeilenhoehe anfangen und bei vier Fuenfteln aufhoeren.
+      // Genau das war der Punkt an der eigenen Spalte - eine eigene Zeile
+      // konnte nicht zeigen, dass das Licht mitten im Set beginnt.
+      const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+        const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
+        const balken = zeile.querySelector('.lichtBalken').getBoundingClientRect();
+        return {
+          von: (balken.top - spur.top) / spur.height,
+          bis: (balken.bottom - spur.top) / spur.height,
+          breite: balken.width
+        };
+      });
+
+      expect(lage.von).toBeGreaterThan(0.12);
+      expect(lage.von).toBeLessThan(0.28);
+      expect(lage.bis).toBeGreaterThan(0.72);
+      expect(lage.bis).toBeLessThan(0.88);
+      // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
+      expect(lage.breite).toBeGreaterThan(30);
+    });
+
+  test('ueber zwei Acts laeuft der Balken durch', async ({ page, bar }) => {
+    bar.konfig(programm({
+      lichteffekte: [{ id: 'l1', date: '2026-08-28', start: '22:30', end: '23:45',
+                       note: 'Hauptbühne' }]
+    }));
     await zeitStellen(page, FREITAG_20_UHR);
     await page.goto(bar.adresse + '/');
 
-    const zeiten = await page.locator('.ttRow .when').allInnerTexts();
-    expect(zeiten).toEqual(['21:00–23:00', '23:00–01:30', '23:30–01:00']);
+    // Beide Acts sind betroffen
+    await expect(page.locator('.ttRow.hatLicht')).toHaveCount(2);
+    // Beschriftet wird nur da, wo die Phase anfaengt
+    await expect(page.locator('.lmZeit')).toHaveCount(1);
+
+    const kanten = await page.locator('.ttRow.hatLicht').evaluateAll((zeilen) =>
+      zeilen.map((z) => {
+        const b = z.querySelector('.lichtBalken');
+        return { beginnt: b.classList.contains('beginnt'), endet: b.classList.contains('endet') };
+      }));
+    expect(kanten[0]).toEqual({ beginnt: true, endet: false });
+    expect(kanten[1]).toEqual({ beginnt: false, endet: true });
   });
 
-  test('ohne eingetragene Zeiten aendert sich nichts', async ({ page, bar }) => {
+  test('ohne eingetragene Zeiten gibt es die Spalte gar nicht', async ({ page, bar }) => {
     bar.konfig(programm({ lichteffekte: [] }));
     await zeitStellen(page, FREITAG_20_UHR);
     await page.goto(bar.adresse + '/');
 
     await expect(page.locator('.ttRow')).toHaveCount(2);
+    await expect(page.locator('.ttList')).not.toHaveClass(/mitLicht/);
     await expect(page.locator('.lichtZeichen')).toHaveCount(0);
   });
 
@@ -89,9 +122,26 @@ test.describe('Kennzeichnung im Timetable', () => {
     await zeitStellen(page, FREITAG_20_UHR);
     await page.goto(bar.adresse + '/');
 
-    await expect(page.locator('.ttRow.licht')).toHaveCount(0);
+    await expect(page.locator('.lichtBalken')).toHaveCount(0);
     await expect(page.locator('.lichtZeichen')).toHaveCount(0);
   });
+
+  test('eine Phase ohne Act daneben faellt nicht unter den Tisch',
+    async ({ page, bar }) => {
+      bar.konfig(programm({
+        lichteffekte: [{ id: 'l1', date: '2026-08-29', start: '02:00', end: '02:30',
+                         note: 'Afterhour' }]
+      }));
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+
+      // Kein Act laeuft um 02:00 - also steht sie unter der Liste
+      await expect(page.locator('.lichtBalken')).toHaveCount(0);
+      const sonst = page.locator('.lichtSonst');
+      await expect(sonst).toBeVisible();
+      await expect(sonst).toContainText('02:00–02:30');
+      await expect(sonst).toContainText('Afterhour');
+    });
 
   test('waehrend der Lichtphase steht die Warnung ganz oben', async ({ page, bar }) => {
     bar.konfig(programm());
@@ -105,9 +155,10 @@ test.describe('Kennzeichnung im Timetable', () => {
     await expect(warnung).toContainText('noch bis 01:00');
     await expect(warnung.locator('.lichtZeichen')).toHaveCount(1);
 
-    // Und sie steht nicht noch einmal in der Liste darunter - dieselbe Angabe
-    // zweimal auf dem Schirm verwirrt mehr, als sie hilft.
-    await expect(page.locator('.ttRow.licht')).toHaveCount(0);
+    // Und sie steht nicht noch einmal darunter - dieselbe Angabe zweimal auf
+    // dem Schirm verwirrt mehr, als sie hilft.
+    await expect(page.locator('.lichtBalken')).toHaveCount(0);
+    await expect(page.locator('.lichtSonst')).toHaveCount(0);
   });
 
   test('das Zeichen ueberdeckt den Act-Namen nicht', async ({ page, bar }) => {
@@ -119,20 +170,12 @@ test.describe('Kennzeichnung im Timetable', () => {
     const karte = page.locator('.ttNow');
     await expect(karte.locator('.lichtZeichen')).toHaveCount(1);
 
-    const lage = await karte.evaluate((el) => {
-      const name = el.querySelector('.act > span, .act');
-      const zeichen = el.querySelector('.lichtZeichen');
+    const drin = await karte.evaluate((el) => {
       const k = el.getBoundingClientRect();
-      const z = zeichen.getBoundingClientRect();
-      return {
-        // Das Zeichen muss innerhalb der Karte bleiben
-        drin: z.right <= k.right + 1 && z.bottom <= k.bottom + 1,
-        // und rechts vom Text stehen, nicht darauf
-        textEnde: name.getBoundingClientRect().right,
-        zeichenAnfang: z.left
-      };
+      const z = el.querySelector('.lichtZeichen').getBoundingClientRect();
+      return z.right <= k.right + 1 && z.bottom <= k.bottom + 1;
     });
-    expect(lage.drin, 'das Zeichen bleibt in der Karte').toBe(true);
+    expect(drin, 'das Zeichen bleibt in der Karte').toBe(true);
   });
 });
 
@@ -142,13 +185,13 @@ test.describe('Das Zeichen', () => {
     await zeitStellen(page, FREITAG_20_UHR);
     await page.goto(bar.adresse + '/');
 
-    const bild = page.locator('.ttRow.licht .lichtZeichen img');
+    const bild = page.locator('.lichtSpur .lichtZeichen img');
     await expect(bild).toHaveAttribute('src', 'branding/lichteffekte.png');
     await bildGeladen(bild);
 
     // Die gelieferte Grafik ist schwarz auf transparent. Ohne helle Flaeche
     // waere sie auf dem dunklen Hintergrund praktisch unsichtbar.
-    const grund = await page.locator('.ttRow.licht .lichtZeichen')
+    const grund = await page.locator('.lichtSpur .lichtZeichen')
       .evaluate(el => getComputedStyle(el).backgroundColor);
     expect(grund).toBe('rgb(255, 255, 255)');
 

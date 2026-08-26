@@ -595,35 +595,69 @@ function lichtJetzt(fenster, now) {
 }
 
 /**
- * Die Zeilen fuer den Timetable-Slide: die kommenden Acts, und dazwischen
- * chronologisch einsortiert die Lichtphasen mit ihrer echten Zeitspanne.
+ * Die Zeilen fuer den Timetable-Slide - die kommenden Acts, sonst nichts.
  *
- * Gezeigt werden nur Lichtphasen, die noch nicht angefangen haben und die in
- * den Zeitraum fallen, den die Liste ohnehin abdeckt - sonst stuende unter den
- * naechsten drei Acts noch das Licht von uebermorgen.
- *
- * Eine gerade laufende Phase bleibt hier bewusst aussen vor: die gehoert nicht
- * in eine Liste kommender Dinge, sondern gross ueber alles andere. Darum
- * kuemmert sich der Aufrufer, siehe lichtJetzt().
+ * Die Lichtphasen bekamen frueher eine eigene Zeile dazwischen. Das riss die
+ * Liste auseinander und verschleierte gerade das Interessante: dass eine Phase
+ * mitten in einem Set anfaengt. Sie stehen jetzt in einer eigenen Spalte als
+ * versetzter Balken - siehe lichtSpuren().
  */
-function timetableZeilen(view, fenster, now) {
-  const acts = (view && view.next ? view.next : []).map(x => ({
-    art: 'act', se: x.se, eintrag: x.entry, licht: lichtTrifft(x.se, fenster)
+function timetableZeilen(view) {
+  return (view && view.next ? view.next : []).map(x => ({
+    art: 'act', se: x.se, eintrag: x.entry
   }));
+}
 
-  // Bis wohin reicht die Liste? Ohne Acts nehmen wir den Rest des Tages.
-  let bis = null;
-  for (const a of acts) {
-    const e = a.se.end || a.se.start;
-    if (!bis || e > bis) bis = e;
+/**
+ * Wo genau liegt eine Lichtphase innerhalb einer Zeile?
+ *
+ * Liefert je ueberschneidender Phase den Anteil, den sie an der Zeile
+ * einnimmt - 0 = Zeilenanfang, 1 = Zeilenende. Damit laesst sich der Balken
+ * versetzt zeichnen: bei einem Set von 23:00 bis 01:30 und Licht ab 23:30
+ * beginnt er auf einem Drittel der Zeilenhoehe, nicht oben.
+ *
+ * `beginntHier` und `endetHier` sagen, ob Anfang bzw. Ende der Phase in diese
+ * Zeile fallen. Nur dort wird beschriftet und rund abgeschlossen; laeuft die
+ * Phase ueber mehrere Acts, laeuft auch der Balken durch.
+ */
+function lichtSpuren(se, fenster) {
+  if (!se || !se.start) return [];
+  const start = se.start.getTime();
+  const ende = (se.end || new Date(start + 60 * 60 * 1000)).getTime();
+  const gesamt = ende - start;
+  if (gesamt <= 0) return [];
+
+  const raus = [];
+  for (const f of (fenster || [])) {
+    const fs = f.se.start.getTime(), fe = f.se.end.getTime();
+    if (fe <= start || fs >= ende) continue;
+    raus.push({
+      von: Math.max(0, (fs - start) / gesamt),
+      bis: Math.min(1, (fe - start) / gesamt),
+      beginntHier: fs >= start,
+      endetHier: fe <= ende,
+      fenster: f
+    });
   }
-  if (!bis) bis = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+  return raus;
+}
 
-  const lichter = (fenster || [])
-    .filter(f => f.se.start > now && f.se.start <= bis)
-    .map(f => ({ art: 'licht', se: f.se, eintrag: f.eintrag, licht: true }));
-
-  return acts.concat(lichter).sort((a, b) => a.se.start - b.se.start);
+/**
+ * Lichtphasen, die zu keiner der gezeigten Zeilen gehoeren - etwa, weil sie in
+ * einer Pause liegen oder nach dem letzten gezeigten Act kommen. Sie duerfen
+ * nicht unter den Tisch fallen, nur weil kein Act danebensteht.
+ */
+function lichtOhneZeile(zeilen, fenster, now) {
+  const offen = [];
+  for (const f of (fenster || [])) {
+    if (f.se.end <= now) continue;
+    let getroffen = false;
+    for (const z of (zeilen || [])) {
+      if (lichtSpuren(z.se, [f]).length) { getroffen = true; break; }
+    }
+    if (!getroffen) offen.push(f);
+  }
+  return offen;
 }
 
 /**

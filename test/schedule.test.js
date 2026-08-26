@@ -18,7 +18,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         wirksameHaeufigkeit, rundeBauen,
         istUebergang, uebergangsAuswahl, uebergangBeutel,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
-        timeLabel } = ctx;
+        lichtSpuren, lichtOhneZeile, timeLabel } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -511,7 +511,8 @@ check('davor', !!lichtJetzt(lichtNacht, FR2(23, 0)), false);
 check('genau am Anfang', !!lichtJetzt(lichtNacht, FR2(23, 30)), true);
 check('genau am Ende', !!lichtJetzt(lichtNacht, SA2(1, 0)), false);
 
-// Zeilen fuer den Slide: Acts und Lichtphasen zusammen, nach Uhrzeit
+// Zeilen fuer den Slide: nur die Acts. Die Lichtphasen stehen in einer eigenen
+// Spalte daneben - siehe lichtSpuren().
 (function () {
   const acts = [
     { date: '2026-08-28', start: '21:00', end: '23:00', act: 'Vorband' },
@@ -519,38 +520,87 @@ check('genau am Ende', !!lichtJetzt(lichtNacht, SA2(1, 0)), false);
   ];
   const jetzt = FR2(20, 0);
   const sicht = timetableView(acts, jetzt, 5);
-  const zeilen = timetableZeilen(sicht, lichtNacht, jetzt);
+  const zeilen = timetableZeilen(sicht);
 
-  check('Acts und Lichtphase in einer Liste', zeilen.map(z => z.art),
-        ['act', 'act', 'licht']);
-  check('nach Uhrzeit sortiert',
-        zeilen.map(z => timeLabel(z.se.start)), ['21:00', '23:00', '23:30']);
-  check('nur der ueberschneidende Act ist markiert',
-        zeilen.filter(z => z.art === 'act').map(z => z.licht), [false, true]);
-  check('die Lichtzeile traegt ihre eigene Zeitspanne',
-        timeLabel(zeilen[2].se.start) + '-' + timeLabel(zeilen[2].se.end), '23:30-01:00');
-
-  // Vergangene Lichtphasen gehoeren nicht mehr in die Liste
-  const spaeter = SA2(2, 0);
-  check('vorbei ist vorbei',
-        timetableZeilen(timetableView(acts, spaeter, 5), lichtNacht, spaeter).length, 0);
-
-  // Eine gerade laufende Phase steht gross ueber der Liste, nicht darin -
-  // sonst stuende dieselbe Angabe zweimal auf dem Schirm.
-  const drin = SA2(0, 15);
-  check('laufende Phase nicht in der Liste',
-        timetableZeilen(timetableView(acts, drin, 5), lichtNacht, drin)
-          .filter(z => z.art === 'licht').length, 0);
-  check('aber sie laeuft', !!lichtJetzt(lichtNacht, drin), true);
+  check('nur Acts in den Zeilen', zeilen.map(z => z.art), ['act', 'act']);
+  check('in der Reihenfolge des Timetables',
+        zeilen.map(z => z.eintrag.act), ['Vorband', 'Nachtflug']);
 })();
 
-// Eine Lichtphase weit in der Zukunft gehoert nicht unter die naechsten Acts
+// ---------------------------------------------------------------------------
+// Die Lichtspalte: wo genau liegt die Phase innerhalb einer Zeile?
+// ---------------------------------------------------------------------------
+(function () {
+  const zeile = (start, end) => entryStartEnd({ date: '2026-08-28', start, end });
+
+  // Set 23:00-01:30 (150 Minuten), Licht 23:30-01:00 (90 Minuten ab Minute 30)
+  let spur = lichtSpuren(zeile('23:00', '01:30'), lichtNacht);
+  check('eine Ueberschneidung', spur.length, 1);
+  check('faengt bei einem Fuenftel an', Math.round(spur[0].von * 100), 20);
+  check('hoert bei vier Fuenfteln auf', Math.round(spur[0].bis * 100), 80);
+  check('Anfang liegt in dieser Zeile', spur[0].beginntHier, true);
+  check('Ende auch', spur[0].endetHier, true);
+
+  // Set 21:00-23:00, Licht faengt erst 23:30 an - keine Ueberschneidung
+  check('davor gibt es nichts zu zeichnen', lichtSpuren(zeile('21:00', '23:00'), lichtNacht).length, 0);
+
+  // Eine Phase, die ueber zwei Acts laeuft: 22:30-23:45
+  const ueber = lichtFenster([L('22:30', '23:45')]);
+  const erste = lichtSpuren(zeile('21:00', '23:00'), ueber)[0];
+  const zweite = lichtSpuren(zeile('23:00', '01:30'), ueber)[0];
+
+  check('erste Zeile: faengt bei drei Vierteln an', Math.round(erste.von * 100), 75);
+  check('erste Zeile: laeuft bis zum Ende durch', Math.round(erste.bis * 100), 100);
+  check('erste Zeile: hier faengt die Phase an', erste.beginntHier, true);
+  check('erste Zeile: hier hoert sie nicht auf', erste.endetHier, false);
+
+  check('zweite Zeile: faengt oben an', Math.round(zweite.von * 100), 0);
+  check('zweite Zeile: geht bis drei Zehntel', Math.round(zweite.bis * 100), 30);
+  check('zweite Zeile: hier faengt sie nicht an', zweite.beginntHier, false);
+  check('zweite Zeile: aber hier hoert sie auf', zweite.endetHier, true);
+
+  // Ein Act ohne Ende wird mit einer Stunde gerechnet - dieselbe Annahme wie
+  // ueberall sonst
+  const ohneEnde = lichtSpuren(entryStartEnd({ date: '2026-08-28', start: '23:00' }), lichtNacht);
+  check('Act ohne Ende: eine Stunde angesetzt', Math.round(ohneEnde[0].von * 100), 50);
+
+  check('ohne Fenster nichts', lichtSpuren(zeile('23:00', '01:30'), []).length, 0);
+  check('ohne Zeile nichts', lichtSpuren(null, lichtNacht).length, 0);
+})();
+
+// ---------------------------------------------------------------------------
+// Phasen, zu denen kein Act danebensteht
+// ---------------------------------------------------------------------------
+(function () {
+  const acts = [{ date: '2026-08-28', start: '21:00', end: '23:00', act: 'Vorband' }];
+  const jetzt = FR2(20, 0);
+  const zeilen = timetableZeilen(timetableView(acts, jetzt, 5));
+
+  // Die Phase 23:30-01:00 beruehrt den einzigen Act nicht - sie darf trotzdem
+  // nicht unter den Tisch fallen
+  const offen = lichtOhneZeile(zeilen, lichtNacht, jetzt);
+  check('faellt nicht unter den Tisch', offen.length, 1);
+  check('und zwar die richtige', timeLabel(offen[0].se.start), '23:30');
+
+  // Beruehrt sie einen Act, steht sie in der Spalte und nicht zusaetzlich
+  const langeActs = [{ date: '2026-08-28', start: '23:00', end: '01:30', act: 'Nachtflug' }];
+  check('sonst nicht doppelt',
+        lichtOhneZeile(timetableZeilen(timetableView(langeActs, jetzt, 5)),
+                       lichtNacht, jetzt).length, 0);
+
+  // Vergangenes bleibt weg
+  check('vorbei bleibt weg', lichtOhneZeile(zeilen, lichtNacht, SA2(2, 0)).length, 0);
+})();
+
+// Eine Lichtphase, die keinen der gezeigten Acts beruehrt, steht in keiner
+// Spalte - dafuer gibt es die Zeile "Ausserdem" unter der Liste.
 (function () {
   const acts = [{ date: '2026-08-28', start: '21:00', end: '22:00', act: 'Vorband' }];
   const jetzt = FR2(20, 0);
+  const zeilen = timetableZeilen(timetableView(acts, jetzt, 5));
   const weit = lichtFenster([{ id: 'x', date: '2026-08-30', start: '23:00', end: '23:30' }]);
-  check('Licht von uebermorgen bleibt weg',
-        timetableZeilen(timetableView(acts, jetzt, 5), weit, jetzt).length, 1);
+  check('kein Balken am Act', lichtSpuren(zeilen[0].se, weit).length, 0);
+  check('aber gemerkt', lichtOhneZeile(zeilen, weit, jetzt).length, 1);
 })();
 
 // Uebersicht fuers Wochenende

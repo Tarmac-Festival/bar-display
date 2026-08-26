@@ -341,10 +341,18 @@ läuft über zwei Acts hinweg oder liegt in einer Pause; wer sich darauf verläs
 muss die echte Zeitspanne sehen und nicht die des DJs, der zufällig gerade
 spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 
-Auf dem Timetable erscheint beides: betroffene Acts bekommen das Warnzeichen,
-und die Lichtphase steht zusätzlich als eigene Zeile mit ihrer eigenen Zeit.
+Auf dem Timetable bekommt das eine **eigene Spalte** neben den Spielzeiten. Der
+Balken darin sitzt genau dort, wo die Phase innerhalb des Sets liegt: fängt das
+Licht mitten im Set an, fängt auch der Balken mittendrin an. Beschriftet wird
+er mit seiner eigenen Zeitspanne.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
+
+Läuft eine Phase über zwei Acts hinweg, läuft der Balken durch — rund
+abgeschlossen wird er nur da, wo sie wirklich anfängt und aufhört. Und eine
+Phase, zu der gar kein Act danebensteht (in einer Pause etwa), erscheint als
+Zeile **Außerdem starke Lichteffekte** unter der Liste; sie fällt nicht unter
+den Tisch, nur weil die Spalte sie nicht aufnehmen kann.
 
 Läuft gerade eine, steht sie als Balken über der Liste — nicht in einer
 Tabellenzeile, aus der man sie erst heraussuchen müsste.

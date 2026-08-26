@@ -942,14 +942,107 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 .lichtZeichen.gross { border-radius: 0.3em; padding: 0.16em 0.24em; }
 .lichtZeichen.gross img { height: 2.1em; }
 
-/* Eigene Zeile im Timetable. Die Zeitspanne weicht bewusst von den Spielzeiten
-   ab, deshalb steht sie fuer sich und nicht am Act. */
-.ttRow.licht {
-  background: color-mix(in srgb, var(--accent2) 26%, transparent);
-  border-radius: 0.4em;
+/* Eigene Spalte statt eigener Zeile.
+
+   Der Balken sitzt genau dort, wo die Phase innerhalb der Zeile liegt: faengt
+   das Licht mitten im Set an, faengt auch der Balken mittendrin an. Eine eigene
+   Zeile konnte das nicht zeigen - sie riss die Liste auseinander und
+   verschleierte gerade das Interessante. */
+.ttList.mitLicht .ttRow {
+  grid-template-columns: 11em 12.5em 1fr auto;
+  column-gap: 0.9em;
 }
-.ttRow.licht .act { color: #fff; font-weight: 700; }
-.ttRow.licht .when { color: #fff; }
+/* Ausdruecklich benannt: ein Kind mit fester Zeile (die Lichtspur) wird vom
+   Browser vor den frei platzierten eingeordnet und haette sich sonst die erste
+   Spalte geschnappt - die Uhrzeit waere nach rechts gerutscht. */
+.ttList.mitLicht .ttRow .when { grid-column: 1; }
+.ttList.mitLicht .ttRow .lichtSpur { grid-column: 2; }
+.ttList.mitLicht .ttRow .act { grid-column: 3; }
+.ttList.mitLicht .ttRow .day { grid-column: 4; }
+.ttList.mitLicht .ttRow .info { grid-column: 3 / -1; }
+
+.lichtSpur {
+  position: relative;
+  /* Ueber beide Rasterzeilen: die Zusatzzeile ("DJ-Set") gehoert zur selben
+     Spielzeit, der Balken soll also auch daneben durchlaufen. Sonst deckt er
+     nur das obere Drittel ab und wirkt wie ein Versehen. */
+  grid-row: 1 / -1;
+  align-self: stretch;
+  min-height: 2.6em;
+}
+
+/* Eine dezente Achse, damit die Spalte als Spalte lesbar ist und der Balken
+   erkennbar ein Ausschnitt davon. */
+.lichtSpur::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 0.32em;
+  border-radius: 0.16em;
+  background: color-mix(in srgb, #fff 12%, transparent);
+}
+
+.lichtBalken {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Ein duenner Strich waere rechnerisch richtig und trotzdem aus drei Metern
+     nicht zu sehen. Also eine Flaeche ueber die ganze Spaltenbreite: die Lage
+     bleibt dieselbe, sie faellt nur auf. */
+  background: color-mix(in srgb, var(--accent2) 24%, transparent);
+  border-left: 0.3em solid var(--accent2);
+  /* Eine kurze Phase in einem langen Set ergibt sonst einen Streifen von
+     wenigen Pixeln. */
+  min-height: 1.1em;
+  /* Laeuft die Phase ueber mehrere Acts, laeuft die Flaeche durch - rund wird
+     sie nur da, wo die Phase wirklich anfaengt und aufhoert. */
+  border-radius: 0;
+}
+.lichtBalken.beginnt { border-top-left-radius: 0.3em; border-top-right-radius: 0.3em; }
+.lichtBalken.endet { border-bottom-left-radius: 0.3em; border-bottom-right-radius: 0.3em; }
+
+.lichtMarke {
+  position: absolute;
+  left: 0.6em;
+  right: 0.2em;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  /* Auf die Hoehe des Balkenanfangs setzen, nicht darunter haengen */
+  transform: translateY(0.25em);
+  line-height: 1.15;
+  flex-wrap: wrap;
+}
+.lichtMarke .lmZeit {
+  font-size: 1.3em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  white-space: nowrap;
+}
+.lichtMarke .lmNote {
+  font-size: 1.05em;
+  color: var(--muted);
+  flex-basis: 100%;
+  margin-left: 2em;
+  margin-top: 0.1em;
+}
+
+/* Nichts danebenstehendes: Phasen, die in eine Pause fallen */
+.lichtSonst {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 0.9em;
+  font-size: 1.35em;
+  color: var(--muted);
+}
+
+/* Im Sparmodus faellt color-mix weg - das kostet auf dem Pi spuerbar. */
+body.spar .lichtSpur::before { background: rgba(255, 255, 255, 0.12); }
+body.spar .lichtBalken { background: none; }
 
 /* Laeuft gerade eine Lichtphase, steht sie ueber der Liste - wer den Raum
    deswegen verlassen will, soll das nicht aus einer Tabellenzeile heraussuchen
@@ -1012,7 +1105,5 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 
 /* Im Sparmodus faellt die Farbmischung weg - color-mix kostet auf dem Pi
    spuerbar. Die Warnung bleibt, sie wird nur schlichter. */
-body.spar .ttRow.licht,
 body.spar .lichtSpanne.laeuft { background: none; }
-body.spar .ttRow.licht .act,
 body.spar .lichtSpanne.laeuft .lz { color: var(--accent2); }
