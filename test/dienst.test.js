@@ -10,6 +10,7 @@ const path = require('path');
 const webserver = require('../lib/webserver');
 const konfigablage = require('../lib/konfigablage');
 const { formatHinweis } = require('../lib/hochladen');
+const { benutzteFotos, fotosAufraeumen } = require('../lib/fotos');
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -165,8 +166,53 @@ function standardPruefen() {
   check('und sie sind nicht leer', alle.length > 30, true);
 }
 
+// ---------------------------------------------------------------------------
+// Aufraeumen des Foto-Ordners
+// ---------------------------------------------------------------------------
+// Hier wird geloescht, ohne Weg zurueck. Die Aufraeumfunktion kannte lange nur
+// die Act-Fotos aus dem Timetable; als die Karte Fotos bekam, haette ein Klick
+// auf "Unbenutzte Fotos aufraeumen" saemtliche Speisen-Fotos mitgenommen.
+function fotosPruefen() {
+  console.log('');
+  console.log('-- Benutzte Fotos --');
+
+  const cfg = {
+    timetable: [{ photo: 'act.jpg' }, { photo: '' }, {}],
+    prices: [
+      { items: [{ photo: 'burger.jpg' }, { name: 'Pommes' }],
+        spezial: { photo: 'chili.jpg' } },
+      { items: [] },
+      null
+    ],
+    special: { photo: 'shot.jpg' }
+  };
+
+  check('alle vier Fundstellen', [...benutzteFotos(cfg)].sort(),
+        ['act.jpg', 'burger.jpg', 'chili.jpg', 'shot.jpg']);
+  check('leere Konfiguration', benutzteFotos(null).size, 0);
+  check('leere Namen zaehlen nicht', benutzteFotos({ timetable: [{ photo: '  ' }] }).size, 0);
+
+  // Und jetzt wirklich aufraeumen, mit echten Dateien
+  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-display-fotos-'));
+  for (const n of ['act.jpg', 'burger.jpg', 'chili.jpg', 'shot.jpg', 'verwaist.jpg']) {
+    fs.writeFileSync(path.join(ordner, n), 'x');
+  }
+
+  const weg = fotosAufraeumen(fs, path, ordner, cfg);
+  const uebrig = fs.readdirSync(ordner).sort();
+
+  check('genau eine Datei geloescht', weg, 1);
+  check('das Speisen-Foto ist noch da', uebrig.indexOf('burger.jpg') >= 0, true);
+  check('das Tagesgericht auch', uebrig.indexOf('chili.jpg') >= 0, true);
+  check('der Spezialshot auch', uebrig.indexOf('shot.jpg') >= 0, true);
+  check('nur die verwaiste ist weg', uebrig, ['act.jpg', 'burger.jpg', 'chili.jpg', 'shot.jpg']);
+
+  fs.rmSync(ordner, { recursive: true, force: true });
+}
+
 (async () => {
   await standPruefen();
+  fotosPruefen();
   formatPruefen();
   standardPruefen();
   console.log('');

@@ -229,6 +229,20 @@ test.describe('Uebergaenge einstellen', () => {
     await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
   }
 
+  test('bei widerspruechlicher Konfiguration gilt der einzelne Uebergang',
+    async ({ page, bar }) => {
+      // Aeltere Installationen haben genau das: transition auf einem einzelnen
+      // Wert, uebergaenge auf den Voreinstellungen. Die Liste muss zeigen, was
+      // laeuft - nicht die Liste daneben.
+      await anzeigeReiter(page, bar, {
+        settings: { transition: 'kreis',
+                    uebergaenge: ['fade', 'zoom', 'schieben', 'wipe', 'logo'] }
+      });
+      const an = await page.locator('#uebergangsListe input:checked')
+        .evaluateAll(els => els.map(e => e.dataset.uebergang));
+      expect(an).toEqual(['kreis']);
+    });
+
   test('alle Uebergaenge stehen als Liste da', async ({ page, bar }) => {
     await anzeigeReiter(page, bar);
 
@@ -240,7 +254,7 @@ test.describe('Uebergaenge einstellen', () => {
   });
 
   test('genau einer angehakt heisst: immer der', async ({ page, bar }) => {
-    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['fade', 'zoom'] } });
+    await anzeigeReiter(page, bar, { settings: { transition: 'mix', uebergaenge: ['fade', 'zoom'] } });
 
     await page.locator('[data-uebergang=fade]').uncheck();
     await page.getByRole('button', { name: 'Speichern' }).click();
@@ -252,7 +266,7 @@ test.describe('Uebergaenge einstellen', () => {
   });
 
   test('mehrere angehakt heisst: sie wechseln sich ab', async ({ page, bar }) => {
-    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
+    await anzeigeReiter(page, bar, { settings: { transition: 'zoom', uebergaenge: ['zoom'] } });
 
     await page.locator('[data-uebergang=kreis]').check();
     await page.locator('[data-uebergang=hoch]').check();
@@ -266,7 +280,7 @@ test.describe('Uebergaenge einstellen', () => {
   });
 
   test('der letzte Haken laesst sich nicht entfernen', async ({ page, bar }) => {
-    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
+    await anzeigeReiter(page, bar, { settings: { transition: 'zoom', uebergaenge: ['zoom'] } });
 
     const zoom = page.locator('[data-uebergang=zoom]');
     await expect(zoom).toBeChecked();
@@ -279,7 +293,8 @@ test.describe('Uebergaenge einstellen', () => {
   });
 
   test('die Reihenfolge laesst sich waehlen', async ({ page, bar }) => {
-    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['fade', 'zoom', 'kreis'] } });
+    await anzeigeReiter(page, bar,
+      { settings: { transition: 'mix', uebergaenge: ['fade', 'zoom', 'kreis'] } });
 
     await expect(page.locator('#s_uebergangsFolge')).toHaveValue('zufall');
     await page.locator('#s_uebergangsFolge').selectOption('reihe');
@@ -291,7 +306,7 @@ test.describe('Uebergaenge einstellen', () => {
 
   test('bei nur einem Uebergang ist die Reihenfolge gegenstandslos',
     async ({ page, bar }) => {
-      await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
+      await anzeigeReiter(page, bar, { settings: { transition: 'zoom', uebergaenge: ['zoom'] } });
       await expect(page.locator('#folgeFeld')).toHaveClass(/gedimmt/);
 
       await page.locator('[data-uebergang=kreis]').check();

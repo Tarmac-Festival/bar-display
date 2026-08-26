@@ -297,6 +297,23 @@ test.describe('Eigene Seite fuers Wochenende', () => {
     await expect(laeuft).toContainText('läuft');
   });
 
+  test('mit lauter vergangenen Zeiten laeuft sie nicht mehr', async ({ page, bar }) => {
+    // Nach dem Festival lief die Seite weiter und meldete "nichts angemeldet"
+    bar.konfig(programm({
+      settings: { lichtEvery: 1, lichtDuration: 3, timetableEvery: 0, pricesEvery: 0,
+                  imageDuration: 2 },
+      timetable: [], prices: [],
+      lichteffekte: [{ id: 'l', date: '2020-01-01', start: '22:00', end: '23:00' }]
+    }));
+    bar.bilder('eins.png', 'zwei.png');
+    await zeitStellen(page, FREITAG_20_UHR);
+
+    const lauf = schleifeMitschreiben(page);
+    await page.goto(bar.adresse + '/');
+    await expect.poll(() => lauf.length, { timeout: 25000 }).toBeGreaterThanOrEqual(6);
+    expect(lauf).not.toContain('licht');
+  });
+
   test('ohne Zeiten sagt die Seite das auch', async ({ page, bar }) => {
     bar.konfig(programm({
       settings: { lichtEvery: 1, lichtDuration: 30, timetableEvery: 0, pricesEvery: 0 },

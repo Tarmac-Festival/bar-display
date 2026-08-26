@@ -228,6 +228,34 @@ test.describe('Eintragen auf der Bedienseite', () => {
     expect(sp.name).toBe('Kümmerling');
   });
 
+  test('eine Position mit Foto und Text ueberlebt das Speichern', async ({ page, bar }) => {
+    // Der Filter warf frueher alles weg, wo Name und Preis fehlten - auch wenn
+    // Bild und Beschreibung schon dranhingen.
+    await reiter(page, bar);
+
+    const grill = page.locator('.catCard').nth(1);
+    await grill.getByRole('button', { name: '+ Gericht' }).click();
+    const neu = grill.locator('[data-items] .itemRow').last();
+    await neu.locator('.iText').fill('Noch ohne Namen, aber mit Beschreibung');
+
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.locator('#dirty')).toBeHidden();
+
+    const items = bar.lies().prices[1].items;
+    expect(items).toHaveLength(2);
+    expect(items[1].text).toBe('Noch ohne Namen, aber mit Beschreibung');
+  });
+
+  test('ganz leere Zeilen fliegen weiterhin raus', async ({ page, bar }) => {
+    await reiter(page, bar);
+    const grill = page.locator('.catCard').nth(1);
+    await grill.getByRole('button', { name: '+ Gericht' }).click();
+
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.locator('#dirty')).toBeHidden();
+    expect(bar.lies().prices[1].items).toHaveLength(1);
+  });
+
   test('das Foto einer Position ist zu sehen', async ({ page, bar }) => {
     await reiter(page, bar);
 

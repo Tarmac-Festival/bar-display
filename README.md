@@ -550,7 +550,9 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
   nicht erscheint. Siehe [Starke Lichteffekte](#starke-lichteffekte).
 - **Nach Zeit sortieren** bringt die Liste in die richtige Reihenfolge.
 - **Vergangene löschen** räumt nach dem Festival auf.
-- **Unbenutzte Fotos aufräumen** löscht Bilder, die keinem Act mehr zugeordnet sind.
+- **Unbenutzte Fotos aufräumen** löscht Bilder, die nirgends mehr vorkommen —
+  weder bei einem Act noch bei einer Position auf der Karte, einer Gruppen-
+  Hervorhebung oder dem Spezialshot.
 - **Timetable weitergeben / übernehmen**: siehe [Mehrere Bars ausstatten](#mehrere-bars-ausstatten).
 
 Endet ein Act nach Mitternacht, einfach `23:00` bis `01:30` eintragen – das Programm
@@ -1310,6 +1312,7 @@ Zusammenfassung des Laufs.
 | `src/eingabefelder.js` | macht Datums- und Uhrzeitfelder betippbar |
 | `lib/zeitstatus.js` | fragt das System, ob die Uhr aus dem Netz kommt |
 | `lib/dateiname.js` | entschärft Dateinamen, von beiden Wegen genutzt |
+| `lib/fotos.js` | welche Fotos benutzt werden — die eine Antwort fürs Aufräumen |
 | `lib/hochladen.js` | nimmt Dateien entgegen, prüft Format und Platz |
 | `lib/anmeldung.js` | PIN-Schutz der Bedienseite im Netzwerk |
 | `src/upload.js` | Dateiauswahl und Hochladen am Handy |

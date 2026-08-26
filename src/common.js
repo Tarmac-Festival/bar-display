@@ -508,9 +508,24 @@ function istUebergang(wert) {
   return UEBERGANG_WERTE.indexOf(wert) >= 0;
 }
 
-/** Welche Uebergaenge sind fuer "Abwechselnd" angehakt? */
+/**
+ * Welche Uebergaenge laufen? Das ist die einzige Wahrheit dazu - Anzeige und
+ * Bedienseite fragen beide hier.
+ *
+ * In der Konfiguration stehen zwei Felder, weil aeltere Fassungen nur eines
+ * kannten: `transition` haelt entweder einen einzelnen Uebergang oder 'mix',
+ * `uebergaenge` die Liste fuer 'mix'. Steht dort ein einzelner Uebergang, gilt
+ * genau der - die Liste daneben ist dann bedeutungslos und darf nicht angezeigt
+ * werden, als waere sie in Kraft.
+ */
 function uebergangsAuswahl(settings) {
   const s = settings || {};
+
+  if (s.transition && s.transition !== 'mix') {
+    // Ein einzelner Uebergang - Unsinn faellt auf die weiche Blende zurueck
+    return [istUebergang(s.transition) ? s.transition : 'fade'];
+  }
+
   const gewaehlt = Array.isArray(s.uebergaenge)
     ? s.uebergaenge.filter(istUebergang) : [];
   // Gar nichts angehakt hiesse: kein Wechsel mehr. Dann lieber die weiche
@@ -608,6 +623,17 @@ function lichtTrifft(se, fenster) {
     if (f.se.start < ende && se.start < f.se.end) return true;
   }
   return false;
+}
+
+/**
+ * Lichtphasen, die noch bevorstehen oder gerade laufen.
+ *
+ * Wichtig fuer die Frage, ob die eigene Seite ueberhaupt mitlaufen soll: mit
+ * ausschliesslich vergangenen Zeiten kam sie weiter in der Schleife und meldete
+ * "nichts angemeldet" - nach dem Festival endlos.
+ */
+function lichtOffen(liste, now) {
+  return lichtFenster(liste).filter(f => f.se.end > now);
 }
 
 /** Laeuft gerade eine Lichtphase? Liefert sie, sonst null. */

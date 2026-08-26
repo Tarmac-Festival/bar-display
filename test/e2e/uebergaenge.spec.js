@@ -230,3 +230,53 @@ test.describe('Die neuen Uebergaenge', () => {
     expect(kf).toContain('scale(0.86)');
   });
 });
+
+test.describe('Was die Liste zeigt, laeuft auch', () => {
+  // Es gab zwei Felder fuer dieselbe Sache: transition (ein einzelner Uebergang
+  // oder 'mix') und uebergaenge (die Liste). Bei jeder bestehenden Installation
+  // stand transition auf einem einzelnen Wert und uebergaenge auf den fuenf
+  // Voreinstellungen - die Bedienseite zeigte fuenf Haken, gelaufen ist einer.
+  const zeigtUndLaeuft = async (page, bar) => {
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+    const angehakt = await page.locator('#uebergangsListe input:checked')
+      .evaluateAll(els => els.map(e => e.dataset.uebergang));
+
+    const lauf = uebergaengeMitschreiben(page);
+    await page.goto(bar.adresse + '/');
+    await expect.poll(() => lauf.length, { timeout: 40000 })
+      .toBeGreaterThanOrEqual(angehakt.length * 2);
+    return { angehakt, gelaufen: [...new Set(lauf.slice(0, angehakt.length * 2))].sort() };
+  };
+
+  test('bei einem einzelnen Uebergang mit alter Liste daneben', async ({ page, bar }) => {
+    bar.konfig(beispiel(FLOTT));
+    bar.konfig({ settings: { transition: 'kreis',
+                             uebergaenge: ['fade', 'zoom', 'schieben', 'wipe', 'logo'] } });
+    bar.bilder('eins.png', 'zwei.png', 'drei.png');
+
+    const z = await zeigtUndLaeuft(page, bar);
+    expect(z.angehakt).toEqual(['kreis']);
+    expect(z.gelaufen).toEqual(['kreis']);
+  });
+
+  test('bei einer Auswahl', async ({ page, bar }) => {
+    bar.konfig(beispiel(FLOTT));
+    bar.konfig({ settings: { transition: 'mix', uebergaenge: ['zoom', 'hoch', 'kreis'] } });
+    bar.bilder('eins.png', 'zwei.png', 'drei.png');
+
+    const z = await zeigtUndLaeuft(page, bar);
+    expect(z.angehakt.sort()).toEqual(['hoch', 'kreis', 'zoom']);
+    expect(z.gelaufen).toEqual(['hoch', 'kreis', 'zoom']);
+  });
+
+  test('bei Unsinn in der Konfiguration', async ({ page, bar }) => {
+    bar.konfig(beispiel(FLOTT));
+    bar.konfig({ settings: { transition: 'quatsch', uebergaenge: ['zoom'] } });
+    bar.bilder('eins.png', 'zwei.png');
+
+    const z = await zeigtUndLaeuft(page, bar);
+    expect(z.angehakt).toEqual(['fade']);
+    expect(z.gelaufen).toEqual(['fade']);
+  });
+});

@@ -30,6 +30,7 @@ let settingsWin = null;
 // ---------------------------------------------------------------------------
 const { zeitStatus } = require('./lib/zeitstatus');
 const { sicherName } = require('./lib/dateiname');
+const { fotosAufraeumen } = require('./lib/fotos');
 const webserver = require('./lib/webserver');
 
 const CONFIG_VERSION = 3;
@@ -748,13 +749,9 @@ ipcMain.handle('timetable:import', async () => {
 // Fotos wegräumen, die von keinem Timetable-Eintrag mehr benutzt werden
 ipcMain.handle('photo:cleanup', () => {
   ensureDirs();
-  const used = new Set((loadConfig().timetable || []).map(e => e.photo).filter(Boolean));
-  let removed = 0;
-  for (const f of fs.readdirSync(PHOTO_DIR)) {
-    if (used.has(f)) continue;
-    try { fs.unlinkSync(path.join(PHOTO_DIR, f)); removed++; } catch (e) { /* egal */ }
-  }
-  return removed;
+  // Welche Fotos benutzt werden, steht in lib/fotos.js - an einer Stelle, weil
+  // hier geloescht wird und ein vergessener Ort Daten kostet.
+  return fotosAufraeumen(fs, path, PHOTO_DIR, loadConfig());
 });
 
 ipcMain.handle('settings:open', () => { openSettings(); });

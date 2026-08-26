@@ -352,8 +352,10 @@ function buildPlaylist() {
     aktiv: nurVorschau ? [] : (cfg.videos || []).filter(v => isVideoActive(v, now)),
     hatTimetable: (cfg.timetable || []).length > 0,
     hatPreise: preisGruppen(cfg.prices).length > 0 || !!(sp.enabled && sp.name),
-    // Die Lichtseite laeuft nur mit, wenn ueberhaupt etwas angemeldet ist
-    hatLicht: lichtFenster(cfg.lichteffekte).length > 0,
+    // Die Lichtseite laeuft nur mit, solange ueberhaupt noch etwas bevorsteht.
+    // Vergangene Zeiten zaehlen nicht - sonst liefe nach dem Festival eine
+    // Seite weiter, auf der "nichts angemeldet" steht.
+    hatLicht: lichtOffen(cfg.lichteffekte, now).length > 0,
     timetableEvery: s.timetableEvery,
     pricesEvery: s.pricesEvery,
     lichtEvery: s.lichtEvery,
@@ -527,10 +529,9 @@ function naechsterUebergang() {
   const s = cfg.settings;
   if (s.sparmodus) return 'cut';
 
-  if (s.transition !== 'mix') {
-    return istUebergang(s.transition) ? s.transition : 'fade';
-  }
-
+  // Ein einziger Uebergang ist nur der Sonderfall einer Auswahl mit einem
+  // Eintrag - deshalb hier kein zweiter Weg. Frueher gab es einen, und er
+  // konnte etwas anderes ergeben als die Liste auf der Bedienseite zeigte.
   if (!uebergangsBeutel.length) {
     uebergangsBeutel = uebergangBeutel(uebergangsAuswahl(s), letzterUebergang,
                                        null, uebergangsFolge(s));

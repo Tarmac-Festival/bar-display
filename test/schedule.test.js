@@ -18,7 +18,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         wirksameHaeufigkeit, rundeBauen,
         istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
-        lichtSpuren, lichtOhneZeile, timeLabel,
+        lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel,
         preisStil, gruppeHatInhalt, preisGruppen } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
@@ -507,6 +507,21 @@ check('Act beginnt genau zum Ende', lichtTrifft(actSE('01:00', '02:00'), lichtNa
 check('Act ohne Ende wird mit einer Stunde gerechnet',
       lichtTrifft(entryStartEnd({ date: '2026-08-28', start: '23:00' }), lichtNacht), true);
 check('ohne Fenster nichts betroffen', lichtTrifft(actSE('23:00', '01:00'), []), false);
+
+// Was steht noch bevor? Danach entscheidet sich, ob die eigene Seite ueberhaupt
+// mitlaeuft - mit lauter vergangenen Zeiten lief sie endlos mit dem Hinweis,
+// dass nichts angemeldet ist.
+(function () {
+  const gemischt = [
+    { id: 'a', date: '2020-01-01', start: '22:00', end: '23:00' },
+    { id: 'b', date: '2026-08-28', start: '23:30', end: '01:00' }
+  ];
+  check('nur das Kommende zaehlt', lichtOffen(gemischt, FR2(20, 0)).length, 1);
+  check('waehrend es laeuft, zaehlt es auch', lichtOffen(gemischt, SA2(0, 15)).length, 1);
+  check('danach nichts mehr', lichtOffen(gemischt, SA2(2, 0)).length, 0);
+  check('nur Vergangenes ergibt nichts',
+        lichtOffen([{ id: 'a', date: '2020-01-01', start: '22:00', end: '23:00' }], FR2(20, 0)).length, 0);
+})();
 
 // Laeuft gerade?
 check('mittendrin', !!lichtJetzt(lichtNacht, SA2(0, 15)), true);

@@ -647,7 +647,10 @@ async function save() {
   // fallen alle Felder heraus, die hier nicht aufgezaehlt sind - die
   // Darstellung der Gruppe und ihr Hervorgehobenes zum Beispiel.
   state.prices = (state.prices || []).map(c => Object.assign({}, c, {
-    items: (c.items || []).filter(i => i.name || i.price)
+    // Alles wegwerfen, wo wirklich nichts drinsteht - aber Foto und
+    // Beschreibung zaehlen mit. Sonst verschwindet eine Position, an der jemand
+    // schon Bild und Text haengen hat, nur weil der Name noch fehlt.
+    items: (c.items || []).filter(i => i && (i.name || i.price || i.photo || i.text))
   }));
 
   let antwort = await window.api.saveConfig(state);
@@ -853,7 +856,8 @@ function wireButtons() {
 
   $('cleanPhotos').addEventListener('click', async () => {
     if (dirty) { toast('Bitte zuerst speichern', true); return; }
-    if (!confirm('Alle Fotos löschen, die keinem Act mehr zugeordnet sind?')) return;
+    if (!confirm('Alle Fotos löschen, die weder einem Act noch einer Position ' +
+                 'auf der Karte zugeordnet sind?')) return;
     const n = await window.api.cleanupPhotos();
     toast(n > 0 ? n + ' Foto(s) gelöscht' : 'Es gab nichts aufzuräumen');
   });
