@@ -49,8 +49,8 @@ Getränkepreise im Festival-Design.
   Farben, Titel, Muster und Titelfläche sind einstellbar.
 - **Zwei Logos liegen bei** – das L300-Zeichen und der TARMAC-Schriftzug –
   und ein eigenes lässt sich jederzeit hochladen.
-- **Übergänge**: sieben Varianten – oder **abwechselnd**, dann wechseln sich die
-  angehakten ab, ohne dass zweimal hintereinander derselbe kommt.
+- **Übergänge**: zehn Varianten. Einer angehakt heißt immer der; mehrere
+  angehakt heißt, sie wechseln sich ab – zufällig gemischt oder der Reihe nach.
 - **Zweiter Monitor** – die Anzeige kann auf einem eigenen Bildschirm laufen, während
   die Einstellungen auf dem Hauptbildschirm geöffnet bleiben.
 - **Jedes Bildschirmformat** – 16:9, 16:10, 4:3, Ultrawide und Hochformat.
@@ -378,7 +378,7 @@ am Rechner geht der Systembrowser auf, am Handy ein neuer Tab.
 
 ### Übergänge
 
-Einstellbar unter *Anzeige → Stil & Übergänge*:
+Unter *Anzeige → Übergänge* steht **eine Liste zum Anhaken** — zehn Varianten:
 
 | Übergang | Beschreibung |
 |---|---|
@@ -386,7 +386,10 @@ Einstellbar unter *Anzeige → Stil & Übergänge*:
 | Harter Schnitt | Ohne Überblendung |
 | Kurz auf Schwarz | Das Bild geht kurz auf Schwarz, wie im Kino zwischen zwei Szenen |
 | Heranziehen | Das neue Bild kommt leicht vergrößert herein und setzt sich |
+| Zurückweichen | Das alte Bild wird kleiner und gibt das neue frei |
 | Schub zur Seite | Das neue Bild schiebt das alte seitlich hinaus |
+| Schub nach oben | Dasselbe nach oben |
+| Kreisblende | Das neue Bild öffnet sich als wachsender Kreis |
 | Blob-Wisch | Eine organische Form fährt mit dem Logo durchs Bild |
 | Logo-Blende | Eine Fläche mit dem Logo zieht auf und wieder weg |
 
@@ -396,19 +399,22 @@ Ohne hinterlegtes Logo erscheint bei beiden Logo-Varianten der Bar-Name.
 |---|---|
 | ![Logo-Blende](docs/screenshots/uebergang-logo.png) | ![Blob-Wisch](docs/screenshots/uebergang-wisch.png) |
 
-#### Abwechselnd
+#### Einer oder mehrere
 
-Immer dieselbe Blende wird über einen Abend hinweg eintönig. Steht die Auswahl
-auf **Abwechselnd**, erscheint darunter eine Liste mit Häkchen — welche
-mitmachen sollen, entscheidet ihr.
+**Einer angehakt**: der kommt immer. **Mehrere angehakt**: sie wechseln sich ab.
+Mehr gibt es nicht einzustellen — es gibt kein zusätzliches Klappmenü, in dem
+man erst „abwechselnd" finden müsste.
 
-Gewürfelt wird dabei nicht einfach: die angehakten Übergänge kommen gemischt in
-einen Beutel und werden daraus gezogen. Ist der Beutel leer, wird neu gemischt.
-Das heißt:
+Darunter steht, in welcher **Reihenfolge**:
 
-- jeder Übergang kommt **gleich oft** dran, nicht zufällig mal häufiger,
-- **nie zweimal hintereinander derselbe** — auch nicht beim Übergang von einem
-  Beutel zum nächsten.
+| | |
+|---|---|
+| **Zufällig gemischt** (Standard) | Lebendiger. Die angehakten kommen gemischt in einen Beutel und werden daraus gezogen; ist er leer, wird neu gemischt. |
+| **Der Reihe nach** | Genau die Reihenfolge der Liste, immer wieder. Vorhersagbar — praktisch beim Einrichten. |
+
+Beim Mischen gilt: jeder Übergang kommt **gleich oft** dran, nicht zufällig mal
+häufiger, und **nie zweimal hintereinander derselbe** — auch nicht beim Übergang
+von einem Beutel zum nächsten.
 
 Mindestens ein Häkchen muss stehen bleiben; sonst gäbe es keinen Wechsel mehr.
 
@@ -645,8 +651,7 @@ sonst passt.
   zusätzlich in der Breite gedeckelt, damit sie die Kopfzeile nicht sprengen.
 - **Beschriftung**: Bar-Name, Untertitel und die Titel beider Info-Slides. Lässt man den
   Bar-Namen leer, steht dort nur das Logo.
-- **Übergänge**: der Übergang zwischen den Beiträgen und die beiden Dauern.
-  Bei *Abwechselnd* erscheint darunter die Liste, welche mitmachen sollen —
+- **Übergänge**: die Liste zum Anhaken, die Reihenfolge und die beiden Dauern —
   siehe [Übergänge](#übergänge).
 - **Farben, Form & Schrift**: Fläche hinter dem Seitentitel (Blob, Balken oder
   ohne), Hintergrundmuster, Hintergrund-, Akzent- und Signalfarbe, zwei

@@ -15,7 +15,8 @@ async function sammeln(page, bar, wieViele) {
 }
 
 test.describe('Fest gewaehlt', () => {
-  for (const modus of ['fade', 'cut', 'schwarz', 'zoom', 'schieben', 'wipe', 'logo']) {
+  for (const modus of ['fade', 'cut', 'schwarz', 'zoom', 'weg', 'schieben', 'hoch',
+                       'kreis', 'wipe', 'logo']) {
     test(modus + ' kommt immer', async ({ page, bar }) => {
       bar.konfig(beispiel(FLOTT));
       bar.konfig({ settings: { transition: modus } });
@@ -146,5 +147,86 @@ test.describe('Was dabei wirklich passiert', () => {
     expect(vorhang.klasse).toContain('schwarz');
     expect(vorhang.farbe).toBe('rgb(0, 0, 0)');
     expect(vorhang.inhalt).toBe('');
+  });
+});
+
+test.describe('Reihenfolge der Rotation', () => {
+  test('der Reihe nach kommt genau in der Reihenfolge der Liste',
+    async ({ page, bar }) => {
+      bar.konfig(beispiel(FLOTT));
+      bar.konfig({ settings: { transition: 'mix', uebergangsFolge: 'reihe',
+                               uebergaenge: ['fade', 'zoom', 'kreis'] } });
+      bar.bilder('eins.png', 'zwei.png');
+
+      const lauf = await sammeln(page, bar, 6);
+      expect(lauf.slice(0, 6)).toEqual(['fade', 'zoom', 'kreis', 'fade', 'zoom', 'kreis']);
+    });
+
+  test('zufaellig kommt nicht in der Reihenfolge der Liste', async ({ page, bar }) => {
+    bar.konfig(beispiel(FLOTT));
+    bar.konfig({ settings: { transition: 'mix', uebergangsFolge: 'zufall',
+                             uebergaenge: ['fade', 'zoom', 'kreis', 'hoch', 'weg'] } });
+    bar.bilder('eins.png', 'zwei.png');
+
+    const lauf = await sammeln(page, bar, 10);
+    const zehn = lauf.slice(0, 10);
+
+    // Alle fuenf kommen in zwei Durchgaengen vor
+    expect(new Set(zehn).size).toBe(5);
+    // und nie zweimal hintereinander derselbe
+    for (let i = 1; i < zehn.length; i++) {
+      expect(zehn[i], 'zweimal hintereinander: ' + zehn.join(' > ')).not.toBe(zehn[i - 1]);
+    }
+  });
+
+  test('ohne Angabe wird gemischt', async ({ page, bar }) => {
+    bar.konfig(beispiel(FLOTT));
+    bar.konfig({ settings: { transition: 'mix', uebergaenge: ['fade', 'zoom', 'kreis'] } });
+    bar.bilder('eins.png', 'zwei.png');
+
+    const lauf = await sammeln(page, bar, 6);
+    expect(new Set(lauf.slice(0, 6))).toEqual(new Set(['fade', 'zoom', 'kreis']));
+  });
+});
+
+test.describe('Die neuen Uebergaenge', () => {
+  const einzeln = async (page, bar, modus) => {
+    bar.konfig(beispiel({ settings: { imageDuration: 3, transitionMs: 1200, timetableEvery: 0 } }));
+    bar.konfig({ settings: { transition: modus } });
+    bar.bilder('eins.png', 'zwei.png');
+    await page.goto(bar.adresse + '/');
+    return page.evaluate(async () => {
+      // Bewusst nicht der erste Wechsel: dort gibt es noch kein altes Bild, das
+      // zuruecktreten koennte - nur das neue kommt herein. Also warten, bis
+      // wirklich Bewegung in den Bildpunkten steckt.
+      for (let i = 0; i < 200; i++) {
+        const kf = Array.from(document.querySelectorAll('.layer'))
+          .flatMap(el => el.getAnimations())
+          .filter(a => a.playState === 'running')
+          .flatMap(a => a.effect.getKeyframes())
+          .map(k => [k.transform, k.clipPath].filter(Boolean).join(' '))
+          .filter(Boolean)
+          .join(' | ');
+        if (kf) return kf;
+        await new Promise(r => setTimeout(r, 50));
+      }
+      return null;
+    });
+  };
+
+  test('Schub nach oben bewegt senkrecht', async ({ page, bar }) => {
+    const kf = await einzeln(page, bar, 'hoch');
+    expect(kf).toContain('translateY');
+    expect(kf).not.toContain('translateX');
+  });
+
+  test('Kreisblende oeffnet einen Kreis', async ({ page, bar }) => {
+    const kf = await einzeln(page, bar, 'kreis');
+    expect(kf).toContain('circle(');
+  });
+
+  test('Zurueckweichen verkleinert das alte Bild', async ({ page, bar }) => {
+    const kf = await einzeln(page, bar, 'weg');
+    expect(kf).toContain('scale(0.86)');
   });
 });

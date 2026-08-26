@@ -494,7 +494,10 @@ const UEBERGAENGE = [
   { wert: 'cut',      name: 'Harter Schnitt' },
   { wert: 'schwarz',  name: 'Kurz auf Schwarz' },
   { wert: 'zoom',     name: 'Heranziehen' },
+  { wert: 'weg',      name: 'Zur\u00fcckweichen' },
   { wert: 'schieben', name: 'Schub zur Seite' },
+  { wert: 'hoch',     name: 'Schub nach oben' },
+  { wert: 'kreis',    name: 'Kreisblende' },
   { wert: 'wipe',     name: 'Blob-Wisch' },
   { wert: 'logo',     name: 'Logo-Blende' }
 ];
@@ -515,15 +518,36 @@ function uebergangsAuswahl(settings) {
   return gewaehlt.length ? gewaehlt : ['fade'];
 }
 
+// Wie die angehakten Uebergaenge drankommen:
+//
+//   zufall   gemischt, aber vollstaendig - jeder kommt gleich oft dran
+//   reihe    genau in der Reihenfolge der Liste, immer wieder
+//
+// Beides hat seinen Sinn: "zufall" wirkt lebendiger, "reihe" ist vorhersagbar
+// und laesst sich beim Einrichten leichter beurteilen.
+const UEBERGANG_FOLGEN = [
+  { wert: 'zufall', name: 'Zuf\u00e4llig gemischt' },
+  { wert: 'reihe',  name: 'Der Reihe nach' }
+];
+
+function uebergangsFolge(settings) {
+  const f = settings && settings.uebergangsFolge;
+  return f === 'reihe' ? 'reihe' : 'zufall';
+}
+
 /**
- * Ein gemischter Beutel aus der Auswahl. `zuletzt` ist der Uebergang, der
- * gerade lief - er soll nicht gleich noch einmal an die Reihe kommen.
- * `zufall` nur zum Pruefen; sonst Math.random.
+ * Ein Beutel aus der Auswahl. `zuletzt` ist der Uebergang, der gerade lief - er
+ * soll nicht gleich noch einmal an die Reihe kommen. `zufall` nur zum Pruefen;
+ * sonst Math.random. `folge` ist 'zufall' (Vorgabe) oder 'reihe'.
  */
-function uebergangBeutel(auswahl, zuletzt, zufall) {
+function uebergangBeutel(auswahl, zuletzt, zufall, folge) {
   const liste = (auswahl || []).filter(istUebergang);
   if (!liste.length) return ['fade'];
   if (liste.length === 1) return liste.slice();
+
+  // Der Reihe nach: unveraendert uebernehmen. Eine Wiederholung an der
+  // Nahtstelle kann es dabei nicht geben, solange mehr als einer angehakt ist.
+  if (folge === 'reihe') return liste.slice();
 
   const wuerfel = typeof zufall === 'function' ? zufall : Math.random;
   const beutel = liste.slice();

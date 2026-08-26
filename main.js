@@ -61,6 +61,7 @@ const DEFAULT_CONFIG = {
     transition: 'fade',
     // Bei 'mix' wechseln sich diese ab, siehe uebergangBeutel() in common.js
     uebergaenge: ['fade', 'zoom', 'schieben', 'wipe', 'logo'],
+    uebergangsFolge: 'zufall',   // zufall | reihe
     transitionMs: 900,
     qrEnabled: false,        // QR-Code auf dem Timetable ein-/ausschalten
     qrUrl: '',               // Adresse; bleibt erhalten, auch wenn abgeschaltet

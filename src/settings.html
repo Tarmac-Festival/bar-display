@@ -399,26 +399,21 @@
 
         <div class="card">
           <h2>&Uuml;berg&auml;nge</h2>
-          <label class="field">
-            <span>&Uuml;bergang zwischen den Beitr&auml;gen</span>
-            <select id="s_transition">
-              <option value="mix">Abwechselnd &ndash; unten ausw&auml;hlen</option>
-              <option value="fade">Weiche &Uuml;berblendung</option>
-              <option value="cut">Harter Schnitt</option>
-              <option value="schwarz">Kurz auf Schwarz</option>
-              <option value="zoom">Heranziehen</option>
-              <option value="schieben">Schub zur Seite</option>
-              <option value="wipe">Blob-Wisch</option>
-              <option value="logo">Logo-Blende</option>
-            </select>
-            <em>Logo-Blende und Blob-Wisch zeigen euer Logo; ohne Logo erscheint der Bar-Name.</em>
-          </label>
-          <div id="uebergangsWahl" class="uebergaenge hidden">
-            <span class="uLabel">Welche sollen sich abwechseln?</span>
+          <div id="uebergangsWahl" class="uebergaenge">
+            <span class="uLabel">Welche &Uuml;berg&auml;nge sollen laufen?</span>
             <div id="uebergangsListe"></div>
-            <em class="uHinweis">Sie kommen der Reihe nach dran, in wechselnder
-              Folge &ndash; und nie zweimal hintereinander derselbe.</em>
+            <em class="uHinweis">Einer angehakt: der kommt immer.
+              <b>Mehrere angehakt: sie wechseln sich ab</b> &ndash; nie zweimal
+              hintereinander derselbe. Logo-Blende und Blob-Wisch zeigen euer
+              Logo; ohne Logo erscheint der Bar-Name.</em>
           </div>
+          <label class="field" id="folgeFeld">
+            <span>Reihenfolge</span>
+            <select id="s_uebergangsFolge">
+              <option value="zufall">Zuf&auml;llig gemischt</option>
+              <option value="reihe">Der Reihe nach</option>
+            </select>
+          </label>
           <div class="twoCol">
             <label class="field">
               <span>Bewegte &Uuml;berg&auml;nge (ms)</span>

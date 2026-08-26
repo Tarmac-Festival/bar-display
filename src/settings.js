@@ -911,7 +911,7 @@ const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'price
                     'lichtEvery', 'lichtDuration'];
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
                      'timetableTitle', 'timetableSubtitle', 'pricesTitle', 'pricesSubtitle',
-                     'titleStyle', 'pattern', 'transition', 'rotation',
+                     'titleStyle', 'pattern', 'rotation', 'uebergangsFolge',
                      'qrUrl', 'qrLabel', 'lichtTitel', 'lichtUnterzeile', 'lichtDoku'];
 
 function fillSettingsFields() {
@@ -951,8 +951,6 @@ function fillSettingsFields() {
       if (k === 'pin') v = v.replace(/\D/g, '');
       if (el.value !== v) el.value = v;
       state.settings[k] = v;
-      // "Abwechselnd" blendet die Auswahl darunter ein, alles andere sie aus
-      if (k === 'transition') renderUebergaenge();
       markDirty();
     });
   }
@@ -1466,12 +1464,10 @@ function fillSpecialFields() {
 // Die Haken stehen nur unter "Abwechselnd" - bei einem fest gewaehlten
 // Uebergang gibt es nichts abzuwechseln.
 function renderUebergaenge() {
-  const kasten = $('uebergangsWahl');
   const liste = $('uebergangsListe');
-  if (!kasten || !liste) return;
+  if (!liste) return;
 
   const s = state.settings;
-  kasten.classList.toggle('hidden', s.transition !== 'mix');
   const an = uebergangsAuswahl(s);
 
   liste.innerHTML = '';
@@ -1485,6 +1481,10 @@ function renderUebergaenge() {
     haken.addEventListener('change', () => uebergangUmschalten(u.wert, haken.checked));
     liste.appendChild(zeile);
   }
+
+  // Die Reihenfolge ist nur eine Frage, wenn es ueberhaupt etwas zu ordnen gibt
+  const feld = $('folgeFeld');
+  if (feld) feld.classList.toggle('gedimmt', an.length < 2);
 }
 
 function uebergangUmschalten(wert, an) {
@@ -1495,7 +1495,7 @@ function uebergangUmschalten(wert, an) {
   if (an && drin < 0) jetzt.push(wert);
   if (!an && drin >= 0) jetzt.splice(drin, 1);
 
-  // Ohne einen einzigen Haken gaebe es keinen Wechsel mehr. Der letzte bleibt
+  // Ohne einen einzigen Haken liefe gar kein Wechsel mehr. Der letzte bleibt
   // deshalb stehen - und der Haken springt sichtbar zurueck.
   if (!jetzt.length) {
     toast('Mindestens ein Übergang muss angehakt bleiben', true);
@@ -1505,7 +1505,14 @@ function uebergangUmschalten(wert, an) {
 
   // In der Reihenfolge der Liste halten, damit die Konfiguration lesbar bleibt
   s.uebergaenge = UEBERGAENGE.map(u => u.wert).filter(w => jetzt.indexOf(w) >= 0);
+
+  // Die Anzeige kennt weiterhin ein einzelnes Feld: genau einer angehakt heisst
+  // "immer der", mehrere heissen "abwechselnd". So bleibt die Konfiguration
+  // aeltere Fassungen lesbar und der Ablauf in player.js unveraendert.
+  s.transition = s.uebergaenge.length === 1 ? s.uebergaenge[0] : 'mix';
+
   markDirty();
+  renderUebergaenge();
 }
 
 function renderLogoPreview() {

@@ -223,45 +223,50 @@ test.describe('Hochladen', () => {
 });
 
 test.describe('Uebergaenge einstellen', () => {
-  async function anzeigeReiter(page, bar) {
-    bar.konfig(beispiel());
+  async function anzeigeReiter(page, bar, zusatz) {
+    bar.konfig(beispiel(zusatz));
     await page.goto(bar.adresse + '/einstellungen');
     await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
   }
 
-  test('die Auswahl erscheint erst bei "Abwechselnd"', async ({ page, bar }) => {
+  test('alle Uebergaenge stehen als Liste da', async ({ page, bar }) => {
     await anzeigeReiter(page, bar);
 
-    await expect(page.locator('#uebergangsWahl')).toBeHidden();
-    await page.locator('#s_transition').selectOption('mix');
+    // Frueher versteckte sich die Auswahl hinter dem Eintrag "Abwechselnd" im
+    // Klappmenue - wer den nicht fand, sah nie, dass es mehrere sein koennen.
     await expect(page.locator('#uebergangsWahl')).toBeVisible();
-
-    // Alle sieben stehen zur Wahl
-    await expect(page.locator('#uebergangsListe input[type=checkbox]')).toHaveCount(7);
-
-    await page.locator('#s_transition').selectOption('fade');
-    await expect(page.locator('#uebergangsWahl')).toBeHidden();
+    await expect(page.locator('#uebergangsListe input[type=checkbox]')).toHaveCount(10);
+    await expect(page.locator('#s_transition')).toHaveCount(0);
   });
 
-  test('ein Haken landet in der Konfiguration', async ({ page, bar }) => {
-    await anzeigeReiter(page, bar);
-    await page.locator('#s_transition').selectOption('mix');
+  test('genau einer angehakt heisst: immer der', async ({ page, bar }) => {
+    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['fade', 'zoom'] } });
 
-    const schwarz = page.locator('[data-uebergang=schwarz]');
-    await expect(schwarz).not.toBeChecked();
-    await schwarz.check();
+    await page.locator('[data-uebergang=fade]').uncheck();
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.locator('#dirty')).toBeHidden();
+
+    const s = bar.lies().settings;
+    expect(s.uebergaenge).toEqual(['zoom']);
+    expect(s.transition).toBe('zoom');
+  });
+
+  test('mehrere angehakt heisst: sie wechseln sich ab', async ({ page, bar }) => {
+    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
+
+    await page.locator('[data-uebergang=kreis]').check();
+    await page.locator('[data-uebergang=hoch]').check();
     await page.getByRole('button', { name: 'Speichern' }).click();
     await expect(page.locator('#dirty')).toBeHidden();
 
     const s = bar.lies().settings;
     expect(s.transition).toBe('mix');
-    expect(s.uebergaenge).toContain('schwarz');
+    // In der Reihenfolge der Liste, unabhaengig vom Anhaken
+    expect(s.uebergaenge).toEqual(['zoom', 'hoch', 'kreis']);
   });
 
   test('der letzte Haken laesst sich nicht entfernen', async ({ page, bar }) => {
-    bar.konfig(beispiel({ settings: { transition: 'mix', uebergaenge: ['zoom'] } }));
-    await page.goto(bar.adresse + '/einstellungen');
-    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
 
     const zoom = page.locator('[data-uebergang=zoom]');
     await expect(zoom).toBeChecked();
@@ -269,26 +274,29 @@ test.describe('Uebergaenge einstellen', () => {
     // Haken hinterher weg ist - und genau das soll hier nicht passieren.
     await zoom.click();
 
-    // Ohne einen einzigen Uebergang gaebe es keinen Wechsel mehr - der Haken
-    // springt zurueck und die Seite sagt, warum.
     await expect(page.locator('#toast')).toContainText('Mindestens ein Übergang');
     await expect(zoom).toBeChecked();
   });
 
-  test('die Reihenfolge in der Konfiguration bleibt die der Liste', async ({ page, bar }) => {
-    bar.konfig(beispiel({ settings: { transition: 'mix', uebergaenge: ['logo'] } }));
-    await page.goto(bar.adresse + '/einstellungen');
-    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+  test('die Reihenfolge laesst sich waehlen', async ({ page, bar }) => {
+    await anzeigeReiter(page, bar, { settings: { uebergaenge: ['fade', 'zoom', 'kreis'] } });
 
-    await page.locator('[data-uebergang=fade]').check();
-    await page.locator('[data-uebergang=zoom]').check();
+    await expect(page.locator('#s_uebergangsFolge')).toHaveValue('zufall');
+    await page.locator('#s_uebergangsFolge').selectOption('reihe');
     await page.getByRole('button', { name: 'Speichern' }).click();
     await expect(page.locator('#dirty')).toBeHidden();
 
-    // fade steht in der Liste vor zoom, zoom vor logo - unabhaengig davon, in
-    // welcher Reihenfolge angehakt wurde.
-    expect(bar.lies().settings.uebergaenge).toEqual(['fade', 'zoom', 'logo']);
+    expect(bar.lies().settings.uebergangsFolge).toBe('reihe');
   });
+
+  test('bei nur einem Uebergang ist die Reihenfolge gegenstandslos',
+    async ({ page, bar }) => {
+      await anzeigeReiter(page, bar, { settings: { uebergaenge: ['zoom'] } });
+      await expect(page.locator('#folgeFeld')).toHaveClass(/gedimmt/);
+
+      await page.locator('[data-uebergang=kreis]').check();
+      await expect(page.locator('#folgeFeld')).not.toHaveClass(/gedimmt/);
+    });
 });
 
 test.describe('Aufgeraeumtes Bedienmenue', () => {
@@ -361,11 +369,11 @@ test.describe('Aufgeraeumtes Bedienmenue', () => {
     }
 
     await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
-    for (const id of ['s_transition', 's_transitionMs', 's_fadeMs', 's_titleStyle', 's_pattern']) {
+    for (const id of ['s_uebergangsFolge', 's_transitionMs', 's_fadeMs', 's_titleStyle', 's_pattern']) {
       await expect(page.locator('#' + id)).toBeVisible();
     }
     // und nicht doppelt
-    for (const id of ['s_rotation', 's_sparmodus', 's_transition', 's_fadeMs']) {
+    for (const id of ['s_rotation', 's_sparmodus', 's_uebergangsFolge', 's_fadeMs']) {
       await expect(page.locator('#' + id)).toHaveCount(1);
     }
   });

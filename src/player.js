@@ -532,7 +532,8 @@ function naechsterUebergang() {
   }
 
   if (!uebergangsBeutel.length) {
-    uebergangsBeutel = uebergangBeutel(uebergangsAuswahl(s), letzterUebergang);
+    uebergangsBeutel = uebergangBeutel(uebergangsAuswahl(s), letzterUebergang,
+                                       null, uebergangsFolge(s));
   }
   letzterUebergang = uebergangsBeutel.shift();
   return letzterUebergang;
@@ -568,7 +569,7 @@ function crossfade(next) {
   console.log('[uebergang]', modus);
   if (modus === 'cut') return swapNow(next);
   if (modus === 'logo' || modus === 'wipe' || modus === 'schwarz') return vorhangWechsel(next, modus);
-  if (modus === 'zoom' || modus === 'schieben') return bewegterWechsel(next, modus);
+  if (BEWEGTE.indexOf(modus) >= 0) return bewegterWechsel(next, modus);
 
   // Weiche Ueberblendung: die beiden Ebenen liegen uebereinander, die CSS-Regel
   // auf .layer erledigt den Rest.
@@ -649,9 +650,20 @@ function vorhangWechsel(next, mode) {
 // Uebergaenge, bei denen sich die Ebenen selbst bewegen.
 //
 //   schieben  das neue Bild schiebt das alte zur Seite hinaus
+//   hoch      dasselbe nach oben
 //   zoom      das neue Bild kommt leicht vergroessert herein und setzt sich
+//   weg       das alte Bild weicht zurueck und gibt das neue frei
+//   kreis     das neue Bild oeffnet sich als wachsender Kreis
 //
-// Bewegt wird nur transform und opacity - das kostet den Pi am wenigsten.
+// Bewegt wird nur transform, opacity und clip-path - das kostet den Pi am
+// wenigsten.
+const BEWEGTE = ['zoom', 'weg', 'schieben', 'hoch', 'kreis'];
+
+// Bei clip-path: 71 % reichen rechnerisch bis in die Ecken (die Prozentangabe
+// bezieht sich auf die Diagonale geteilt durch Wurzel 2), 78 % geben Luft.
+const KREIS_ZU = 'circle(0% at 50% 50%)';
+const KREIS_AUF = 'circle(78% at 50% 50%)';
+
 function bewegterWechsel(next, modus) {
   const dauer = animationMs();
   const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
@@ -663,12 +675,25 @@ function bewegterWechsel(next, modus) {
 
   // Die Deckkraft wird hier ausdruecklich mitgefuehrt, sonst mischt die
   // CSS-Blende auf .layer mit und der Schub sieht verwaschen aus.
-  const rein = modus === 'schieben'
-    ? [{ transform: 'translateX(100%)', opacity: 1 }, { transform: 'translateX(0)', opacity: 1 }]
-    : [{ transform: 'scale(1.08)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }];
-  const raus = modus === 'schieben'
-    ? [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(-100%)', opacity: 1 }]
-    : [{ opacity: 1 }, { opacity: 0 }];
+  const REIN = {
+    schieben: [{ transform: 'translateX(100%)', opacity: 1 }, { transform: 'translateX(0)', opacity: 1 }],
+    hoch:     [{ transform: 'translateY(100%)', opacity: 1 }, { transform: 'translateY(0)', opacity: 1 }],
+    zoom:     [{ transform: 'scale(1.08)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+    weg:      [{ opacity: 0 }, { opacity: 1 }],
+    kreis:    [{ clipPath: KREIS_ZU, opacity: 1 }, { clipPath: KREIS_AUF, opacity: 1 }]
+  };
+  const RAUS = {
+    schieben: [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(-100%)', opacity: 1 }],
+    hoch:     [{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-100%)', opacity: 1 }],
+    zoom:     [{ opacity: 1 }, { opacity: 0 }],
+    // Zurueckweichen: das alte Bild wird kleiner und gibt den Blick frei
+    weg:      [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.86)', opacity: 0 }],
+    // Bei der Kreisblende bleibt das alte Bild stehen und wird ueberdeckt
+    kreis:    [{ opacity: 1 }, { opacity: 1 }]
+  };
+
+  const rein = REIN[modus] || REIN.zoom;
+  const raus = RAUS[modus] || RAUS.zoom;
 
   next.animate(rein, { duration: dauer, easing, fill: 'backwards' });
 
@@ -683,6 +708,7 @@ function bewegterWechsel(next, modus) {
       prev.classList.remove('show');
       prev.getAnimations().forEach(a => a.cancel());
       prev.style.transform = '';
+      prev.style.clipPath = '';
       cleanupLayer(prev);
       setTimeout(() => document.body.classList.remove('instant'), 60);
     };

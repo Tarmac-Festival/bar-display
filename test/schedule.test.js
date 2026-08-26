@@ -16,7 +16,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         mitgeliefertesLogo, durchsageStil, laufDauer,
         datumParsen, datumAnzeige, zeitParsen, zeitAnzeige,
         wirksameHaeufigkeit, rundeBauen,
-        istUebergang, uebergangsAuswahl, uebergangBeutel,
+        istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, timeLabel,
         preisStil, gruppeHatInhalt, preisGruppen } = ctx;
@@ -417,7 +417,8 @@ console.log('');
 console.log('-- Uebergaenge --');
 
 check('bekannte Uebergaenge', UEBERGAENGE.map(u => u.wert),
-      ['fade', 'cut', 'schwarz', 'zoom', 'schieben', 'wipe', 'logo']);
+      ['fade', 'cut', 'schwarz', 'zoom', 'weg', 'schieben', 'hoch', 'kreis',
+       'wipe', 'logo']);
 check('jeder hat einen Namen', UEBERGAENGE.every(u => !!u.name), true);
 check('fade ist einer', istUebergang('fade'), true);
 check('quatsch ist keiner', istUebergang('quatsch'), false);
@@ -684,6 +685,32 @@ check('leere Gruppen fallen heraus', preisGruppen([
   { category: 'Grill', items: [], spezial: { enabled: true, name: 'Chili' } }
 ]).map(g => g.category), ['Bier', 'Grill']);
 check('ohne Liste nichts', preisGruppen(null).length, 0);
+
+// Reihenfolge der Rotation
+check('ohne Angabe wird gemischt', uebergangsFolge({}), 'zufall');
+check('Unsinn wird gemischt', uebergangsFolge({ uebergangsFolge: 'quatsch' }), 'zufall');
+check('reihe wird uebernommen', uebergangsFolge({ uebergangsFolge: 'reihe' }), 'reihe');
+
+check('der Reihe nach: unveraendert',
+      uebergangBeutel(['fade', 'zoom', 'kreis'], '', null, 'reihe'),
+      ['fade', 'zoom', 'kreis']);
+check('der Reihe nach: auch wenn derselbe zuletzt lief',
+      uebergangBeutel(['fade', 'zoom'], 'fade', null, 'reihe'), ['fade', 'zoom']);
+check('der Reihe nach: Unsinn faellt trotzdem raus',
+      uebergangBeutel(['fade', 'quatsch', 'kreis'], '', null, 'reihe'), ['fade', 'kreis']);
+
+// Ueber viele Runden: der Reihe nach kommt jeder gleich oft und in Folge
+(function () {
+  const auswahl = ['fade', 'zoom', 'kreis'];
+  const raus = [];
+  let vorrat = [];
+  for (let i = 0; i < 9; i++) {
+    if (!vorrat.length) vorrat = uebergangBeutel(auswahl, raus[raus.length - 1], null, 'reihe');
+    raus.push(vorrat.shift());
+  }
+  check('neun Wechsel der Reihe nach', raus,
+        ['fade', 'zoom', 'kreis', 'fade', 'zoom', 'kreis', 'fade', 'zoom', 'kreis']);
+})();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
 process.exit(fail ? 1 : 0);
