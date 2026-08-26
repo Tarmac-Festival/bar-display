@@ -1315,8 +1315,16 @@ function ttRow(e, i) {
   return tr;
 }
 
+// Adresse eines Bildes im Medien-, Foto- oder Logo-Ordner.
+//
+// Am Rechner liegt das als Pfad auf der Platte vor und wird ueber file://
+// eingebunden. Am Handy laeuft diese Seite im Browser: dort liefert der Dienst
+// Pfade wie "/photos", und eine file://-Adresse wuerde der Browser blockieren -
+// die Vorschau blieb schlicht leer. Genau derselbe Fall wie in player.js.
 function fileSrc(dir, file) {
-  return 'file:///' + encodeURI(String(dir).replace(/\\/g, '/') + '/' + file);
+  const p = String(dir).replace(/\\/g, '/').replace(/\/$/, '');
+  if (paths.mode === 'http') return p + '/' + encodeURIComponent(file);
+  return 'file:///' + encodeURI(p + '/' + file).replace(/#/g, '%23').replace(/\?/g, '%3F');
 }
 
 // Spezialshot: eigener Block in der Konfiguration, deshalb eigene Verdrahtung

@@ -669,6 +669,11 @@ Systemdialogs die Dateiauswahl des Telefons.
 
 ![Hochladen vom Handy](docs/screenshots/handy-hochladen.png)
 
+Statt eine Datei zu suchen, könnt ihr das Foto auch **direkt aufnehmen** — das
+Telefon bietet die Kamera in derselben Auswahl an. Bis das Bild fertig ist,
+vergehen ein paar Sekunden; solange steht unten *Bild wird übernommen …*. Danach
+ist es sofort verwendbar, samt Vorschau und Ausschnitt.
+
 Ein Balken am unteren Rand zeigt den Fortschritt; über WLAN dauert ein Video seine
 Zeit. **Fotos werden vor dem Hochladen im Browser verkleinert** — aus einem
 6-MB-Handyfoto werden rund 260 KB. Act-Fotos landen auf der Anzeige ohnehin
@@ -990,6 +995,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
 | Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
+| Frisch aufgenommenes Foto kommt nicht an | Sollte nicht mehr vorkommen: die Seite wartet jetzt bis zu 30 Sekunden auf das Bild |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
 | Bedienseite vom Handy nicht erreichbar | *System → Bedienung vom Handy*: eingeschaltet? Adresse und Port stimmen? Firewall des Rechners? |
 | „Port 8080 ist schon belegt" | Anderen Port eintragen – oder läuft das Programm zweimal? |

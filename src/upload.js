@@ -32,23 +32,38 @@
       // nicht ewig offen bleibt, hängen wir uns zusätzlich an den nächsten
       // Fokus des Fensters.
       let erledigt = false;
+      let warten = null;
+      let hinweis = null;
       const schliessen = (dateien) => {
         if (erledigt) return;
         erledigt = true;
+        clearInterval(warten);
+        clearTimeout(hinweis);
         window.removeEventListener('focus', beiFokus);
+        melden(null);
         feld.remove();
         fertig(dateien);
       };
-      // Bewusst nicht einfach mit [] abschliessen: kommt "change" erst nach dem
-      // Fokus - bei grossen Dateien am Handy durchaus - waere die Auswahl sonst
-      // stillschweigend verschluckt. Also nachsehen, was wirklich drinsteht.
-      const beiFokus = () => setTimeout(() => {
-        const da = Array.from(feld.files || []);
-        if (da.length) return schliessen(da);
-        // Noch nichts da? Dem Browser eine zweite Chance geben, bevor wir
-        // "abgebrochen" annehmen.
-        setTimeout(() => schliessen(Array.from(feld.files || [])), 1500);
-      }, 400);
+
+      // Ein gerade aufgenommenes Foto ist nicht sofort da: das Handy schreibt es
+      // erst weg, rechnet es um und reicht es dann herein. Vorher stand hier eine
+      // feste Frist von knapp zwei Sekunden - war das Bild bis dahin nicht fertig,
+      // galt die Auswahl als abgebrochen und das Foto verschwand stillschweigend.
+      // Also nachsehen statt raten: bis zu einer halben Minute im Takt schauen,
+      // ob etwas angekommen ist, und erst dann aufgeben.
+      const GEDULD = 30000;
+      const TAKT = 250;
+      const beiFokus = () => {
+        if (erledigt || warten) return;
+        const bis = Date.now() + GEDULD;
+        // Damit niemand vor einem scheinbar toten Bildschirm sitzt
+        hinweis = setTimeout(() => { if (!erledigt) melden('Bild wird übernommen …'); }, 1200);
+        warten = setInterval(() => {
+          const da = Array.from(feld.files || []);
+          if (da.length) return schliessen(da);
+          if (Date.now() > bis) return schliessen([]);   // wirklich abgebrochen
+        }, TAKT);
+      };
 
       feld.addEventListener('change', () => schliessen(Array.from(feld.files || [])));
       window.addEventListener('focus', beiFokus);
@@ -122,6 +137,15 @@
       anfrage.onabort = () => fehler(new Error('Abgebrochen.'));
       anfrage.send(datei);
     });
+  }
+
+  // Kurzer Hinweis waehrend des Wartens - benutzt denselben Kasten wie der
+  // Fortschrittsbalken, nur ohne Balken.
+  function melden(text) {
+    const balken = document.getElementById('uploadBalken');
+    if (!text) { if (balken) balken.classList.remove('an'); return; }
+    const b = balkenZeigen();
+    b.setzen(text, 0);
   }
 
   // ------------------------------------------------------------------ Balken
