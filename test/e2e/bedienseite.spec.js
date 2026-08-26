@@ -290,3 +290,83 @@ test.describe('Uebergaenge einstellen', () => {
     expect(bar.lies().settings.uebergaenge).toEqual(['fade', 'zoom', 'logo']);
   });
 });
+
+test.describe('Aufgeraeumtes Bedienmenue', () => {
+  const REITER = ['Durchsage', 'Timetable', 'Karte', 'Videos', 'Anzeige', 'System'];
+
+  test('keine leeren Karten und keine leeren Knopfreihen', async ({ page, bar }) => {
+    // Am Handy werden einzelne Knoepfe ausgeblendet. Frueher blieben ihre
+    // Huellen stehen: vier Knopfreihen ohne Knopf und die Karte "Fenster" mit
+    // nichts als der Ueberschrift.
+    bar.konfig(beispiel());
+    await page.goto(bar.adresse + '/einstellungen');
+
+    for (const name of REITER) {
+      await page.getByRole('button', { name, exact: true }).click();
+      const fund = await page.evaluate(() => {
+        const sichtbar = (el) => el.offsetParent !== null;
+        const leereKarten = [];
+        for (const k of document.querySelectorAll('.panel.active .card')) {
+          if (!sichtbar(k)) continue;
+          const bedienbar = Array.from(k.querySelectorAll('input,select,textarea,button,img'));
+          if (bedienbar.some(sichtbar)) continue;
+          const titel = k.querySelector('h2');
+          const rest = Array.from(k.children)
+            .filter(x => x !== titel && sichtbar(x) && x.textContent.trim());
+          if (!rest.length) leereKarten.push(titel ? titel.textContent.trim() : '(ohne Titel)');
+        }
+        const leereReihen = [];
+        for (const r of document.querySelectorAll('.panel.active .btnRow')) {
+          if (!sichtbar(r)) continue;
+          const b = Array.from(r.querySelectorAll('button'));
+          if (b.length && !b.some(sichtbar)) leereReihen.push(r.className);
+        }
+        return { leereKarten, leereReihen };
+      });
+      expect(fund.leereKarten, name + ': leere Karten').toEqual([]);
+      expect(fund.leereReihen, name + ': leere Knopfreihen').toEqual([]);
+    }
+  });
+
+  test('das Aufraeumen nimmt nicht zu viel mit', async ({ page, bar }) => {
+    // Der erste Anlauf pruefte mit offsetParent - das ist auch dann null, wenn
+    // der Reiter gerade nicht dran ist. Damit galten saemtliche Karten der
+    // uebrigen fuenf Reiter als leer und verschwanden.
+    bar.konfig(beispiel());
+    await page.goto(bar.adresse + '/einstellungen');
+
+    for (const name of REITER) {
+      await page.getByRole('button', { name, exact: true }).click();
+      const karten = await page.locator('.panel.active .card').evaluateAll(
+        (ks) => ks.filter(k => k.offsetParent !== null).length);
+      expect(karten, name + ' hat noch Karten').toBeGreaterThan(0);
+    }
+  });
+
+  test('jede Karte gehoert zu einem Reiter', async ({ page, bar }) => {
+    // Die Vorschau war beim Verschieben aus ihrem Reiter herausgerutscht und
+    // stand danach auf allen sechs.
+    bar.konfig(beispiel());
+    await page.goto(bar.adresse + '/einstellungen');
+    await expect(page.locator('main > .card')).toHaveCount(0);
+  });
+
+  test('Geraeteeinstellungen stehen unter System', async ({ page, bar }) => {
+    bar.konfig(beispiel());
+    await page.goto(bar.adresse + '/einstellungen');
+
+    await page.getByRole('button', { name: 'System', exact: true }).click();
+    for (const id of ['s_rotation', 's_sparmodus', 'q_enabled', 'q_from', 'q_to']) {
+      await expect(page.locator('#' + id)).toBeVisible();
+    }
+
+    await page.getByRole('button', { name: 'Anzeige', exact: true }).click();
+    for (const id of ['s_transition', 's_transitionMs', 's_fadeMs', 's_titleStyle', 's_pattern']) {
+      await expect(page.locator('#' + id)).toBeVisible();
+    }
+    // und nicht doppelt
+    for (const id of ['s_rotation', 's_sparmodus', 's_transition', 's_fadeMs']) {
+      await expect(page.locator('#' + id)).toHaveCount(1);
+    }
+  });
+});

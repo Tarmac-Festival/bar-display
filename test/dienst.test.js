@@ -8,6 +8,7 @@ const os = require('os');
 const path = require('path');
 
 const webserver = require('../lib/webserver');
+const konfigablage = require('../lib/konfigablage');
 const { formatHinweis } = require('../lib/hochladen');
 
 let pass = 0, fail = 0;
@@ -114,9 +115,60 @@ function formatPruefen() {
   fs.rmSync(ordner, { recursive: true, force: true });
 }
 
+// ---------------------------------------------------------------------------
+// Zwei Standardkonfigurationen, ein Programm
+// ---------------------------------------------------------------------------
+// main.js (Electron) und lib/konfigablage.js (Raspberry Pi) halten jeweils eine
+// eigene Fassung der Voreinstellungen. Laufen sie auseinander, sieht dieselbe
+// Konfiguration je nach Geraet anders aus - und das faellt erst an der Bar auf.
+// Deshalb hier ein Abgleich bei jedem Testlauf.
+function standardPruefen() {
+  console.log('');
+  console.log('-- Voreinstellungen auf beiden Wegen --');
+
+  const vm = require('vm');
+  const quelle = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+  const von = quelle.indexOf('const DEFAULT_CONFIG = {');
+  const bis = quelle.indexOf('\nfunction deepMerge', von);
+  const ctx = vm.createContext({});
+  vm.runInContext('const CONFIG_VERSION = 3;\n' + quelle.slice(von, bis) +
+                  '\nglobalThis.D = DEFAULT_CONFIG;', ctx);
+
+  const flach = (o, praefix) => {
+    const raus = {};
+    for (const key of Object.keys(o || {})) {
+      const wert = o[key];
+      if (wert && typeof wert === 'object' && !Array.isArray(wert)) {
+        Object.assign(raus, flach(wert, (praefix || '') + key + '.'));
+      } else {
+        raus[(praefix || '') + key] = Array.isArray(wert) ? JSON.stringify(wert) : wert;
+      }
+    }
+    return raus;
+  };
+
+  const A = flach(ctx.D), B = flach(konfigablage.STANDARD);
+  const alle = [...new Set([...Object.keys(A), ...Object.keys(B)])].sort();
+  const abweichungen = [];
+  for (const schluessel of alle) {
+    // Die laufende Nummer wird beim Schreiben gesetzt, nicht voreingestellt
+    if (schluessel === 'stand') continue;
+    if (!(schluessel in A)) abweichungen.push(schluessel + ' fehlt in main.js');
+    else if (!(schluessel in B)) abweichungen.push(schluessel + ' fehlt beim Pi');
+    else if (JSON.stringify(A[schluessel]) !== JSON.stringify(B[schluessel])) {
+      abweichungen.push(schluessel + ': main=' + JSON.stringify(A[schluessel]) +
+                        ' pi=' + JSON.stringify(B[schluessel]));
+    }
+  }
+
+  check('beide Voreinstellungen stimmen ueberein', abweichungen, []);
+  check('und sie sind nicht leer', alle.length > 30, true);
+}
+
 (async () => {
   await standPruefen();
   formatPruefen();
+  standardPruefen();
   console.log('');
   console.log(pass + ' bestanden, ' + fail + ' fehlgeschlagen');
   // Kein process.exit: Node soll seine Handles selbst abraeumen.

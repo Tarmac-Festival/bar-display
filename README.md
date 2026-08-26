@@ -645,12 +645,19 @@ sonst passt.
   zusätzlich in der Breite gedeckelt, damit sie die Kopfzeile nicht sprengen.
 - **Beschriftung**: Bar-Name, Untertitel und die Titel beider Info-Slides. Lässt man den
   Bar-Namen leer, steht dort nur das Logo.
-- **Stil & Übergänge**: Fläche hinter dem Seitentitel (Blob, Balken oder ohne),
-  Hintergrundmuster (keins, dezente Punkte, Konfetti) und der Übergang. Bei
-  *Abwechselnd* erscheint darunter die Liste, welche mitmachen sollen —
+- **Übergänge**: der Übergang zwischen den Beiträgen und die beiden Dauern.
+  Bei *Abwechselnd* erscheint darunter die Liste, welche mitmachen sollen —
   siehe [Übergänge](#übergänge).
-- **Farben & Schrift**: Hintergrund-, Akzent- und Signalfarbe, zwei Voreinstellungen,
-  optional eine eigene Schriftdatei.
+- **Farben, Form & Schrift**: Fläche hinter dem Seitentitel (Blob, Balken oder
+  ohne), Hintergrundmuster, Hintergrund-, Akzent- und Signalfarbe, zwei
+  Voreinstellungen, optional eine eigene Schriftdatei.
+> **Umgezogen:** *Anzeige drehen*, *Sparmodus* und *Ruhezeit* stehen jetzt unter
+> **System**. Das sind Einstellungen, die man einmal beim Aufbau macht und nie
+> wieder — sie standen zwischen Logo und Farben nur im Weg. Der Reiter *Anzeige*
+> ist damit das, was sein Name sagt: wie die Anzeige aussieht.
+
+Unter **System** dazugekommen:
+
 - **Sparmodus**: schaltet Hintergrundmuster, Schatten, die Form hinter dem
   Seitentitel und alle Blenden ab und schneidet hart. Für den Raspberry Pi
   gedacht. Die übrigen Einstellungen bleiben gespeichert — der Schalter

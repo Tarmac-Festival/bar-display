@@ -37,18 +37,6 @@
            direkt &ndash; ohne den Knopf oben rechts.</p>
       </div></div>
 
-      <div class="card" id="vorschauKarte" style="display:none">
-        <h2>Vorschau</h2>
-        <p class="hint" style="margin-bottom:0.9rem">So sehen Timetable und Preise
-           gerade aus. Videos werden hier weggelassen, damit die Vorschau den Pi
-           nicht zus&auml;tzlich belastet.</p>
-        <div class="vorschauRahmen"><iframe id="vorschauBild" title="Vorschau"></iframe></div>
-        <div class="btnRow" style="margin-top:0.7rem">
-          <button id="vorschauAn">Vorschau anzeigen</button>
-          <button id="vorschauNeu" style="display:none">Aktualisieren</button>
-        </div>
-      </div>
-
       <div class="card">
         <div id="an_status" class="anStatus">Keine Durchsage aktiv</div>
 
@@ -102,6 +90,18 @@
            Durchsage hat immer Vorrang. Passen mehrere Pl&auml;ne gleichzeitig, gilt
            der oberste in der Liste.</p>
       </div>
+      <div class="card" id="vorschauKarte" style="display:none">
+        <h2>Vorschau</h2>
+        <p class="hint" style="margin-bottom:0.9rem">So sehen Timetable und Preise
+           gerade aus. Videos werden hier weggelassen, damit die Vorschau den Pi
+           nicht zus&auml;tzlich belastet.</p>
+        <div class="vorschauRahmen"><iframe id="vorschauBild" title="Vorschau"></iframe></div>
+        <div class="btnRow" style="margin-top:0.7rem">
+          <button id="vorschauAn">Vorschau anzeigen</button>
+          <button id="vorschauNeu" style="display:none">Aktualisieren</button>
+        </div>
+      </div>
+
     </section>
 
     <!-- ------------------------------------------------------------- -->
@@ -326,7 +326,9 @@
     <!-- ------------------------------------------------------------- -->
     <section id="panel-display" class="panel">
       <div class="panelHead"><div><h1>Anzeige</h1>
-        <p class="hint">Erscheinungsbild der Anzeige: Logo, Beschriftung, Farben und &Uuml;berg&auml;nge. Wie oft Timetable und Preise erscheinen, steht im jeweiligen Reiter.</p></div></div>
+        <p class="hint">Wie die Anzeige aussieht: Logo, Beschriftung, Farben und
+             &Uuml;berg&auml;nge. Wie oft Timetable und Preise erscheinen, steht im
+             jeweiligen Reiter; Drehung, Sparmodus und Ruhezeit unter <b>System</b>.</p></div></div>
 
       <div class="cards">
         <div class="card">
@@ -396,56 +398,7 @@
         </div>
 
         <div class="card">
-          <h2>Ruhezeit</h2>
-          <p class="hint" style="margin-bottom:0.9rem">Au&szlig;erhalb der &Ouml;ffnungszeiten
-             bleibt der Bildschirm schwarz. Das schont das Ger&auml;t und spart Strom;
-             die Schleife wird dabei angehalten.</p>
-          <label class="checkline">
-            <input type="checkbox" id="q_enabled"> <span>Ruhezeit einschalten</span>
-          </label>
-          <div class="twoCol">
-            <label class="field">
-              <span>Von</span>
-              <input type="time" id="q_from">
-            </label>
-            <label class="field">
-              <span>Bis</span>
-              <input type="time" id="q_to">
-            </label>
-          </div>
-          <p class="hint">&Uuml;ber Mitternacht hinweg funktioniert es genauso &ndash;
-             z.B. 04:00 bis 14:00 f&uuml;r eine Bar, die nachts l&auml;uft.</p>
-        </div>
-
-        <div class="card">
-          <h2>Stil &amp; &Uuml;berg&auml;nge</h2>
-          <label class="field">
-            <span>Fl&auml;che hinter dem Seitentitel</span>
-            <select id="s_titleStyle">
-              <option value="blob">Organische Form (Blob)</option>
-              <option value="bar">Schlichter Balken</option>
-              <option value="plain">Ohne Fl&auml;che, Titel frei</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Anzeige drehen</span>
-            <select id="s_rotation">
-              <option value="0">Nicht drehen</option>
-              <option value="90">90&deg; im Uhrzeigersinn</option>
-              <option value="180">180&deg;, auf dem Kopf</option>
-              <option value="270">90&deg; gegen den Uhrzeigersinn</option>
-            </select>
-            <em>F&uuml;r hochkant montierte Bildschirme. Wirkt sofort, ohne am
-                Betriebssystem etwas einzustellen.</em>
-          </label>
-          <label class="field">
-            <span>Hintergrundmuster</span>
-            <select id="s_pattern">
-              <option value="none">Kein Muster, nur Farbverlauf</option>
-              <option value="dots">Dezente Punkte</option>
-              <option value="confetti">Konfetti, gr&ouml;&szlig;er und bunter</option>
-            </select>
-          </label>
+          <h2>&Uuml;berg&auml;nge</h2>
           <label class="field">
             <span>&Uuml;bergang zwischen den Beitr&auml;gen</span>
             <select id="s_transition">
@@ -466,24 +419,39 @@
             <em class="uHinweis">Sie kommen der Reihe nach dran, in wechselnder
               Folge &ndash; und nie zweimal hintereinander derselbe.</em>
           </div>
-          <label class="checkline" style="margin-top:0.9rem">
-            <input type="checkbox" id="s_sparmodus"> <span>Sparmodus f&uuml;r schwache Ger&auml;te</span>
-          </label>
-          <p class="hint" style="margin:-0.5rem 0 0.9rem">Schaltet Hintergrundmuster,
-             Schatten und alle Blenden ab und schneidet hart. Gedacht f&uuml;r den
-             Raspberry Pi: die Anzeige wirkt flacher, l&auml;uft daf&uuml;r deutlich
-             ruhiger. Die Einstellungen dar&uuml;ber bleiben erhalten.</p>
-          <label class="field">
-            <span>Dauer der bewegten &Uuml;berg&auml;nge (Millisekunden)</span>
-            <input type="number" min="300" max="4000" step="100" id="s_transitionMs">
-            <em>Gilt f&uuml;r Logo-Blende, Blob-Wisch, Schub, Heranziehen und
-              die Schwarzblende. Die weiche &Uuml;berblendung hat ihre eigene
-              Dauer weiter rechts.</em>
-          </label>
+          <div class="twoCol">
+            <label class="field">
+              <span>Bewegte &Uuml;berg&auml;nge (ms)</span>
+              <input type="number" min="300" max="4000" step="100" id="s_transitionMs">
+            </label>
+            <label class="field">
+              <span>Weiche &Uuml;berblendung (ms)</span>
+              <input type="number" min="0" max="3000" step="100" id="s_fadeMs">
+            </label>
+          </div>
+          <em class="feldHinweis">Die erste Dauer gilt f&uuml;r Logo-Blende, Blob-Wisch,
+            Schub, Heranziehen und die Schwarzblende, die zweite f&uuml;r die weiche
+            &Uuml;berblendung.</em>
         </div>
 
         <div class="card">
-          <h2>Farben &amp; Schrift</h2>
+          <h2>Farben, Form &amp; Schrift</h2>
+          <label class="field">
+            <span>Fl&auml;che hinter dem Seitentitel</span>
+            <select id="s_titleStyle">
+              <option value="blob">Organische Form (Blob)</option>
+              <option value="bar">Schlichter Balken</option>
+              <option value="plain">Ohne Fl&auml;che, Titel frei</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Hintergrundmuster</span>
+            <select id="s_pattern">
+              <option value="none">Kein Muster, nur Farbverlauf</option>
+              <option value="dots">Dezente Punkte</option>
+              <option value="confetti">Konfetti, gr&ouml;&szlig;er und bunter</option>
+            </select>
+          </label>
           <div class="colorRow">
             <label class="colorField"><span>Hintergrund</span><input type="color" id="s_bgColor"></label>
             <label class="colorField"><span>Akzent</span><input type="color" id="s_accent"></label>
@@ -503,10 +471,6 @@
              (z.B. Fabrik oder Osterbar) &uuml;berschreibt sie.</p>
           <label class="checkline" style="margin-top:0.9rem">
             <input type="checkbox" id="s_showClock"> <span>Datum und Uhrzeit auf den Info-Slides anzeigen</span>
-          </label>
-          <label class="field">
-            <span>Dauer der weichen &Uuml;berblendung (Millisekunden)</span>
-            <input type="number" min="0" max="3000" step="100" id="s_fadeMs">
           </label>
         </div>
       </div>
@@ -571,6 +535,50 @@
           </div>
           <p class="hint" style="margin-top:0.6rem">Wird der gew&auml;hlte Monitor abgezogen,
              wandert die Anzeige automatisch auf den Hauptbildschirm.</p>
+        </div>
+
+        <div class="card">
+          <h2>Drehung &amp; Sparmodus</h2>
+          <label class="field">
+            <span>Anzeige drehen</span>
+            <select id="s_rotation">
+              <option value="0">Nicht drehen</option>
+              <option value="90">90&deg; im Uhrzeigersinn</option>
+              <option value="180">180&deg;, auf dem Kopf</option>
+              <option value="270">90&deg; gegen den Uhrzeigersinn</option>
+            </select>
+            <em>F&uuml;r hochkant montierte Bildschirme. Wirkt sofort, ohne am
+                Betriebssystem etwas einzustellen.</em>
+          </label>
+          <label class="checkline" style="margin-top:0.9rem">
+            <input type="checkbox" id="s_sparmodus"> <span>Sparmodus f&uuml;r schwache Ger&auml;te</span>
+          </label>
+          <p class="hint" style="margin:-0.5rem 0 0">Schaltet Hintergrundmuster,
+             Schatten und alle Blenden ab und schneidet hart. Gedacht f&uuml;r den
+             Raspberry Pi: die Anzeige wirkt flacher, l&auml;uft daf&uuml;r deutlich
+             ruhiger. Die Einstellungen unter <b>Anzeige</b> bleiben erhalten.</p>
+        </div>
+
+        <div class="card">
+          <h2>Ruhezeit</h2>
+          <p class="hint" style="margin-bottom:0.9rem">Au&szlig;erhalb der &Ouml;ffnungszeiten
+             bleibt der Bildschirm schwarz. Das schont das Ger&auml;t und spart Strom;
+             die Schleife wird dabei angehalten.</p>
+          <label class="checkline">
+            <input type="checkbox" id="q_enabled"> <span>Ruhezeit einschalten</span>
+          </label>
+          <div class="twoCol">
+            <label class="field">
+              <span>Von</span>
+              <input type="time" id="q_from">
+            </label>
+            <label class="field">
+              <span>Bis</span>
+              <input type="time" id="q_to">
+            </label>
+          </div>
+          <p class="hint">&Uuml;ber Mitternacht hinweg funktioniert es genauso &ndash;
+             z.B. 04:00 bis 14:00 f&uuml;r eine Bar, die nachts l&auml;uft.</p>
         </div>
 
         <div class="card">

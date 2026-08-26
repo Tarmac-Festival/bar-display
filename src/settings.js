@@ -138,6 +138,8 @@ function fuerBrowserAnpassen() {
   // nichts zu waehlen gibt - am Raspberry Pi etwa.
   bildschirmKarteAnpassen();
 
+  leereHuellenVerstecken();
+
   // Die Vorschau gibt es nur im Browserbetrieb - am Rechner steht die Anzeige
   // ohnehin daneben.
   const karte = $('vorschauKarte');
@@ -1561,6 +1563,44 @@ function renderLogoAuswahl() {
       renderLogoPreview();
     });
   });
+}
+
+// Werden einzelne Knoepfe ausgeblendet, bleiben ihre Huellen stehen: eine
+// Knopfreihe ohne Knopf, eine Karte mit nichts als der Ueberschrift. Am Handy
+// standen so vier leere Reihen und die Karte "Fenster" ganz ohne Inhalt.
+//
+// Statt jede Stelle einzeln zu pflegen - und die naechste wieder zu vergessen -
+// wird hinterher einmal durchgesehen: was nichts Bedienbares und keinen eigenen
+// Text mehr enthaelt, verschwindet.
+function leereHuellenVerstecken() {
+  // Zaehlt das Element noch, oder ist es (oder etwas darueber innerhalb der
+  // Karte) ausgeblendet? Bewusst nicht offsetParent: das ist auch dann null,
+  // wenn der ganze Reiter gerade nicht dran ist.
+  const zaehlt = (el, grenze) => {
+    for (let k = el; k && k !== grenze; k = k.parentElement) {
+      if (k.style && k.style.display === 'none') return false;
+      if (k.classList && k.classList.contains('hidden')) return false;
+    }
+    return true;
+  };
+
+  for (const reihe of document.querySelectorAll('.btnRow')) {
+    const knoepfe = Array.from(reihe.querySelectorAll('button'));
+    if (knoepfe.length && !knoepfe.some(b => zaehlt(b, reihe))) reihe.style.display = 'none';
+  }
+
+  for (const karte of document.querySelectorAll('.card')) {
+    if (karte.style.display === 'none') continue;
+    const bedienbar = Array.from(karte.querySelectorAll('input, select, textarea, button, img'));
+    if (bedienbar.some(el => zaehlt(el, karte))) continue;
+
+    // Bleibt ausser der Ueberschrift noch Text stehen? Dann ist die Karte ein
+    // Hinweis und darf bleiben.
+    const titel = karte.querySelector('h2');
+    const rest = Array.from(karte.children)
+      .filter(k => k !== titel && zaehlt(k, karte) && k.textContent.trim());
+    if (!rest.length) karte.style.display = 'none';
+  }
 }
 
 // Ohne waehlbare Bildschirme ist die Karte nur Ballast.
