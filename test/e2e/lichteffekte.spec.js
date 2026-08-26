@@ -53,6 +53,45 @@ test.describe('Kennzeichnung im Timetable', () => {
       await expect(nachtflug.locator('.lmNote')).toHaveText('Hauptbühne');
     });
 
+  test('die Spalte steht rechts und traegt oben das Zeichen als Reiter',
+    async ({ page, bar }) => {
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+
+      const reiter = page.locator('.klLicht');
+      await expect(reiter).toBeVisible();
+      await expect(reiter).toContainText('Lichteffekte');
+      await expect(reiter.locator('.lichtZeichen img')).toHaveCount(1);
+
+      const lage = await page.evaluate(() => {
+        const zeile = document.querySelector('.ttRow.hatLicht');
+        const s = (w) => zeile.querySelector(w).getBoundingClientRect();
+        const k = document.querySelector('.klLicht').getBoundingClientRect();
+        const spur = s('.lichtSpur');
+        return {
+          rechtsVomAct: spur.left >= s('.act').right,
+          rechtsVomTag: spur.left >= s('.day').right,
+          // Der Reiter sitzt ueber der Spalte, nicht irgendwo
+          kopfUeberSpalte: Math.abs(k.left - spur.left) < 4 && k.bottom <= spur.top,
+          // und laeuft nicht ueber den Bildrand hinaus
+          imBild: k.right <= window.innerWidth
+        };
+      });
+
+      expect(lage.rechtsVomAct, 'die Spalte steht rechts vom Act').toBe(true);
+      expect(lage.rechtsVomTag, 'und rechts vom Tag').toBe(true);
+      expect(lage.kopfUeberSpalte, 'der Reiter sitzt ueber der Spalte').toBe(true);
+      expect(lage.imBild, 'der Reiter passt ins Bild').toBe(true);
+    });
+
+  test('ohne Lichtzeiten gibt es auch keinen Reiter', async ({ page, bar }) => {
+    bar.konfig(programm({ lichteffekte: [] }));
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+    await expect(page.locator('.klLicht')).toHaveCount(0);
+  });
+
   test('der Balken sitzt versetzt - dort, wo die Phase wirklich anfaengt',
     async ({ page, bar }) => {
       bar.konfig(programm());

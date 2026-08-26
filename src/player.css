@@ -948,18 +948,47 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
    das Licht mitten im Set an, faengt auch der Balken mittendrin an. Eine eigene
    Zeile konnte das nicht zeigen - sie riss die Liste auseinander und
    verschleierte gerade das Interessante. */
+/* Die Lichtspalte steht ganz rechts, mit einem eigenen Kopf darueber. Zwischen
+   Uhrzeit und Act hat sie die Liste auseinandergezogen; am Rand liest sie sich
+   wie das, was sie ist - eine zusaetzliche Spur neben dem Programm. */
+.ttKopf,
 .ttList.mitLicht .ttRow {
-  grid-template-columns: 11em 12.5em 1fr auto;
-  column-gap: 0.9em;
+  display: grid;
+  grid-template-columns: 11em 1fr auto 12.5em;
+  column-gap: 1.1em;
 }
 /* Ausdruecklich benannt: ein Kind mit fester Zeile (die Lichtspur) wird vom
    Browser vor den frei platzierten eingeordnet und haette sich sonst die erste
    Spalte geschnappt - die Uhrzeit waere nach rechts gerutscht. */
 .ttList.mitLicht .ttRow .when { grid-column: 1; }
-.ttList.mitLicht .ttRow .lichtSpur { grid-column: 2; }
-.ttList.mitLicht .ttRow .act { grid-column: 3; }
-.ttList.mitLicht .ttRow .day { grid-column: 4; }
-.ttList.mitLicht .ttRow .info { grid-column: 3 / -1; }
+.ttList.mitLicht .ttRow .act { grid-column: 2; }
+.ttList.mitLicht .ttRow .day { grid-column: 3; }
+.ttList.mitLicht .ttRow .lichtSpur { grid-column: 4; }
+.ttList.mitLicht .ttRow .info { grid-column: 2 / 4; }
+
+/* Der Spaltenkopf: das Zeichen sitzt ueber der Spur wie ein Reiter.
+
+   Die Beschriftung muss in die Spaltenbreite passen - mit der Sperrung des
+   uebrigen Kleinkrams lief sie ueber den Bildrand hinaus. */
+.ttKopf { margin-bottom: 0.25em; }
+.klLicht {
+  grid-column: 4;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  white-space: nowrap;
+  font-size: 1em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  /* Angedeuteter Reiter: oben rund, unten offen zur Spalte hin */
+  background: color-mix(in srgb, var(--accent2) 18%, transparent);
+  border-radius: 0.4em 0.4em 0 0;
+  padding: 0.22em 0.55em 0.18em;
+}
+body.spar .klLicht { background: none; }
 
 .lichtSpur {
   position: relative;

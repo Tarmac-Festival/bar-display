@@ -341,10 +341,10 @@ läuft über zwei Acts hinweg oder liegt in einer Pause; wer sich darauf verläs
 muss die echte Zeitspanne sehen und nicht die des DJs, der zufällig gerade
 spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 
-Auf dem Timetable bekommt das eine **eigene Spalte** neben den Spielzeiten. Der
-Balken darin sitzt genau dort, wo die Phase innerhalb des Sets liegt: fängt das
-Licht mitten im Set an, fängt auch der Balken mittendrin an. Beschriftet wird
-er mit seiner eigenen Zeitspanne.
+Auf dem Timetable bekommt das eine **eigene Spalte am rechten Rand**, mit dem
+Warnzeichen als Reiter darüber. Der Balken darin sitzt genau dort, wo die Phase
+innerhalb des Sets liegt: fängt das Licht mitten im Set an, fängt auch der
+Balken mittendrin an. Beschriftet wird er mit seiner eigenen Zeitspanne.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 

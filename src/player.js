@@ -834,6 +834,14 @@ function renderTimetable() {
 
   if (zeilen.length) {
     body += '<div class="ttLabel">' + (view.current ? 'ALS N&Auml;CHSTES' : 'DEMN&Auml;CHST') + '</div>';
+
+    // Kopf ueber der Lichtspalte, damit klar ist, wofuer die Spalte steht -
+    // ohne ihn waere der Balken nur ein Streifen neben dem Act.
+    if (mitLicht) {
+      body += '<div class="ttKopf"><span class="klLicht">' + lichtZeichen() +
+        '<span>Lichteffekte</span></span></div>';
+    }
+
     body += '<div class="ttList' + (mitLicht ? ' mitLicht' : '') + '">';
     for (const x of zeilen) {
       const e = x.eintrag;
@@ -842,13 +850,13 @@ function renderTimetable() {
 
       body += '<div class="ttRow' + (spuren.length ? ' hatLicht' : '') + '">' +
         '<div class="when">' + when + '</div>' +
-        (mitLicht ? lichtSpurHtml(spuren) : '') +
         '<div class="act">' +
           (e.photo ? '<span class="ttThumb"><img src="' + photoUrl(e.photo) +
                      '" alt="" style="' + fotoStil(e) + '"></span>'
                    : (anyPhoto ? '<span class="ttThumb empty"></span>' : '')) +
           '<span>' + escapeHtml(e.act) + '</span></div>' +
         '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +
+        (mitLicht ? lichtSpurHtml(spuren) : '') +
         (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') +
         '</div>';
     }
