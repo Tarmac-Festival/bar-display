@@ -3,6 +3,8 @@
 let state = null;
 let paths = null;
 let dirty = false;
+// Jemand anders hat gespeichert, waehrend hier noch Aenderungen offen sind.
+let fremdGeaendert = false;
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mo ... So
 const $ = (id) => document.getElementById(id);
@@ -27,7 +29,13 @@ async function boot() {
   await zugangPruefen();
 
   window.api.onConfigChanged((cfg) => {
-    if (dirty) return;           // eigene Änderungen nicht ueberschreiben
+    if (dirty) {
+      // Eigene Eingaben bleiben stehen - aber stillschweigend auseinanderlaufen
+      // sollen die beiden Seiten nicht. Beim Speichern kommt die Rueckfrage.
+      fremdGeaendert = true;
+      $('fremd').classList.remove('hidden');
+      return;
+    }
     state = cfg;
     fillAll();
   });
@@ -217,14 +225,16 @@ function fillDurchsage() {
         text,
         until: minuten ? new Date(Date.now() + minuten * 60000).toISOString() : ''
       });
-      await save();
+      // Wurde nicht gespeichert - etwa weil woanders geaendert wurde -, waere
+      // die Meldung "Durchsage laeuft" schlicht falsch.
+      if (!(await save())) return;
       durchsageStatus();
       toast(minuten ? 'Durchsage läuft, endet in ' + minuten + ' Minuten' : 'Durchsage läuft');
     });
 
     $('an_weg').addEventListener('click', async () => {
       state.announcement = Object.assign({}, state.announcement, { enabled: false, until: '' });
-      await save();
+      if (!(await save())) return;
       durchsageStatus();
       toast('Durchsage ausgeblendet');
     });
@@ -618,6 +628,15 @@ function markDirty() {
   $('dirty').classList.remove('hidden');
 }
 
+// Nach dem Speichern oder Neuladen ist wieder alles beisammen.
+function sauber() {
+  dirty = false;
+  fremdGeaendert = false;
+  $('dirty').classList.add('hidden');
+  $('fremd').classList.add('hidden');
+}
+
+// Gibt zurueck, ob wirklich gespeichert wurde.
 async function save() {
   // Aufräumen vor dem Speichern
   state.timetable = (state.timetable || []).filter(e => e.act || e.date);
@@ -626,11 +645,38 @@ async function save() {
     items: (c.items || []).filter(i => i.name || i.price)
   }));
 
-  state = await window.api.saveConfig(state);
-  dirty = false;
-  $('dirty').classList.add('hidden');
+  let antwort = await window.api.saveConfig(state);
+
+  // Inzwischen hat jemand anders gespeichert - am Rechner, am Handy oder an
+  // einem zweiten Handy. Ohne Rueckfrage wuerde hier dessen Arbeit verschwinden.
+  if (antwort && antwort.konflikt) {
+    const weiter = confirm(
+      'Die Einstellungen wurden inzwischen woanders geändert – am Rechner oder ' +
+      'von einem anderen Gerät.\n\n' +
+      'OK: deine Eingaben speichern und die anderen Änderungen verwerfen.\n' +
+      'Abbrechen: den neuen Stand laden; deine Eingaben hier gehen verloren.');
+    if (!weiter) {
+      state = antwort.aktuell;
+      sauber();
+      fillAll();
+      updateBadges();
+      toast('Neuer Stand geladen');
+      return false;
+    }
+    // Bewusst ueberschreiben: auf den aktuellen Stand aufsetzen und nochmal hin.
+    state.stand = antwort.aktuell && antwort.aktuell.stand;
+    antwort = await window.api.saveConfig(state);
+    if (antwort && antwort.konflikt) {
+      toast('Speichern fehlgeschlagen - es wird gerade woanders geändert', true);
+      return false;
+    }
+  }
+
+  state = antwort;
+  sauber();
   toast('Gespeichert - die Anzeige wurde aktualisiert');
   updateBadges();
+  return true;
 }
 
 let toastTimer = null;
@@ -790,7 +836,7 @@ function wireButtons() {
   });
 
   $('exportCfg').addEventListener('click', async () => {
-    if (dirty) await save();
+    if (dirty && !(await save())) return;
     const ok = await window.api.exportConfig();
     if (ok) toast('Konfiguration gesichert');
   });
@@ -800,8 +846,7 @@ function wireButtons() {
     const cfg = await window.api.importConfig();
     if (cfg) {
       state = cfg;
-      dirty = false;
-      $('dirty').classList.add('hidden');
+      sauber();
       fillSettingsFields();
       renderVideos(); renderTimetable(); renderPrices();
       toast('Konfiguration geladen');
@@ -943,6 +988,19 @@ function testPlayable(file) {
 
 // Nicht abspielbare Clips einsammeln und auf Wunsch nach MP4 umwandeln
 async function pruefeUndWandle(eintraege, stillWennAllesOk) {
+  // Am Handy ist diese Probe wertlos und war sogar irrefuehrend: getestet wurde
+  // ueber eine file://-Adresse, die es im Browser des Handys gar nicht gibt -
+  // jeder Clip fiel durch und wurde als "nicht abspielbar" gemeldet, obwohl er
+  // auf der Anzeige einwandfrei lief. Ob ein Clip laeuft, entscheidet ohnehin
+  // das Geraet mit dem Bildschirm. Beim Hochladen sagt der Dienst dazu schon
+  // etwas: er schaut in die Datei und meldet den Codec zurueck.
+  if (paths.mode === 'http') {
+    if (!stillWennAllesOk) {
+      toast('Prüfen und Umwandeln geht nur am Rechner mit der Anzeige', true);
+    }
+    return;
+  }
+
   const clips = eintraege.filter(v => !isImageFile(v.file));
   if (!clips.length) {
     if (!stillWennAllesOk) toast('Keine Videos zum Prüfen');

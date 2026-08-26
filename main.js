@@ -36,6 +36,10 @@ const CONFIG_VERSION = 3;
 
 const DEFAULT_CONFIG = {
   version: CONFIG_VERSION,
+  // Fortlaufende Nummer jeder gespeicherten Fassung. Handy und
+  // Einstellungsfenster merken sich, auf welchem Stand sie aufsetzen; passt der
+  // beim Speichern nicht mehr, hat inzwischen jemand anders geschrieben.
+  stand: 0,
   settings: {
     barName: 'TARMAC BAR',
     subtitle: 'Planetenweide',
@@ -146,9 +150,25 @@ function loadConfig() {
   }
 }
 
+// Stand der Fassung, die gerade auf der Platte liegt.
+function standAufPlatte() {
+  try { return Number(readJson(CONFIG_PATH).stand) || 0; } catch (err) { return 0; }
+}
+
+// Baut die Aenderung noch auf der aktuellen Fassung auf? Eine Konfiguration
+// ohne Stand (aeltere Sicherung, Import) laesst sich nicht pruefen und wird
+// durchgelassen.
+function standKonflikt(cfg) {
+  const mit = Number(cfg && cfg.stand);
+  const da = standAufPlatte();
+  if (!Number.isFinite(mit) || !da) return false;
+  return mit !== da;
+}
+
 function saveConfig(cfg) {
   ensureDirs();
   const merged = deepMerge(DEFAULT_CONFIG, cfg || {});
+  merged.stand = standAufPlatte() + 1;
   // kleines Sicherheitsnetz: letzte Fassung aufheben
   try {
     if (fs.existsSync(CONFIG_PATH)) fs.copyFileSync(CONFIG_PATH, BACKUP_PATH);
@@ -323,6 +343,9 @@ function fernStarten(cfg) {
       // Dienst schickt danach von sich aus die Meldung an andere Handys.
       schreiben: (neu) => { const m = saveConfig(neu); broadcastConfig(m); return m; },
       version: app.getVersion(),
+      // Hier haengt die Anzeige an einem Rechner, nicht an einem Pi - das
+      // aendert, was beim Hochladen ueber Videoformate zu sagen ist.
+      anzeigegeraet: 'rechner',
       // Damit sich der Bildschirm auch vom Handy waehlen laesst
       displays: displayListe,
       nummerieren: displaysNummerieren
@@ -433,6 +456,8 @@ ipcMain.handle('fern:info', () => fernInfo());
 ipcMain.handle('config:get', () => loadConfig());
 
 ipcMain.handle('config:save', (_e, cfg) => {
+  // Inzwischen woanders gespeichert - nicht stillschweigend darueberbuegeln.
+  if (standKonflikt(cfg)) return { konflikt: true, aktuell: loadConfig() };
   const saved = saveConfig(cfg);
   broadcastConfig(saved);
   fernVerkuenden(saved);

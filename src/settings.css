@@ -7,6 +7,7 @@
   --line: #2c313a;
   --accent: #ff8a1f;
   --danger: #e5544b;
+  --warn: #f0a23e;
   --ok: #3fbf6e;
 }
 
@@ -52,6 +53,8 @@ body {
 
 .topActions { display: flex; align-items: center; gap: 0.8rem; }
 .dirty { color: var(--accent); font-size: 12px; }
+/* Jemand anders hat gespeichert, waehrend hier noch etwas offen ist. */
+.fremd { color: var(--warn); font-size: 12px; }
 
 /* ------------------------------- Buttons ----------------------------- */
 button {

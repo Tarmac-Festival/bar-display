@@ -21,6 +21,7 @@ let loadTimer = null;     // Watchdog beim Laden eines Videos
 let stallTimer = null;    // Watchdog fuer haengende Wiedergabe
 let lastTime = -1;
 let videoCounter = 0;   // läuft ueber die Runden hinweg weiter
+let zaehlerVorRunde = 0;  // Stand zu Beginn der laufenden Runde, siehe neueRunde()
 let itemToken = 0;        // invalidiert Callbacks bereits abgelöster Elemente
 let imRuhemodus = false;  // Bildschirm schwarz, Schleife angehalten
 // Vorschau: nur die Info-Slides, keine Videos. So kostet die Vorschau auf der
@@ -49,11 +50,7 @@ async function boot() {
   cfg = await window.api.getConfig();
   applyTheme();
 
-  window.api.onConfigChanged((next) => {
-    cfg = next;
-    applyTheme();
-    restart();
-  });
+  window.api.onConfigChanged((next) => konfigUebernehmen(next));
 
   starthinweisZeigen();
   zeitPruefen();
@@ -115,9 +112,65 @@ function restart() {
   sonderzustaende();
   if (imRuhemodus) return;      // waehrend der Ruhezeit laeuft nichts
   videoCounter = 0;
-  buildPlaylist();
+  neueRunde();
   index = -1;
   advance();
+}
+
+// Eine Runde bauen und sich den Zaehlerstand von ihrem Anfang merken. Der
+// Stand wird gebraucht, um dieselbe Runde spaeter noch einmal bauen zu koennen,
+// ohne dass Timetable und Preise dabei verrutschen - siehe konfigUebernehmen().
+function neueRunde() {
+  zaehlerVorRunde = videoCounter;
+  buildPlaylist();
+}
+
+// Kennung eines Eintrags, um ihn in einer neu gebauten Runde wiederzufinden.
+function itemKennung(it) {
+  if (!it) return '';
+  return it.type + '|' + (it.video ? (it.video.id || it.video.file) : '');
+}
+
+// ---------------------------------------------------------------------------
+// Neue Konfiguration uebernehmen, ohne die Schleife zurueckzuwerfen
+// ---------------------------------------------------------------------------
+// Frueher wurde bei jedem Speichern neu gestartet: der laufende Clip brach mitten
+// im Bild ab und die Runde fing wieder beim ersten Beitrag an. Wer am Handy nur
+// einen Preis tippt, will das nicht.
+//
+// Also: der Beitrag, der gerade laeuft, laeuft zu Ende. Danach geht es an der
+// richtigen Stelle der neuen Runde weiter. Nur wenn dieser Beitrag gar nicht
+// mehr vorkommt - geloescht, abgeschaltet, Zeitfenster vorbei - wird sofort
+// weitergeschaltet.
+function konfigUebernehmen(next) {
+  const lief = playlist[index] || null;
+  const kennung = itemKennung(lief);
+
+  cfg = next;
+  applyTheme();
+  sonderzustaende();
+  if (imRuhemodus) return;        // Ruhezeit haelt die Schleife ohnehin an
+  if (!lief) return restart();    // es lief noch nichts
+
+  // Dieselbe Runde noch einmal bauen: der Zaehler geht auf den Stand vom
+  // Rundenbeginn zurueck, sonst wandern Timetable und Preise bei jedem
+  // Speichern eine Runde weiter.
+  videoCounter = zaehlerVorRunde;
+  buildPlaylist();
+
+  const stelle = playlist.findIndex(it => itemKennung(it) === kennung);
+  if (stelle < 0) {
+    // Der laufende Beitrag steht nicht mehr im Plan.
+    index = -1;
+    advance();
+    return;
+  }
+
+  index = stelle;
+  // Ein sichtbarer Info-Slide soll den neuen Inhalt sofort zeigen - das ist
+  // kein Neustart der Schleife, nur frischer Text an derselben Stelle.
+  letzterSlideStand = '';
+  refreshVisibleSlide(true);
 }
 
 // ---------------------------------------------------------------------------
@@ -314,7 +367,7 @@ function advance(delay) {
     index++;
     if (index >= playlist.length) {
       // Runde vorbei: Playlist neu bewerten (Zeitfenster können sich geändert haben)
-      buildPlaylist();
+      neueRunde();
       index = 0;
     }
     const item = playlist[index];
@@ -873,10 +926,13 @@ async function zeitPruefen() {
 // Meistens aendert sich dabei nichts ausser der Uhrzeit - und die schreibt
 // tickClock ohnehin jede Sekunde neu. Den Slide dann trotzdem neu aufzubauen
 // und neu einzupassen kostet auf einem Pi spuerbar Zeit, also erst vergleichen.
-function refreshVisibleSlide() {
+// Der regelmaessige Aufruf frischt nur den Timetable auf - dort wandert die
+// Hervorhebung des laufenden Acts von selbst. Preise aendern sich nur, wenn
+// jemand sie aendert; die kommen deshalb nur auf Ansage mit.
+function refreshVisibleSlide(auchPreise) {
   if (!currentLayer || currentLayer.tagName === 'VIDEO') return;
   const kind = currentLayer.dataset.kind;
-  if (kind !== 'timetable') return;
+  if (kind !== 'timetable' && !(auchPreise && kind === 'prices')) return;
 
   const frisch = renderSlide(kind);
   const stand = ohneUhrzeit(frisch);

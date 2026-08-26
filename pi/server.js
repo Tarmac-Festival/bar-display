@@ -50,6 +50,9 @@ const VERSION_KONFIG = 3;
 
 const STANDARD = {
   version: VERSION_KONFIG,
+  // Fortlaufende Nummer jeder gespeicherten Fassung - daran erkennen Handy und
+  // Einstellungsfenster, ob sie noch auf dem Stand sind, den sie geladen haben.
+  stand: 0,
   settings: {
     barName: 'TARMAC BAR', subtitle: 'Planetenweide',
     bgColor: '#450b6f', accent: '#74ff40', accent2: '#f04e23',
@@ -121,6 +124,10 @@ function konfigLesen() {
 function konfigSchreiben(cfg) {
   ordnerAnlegen();
   const gemischt = tiefMischen(STANDARD, cfg || {});
+  // Siehe STANDARD.stand: fortlaufende Nummer der Fassung
+  gemischt.stand = (Number(konfigLesen().stand) || 0) + 1;
+  // Siehe STANDARD.stand: fortlaufende Nummer der Fassung
+  gemischt.stand = (Number(konfigLesen().stand) || 0) + 1;
   try {
     if (fs.existsSync(ORDNER.config)) fs.copyFileSync(ORDNER.config, BACKUP_PATH);
   } catch (e) { /* egal */ }

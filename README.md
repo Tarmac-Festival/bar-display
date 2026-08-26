@@ -152,7 +152,8 @@ xattr -dr com.apple.quarantine "/Applications/Bar Display.app"
 3. Unter *System* den Haken bei **Automatisch mit dem System starten** setzen.
 4. Unter *Videos* die Clips und Plakate hinzufügen, unter *Timetable* das Programm
    eintragen, unter *Getränkepreise* die Karte pflegen.
-5. **Speichern** – die Anzeige übernimmt die Änderungen sofort.
+5. **Speichern** – die Anzeige übernimmt die Änderungen sofort. Der Beitrag, der
+   gerade läuft, läuft dabei zu Ende; die Schleife fängt nicht von vorn an.
 
 > Der Bar-PC braucht kein Node.js und keine Internetverbindung. Alles Nötige – auch die
 > Schrift und ffmpeg – steckt im Programm.
@@ -168,6 +169,24 @@ xattr -dr com.apple.quarantine "/Applications/Bar Display.app"
 | Programm beenden | **Strg + Alt + Q**, oder in den Einstellungen unter *System* |
 | Zurück zur Anzeige | Einstellungsfenster schließen |
 | Speichern | Knopf oben rechts, oder **Strg + S** |
+
+Speichern unterbricht die Anzeige nicht. Der laufende Clip läuft zu Ende, danach
+geht die Runde an derselben Stelle weiter – nur wer den gerade laufenden Beitrag
+löscht oder abschaltet, sieht sofort den nächsten. Ein sichtbarer Timetable oder
+eine sichtbare Preisliste zeigen den neuen Inhalt dagegen gleich.
+
+### Wenn zwei gleichzeitig arbeiten
+
+Handy und Einstellungsfenster halten beide die ganze Konfiguration in der Hand.
+Damit der Letzte nicht stillschweigend die Arbeit des Ersten überschreibt, trägt
+jede gespeicherte Fassung eine fortlaufende Nummer.
+
+- Wird woanders gespeichert, während hier **nichts** offen ist, übernimmt die
+  Seite den neuen Stand von selbst.
+- Sind hier Eingaben offen, bleiben sie stehen; oben erscheint **Woanders
+  geändert**.
+- Beim Speichern kommt dann die Rückfrage: eigene Eingaben durchsetzen, oder den
+  neuen Stand laden und die eigenen verwerfen.
 
 Ist unter *System* eine PIN hinterlegt, fragt die Anzeige vorher nach einem Zahlencode.
 Das verhindert, dass jemand im Vorbeigehen die Preise ändert.
@@ -384,7 +403,9 @@ Bildschirm, verschieben geht mit den Pfeilen links.
 - Das Fähnchen rechts zeigt live an, ob der Beitrag gerade läuft, pausiert oder
   deaktiviert ist – inklusive der Zeitfenster im Klartext.
 - **Clips prüfen & umwandeln** testet alle Videos und bietet an, nicht abspielbare
-  Formate nach MP4 umzurechnen.
+  Formate nach MP4 umzurechnen. Der Knopf gibt es nur am Rechner mit der Anzeige:
+  ob ein Clip läuft, kann nur das Gerät beantworten, das ihn zeigen soll — nicht
+  der Browser eines Handys nebenan.
 
 ### Timetable
 
@@ -658,10 +679,14 @@ Zwei Dinge, die man wissen sollte:
 
 **iPhone-Videos spielen auf einem Pi meist nicht.** iPhones nehmen standardmäßig in
 HEVC (H.265) auf, und ein Pi 3B kann das nicht dekodieren — auch nicht langsam. Das
-Programm erkennt das direkt nach dem Hochladen und sagt es, statt den Clip abends
-stillschweigend zu überspringen. Abhilfe: am iPhone unter *Einstellungen → Kamera →
-Formate* auf **Maximale Kompatibilität** stellen, oder den Clip am Rechner nach MP4
-umwandeln.
+Programm schaut direkt nach dem Hochladen in die Datei und sagt es, statt den Clip
+abends stillschweigend zu überspringen. Abhilfe: am iPhone unter *Einstellungen →
+Kamera → Formate* auf **Maximale Kompatibilität** stellen, oder den Clip am Rechner
+nach MP4 umwandeln.
+
+Hängt die Anzeige dagegen an einem **Rechner**, fällt die Warnung milder aus: die
+meisten Rechner spielen HEVC ab. Der Hinweis nennt dann nur den Weg für den Fall,
+dass der Clip doch übersprungen wird.
 
 **Umwandeln geht am Handy nicht.** Dafür fehlt dem Pi ffmpeg, und ein Pi 3B wäre
 damit auch viele Minuten beschäftigt. Das bleibt dem Rechner vorbehalten.
@@ -934,6 +959,8 @@ Unter Windows liegt alles in `%APPDATA%\Bar Display\`, unter Linux in
 | Eigene Schrift | `fonts/` |
 
 Vor jedem Speichern legt das Programm eine Sicherungskopie der letzten Fassung an.
+In der Konfiguration steht außerdem `stand` – eine fortlaufende Nummer, an der
+Handy und Einstellungsfenster erkennen, ob sie noch auf demselben Stand sind.
 
 Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux als
 `~/.config/autostart/bar-display.desktop`.

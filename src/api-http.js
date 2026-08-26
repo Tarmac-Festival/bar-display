@@ -49,11 +49,19 @@ if (!window.api) {
     zeitStatus: () => hole('/api/zeit'),
     fernInfo: () => hole('/api/fern'),
     getConfig: () => hole('/api/config'),
-    saveConfig: (cfg) => hole('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cfg)
-    }),
+    saveConfig: async (cfg) => {
+      const antwort = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cfg)
+      });
+      const daten = await antwort.json();
+      // 409: inzwischen woanders gespeichert. Die Einstellungsseite fragt
+      // dann nach, statt eine Fehlermeldung zu zeigen.
+      if (antwort.status === 409) return daten;
+      if (!antwort.ok) throw new Error('/api/config -> HTTP ' + antwort.status);
+      return daten;
+    },
     onConfigChanged: (cb) => beobachter.push(cb),
 
     // Im Browser gibt es keine Dateiauswahl und kein Fenster-Handling.
