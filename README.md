@@ -34,6 +34,9 @@ Getränkepreise im Festival-Design.
   laufenden Act hervor und zeigt darunter die nächsten. Vergangenes verschwindet von selbst.
 - **Bildausschnitt wählbar** — pro Act festlegen, welcher Teil des Fotos zu sehen
   ist. Kein abgeschnittener Kopf mehr bei Hochformat-Bildern.
+- **Datum und Uhrzeit tippen statt klicken** — `3.10.26`, `031026` oder
+  `2026-10-03` führen zum selben Ergebnis. Die Auswahl gibt es weiterhin,
+  über den Knopf daneben.
 - **Getränkepreise** in Gruppen, mit Größe und Preis.
 - **Spezialshot** – ein hervorgehobenes Band über die volle Breite unter den
   Preisspalten, mit eigener Überschrift, Preis und Beschreibungstext.
@@ -388,7 +391,28 @@ Bildschirm, verschieben geht mit den Pfeilen links.
 
 ![Einstellungen Timetable](docs/screenshots/einstellungen-timetable.png)
 
-Eine Zeile pro Act: Datum, Von, Bis, Name und ein optionaler Zusatz. Der gerade laufende
+Eine Zeile pro Act: Datum, Von, Bis, Name und ein optionaler Zusatz.
+
+**Datum und Uhrzeit lassen sich tippen.** Die eingebauten Felder von Windows,
+Linux und macOS verhalten sich dabei unterschiedlich – mal nimmt man Eingaben
+an, mal geht nur die Auswahl auf. Deshalb steht überall ein normales Textfeld,
+und der kleine Knopf daneben öffnet weiterhin Kalender bzw. Uhr.
+
+Beim Tippen ist das Feld großzügig; geschrieben wird immer sauber:
+
+| Getippt | Wird zu |
+|---|---|
+| `3.10.26`, `03.10.2026`, `3/10/2026`, `031026`, `2026-10-03` | 03.10.2026 |
+| `9`, `900`, `9:00`, `9.00` | 09:00 |
+| `2130`, `21:30`, `21.30` | 21:30 |
+| `7:5` | 07:05 |
+
+Ausgewertet wird beim Verlassen des Feldes oder mit **Enter** – während des
+Tippens springt nichts um. Steht etwas Unbrauchbares drin, färbt sich das Feld
+rot und der bisherige Wert bleibt stehen; **Esc** stellt ihn wieder her.
+
+Das gilt überall gleich: Timetable, Zeitfenster der Clips, geplante Durchsagen
+und Ruhezeit. Der gerade laufende
 Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
 - **Foto**: Klick auf *+ Foto* wählt ein Bild, Klick auf die Miniatur tauscht es,
@@ -929,6 +953,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
+| Datum oder Uhrzeit färbt sich rot | Die Eingabe war nicht deutbar – Esc stellt den alten Wert wieder her |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
 | Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
 | Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
@@ -1041,6 +1066,7 @@ Zusammenfassung des Laufs.
 | `pi/kiosk.sh` | startet die Vollbildanzeige, wartet vorher auf den Webdienst |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |
 | `src/qr.js` | QR-Erzeugung, mitgeliefert statt nachgeladen |
+| `src/eingabefelder.js` | macht Datums- und Uhrzeitfelder betippbar |
 | `lib/zeitstatus.js` | fragt das System, ob die Uhr aus dem Netz kommt |
 | `lib/dateiname.js` | entschärft Dateinamen, von beiden Wegen genutzt |
 | `lib/hochladen.js` | nimmt Dateien entgegen, prüft Format und Platz |

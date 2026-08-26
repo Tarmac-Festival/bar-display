@@ -331,3 +331,95 @@ function mitgeliefertesLogo(wert) {
   if (String(wert).charAt(0) === '@') return 'branding/' + String(wert).slice(1);
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Datum und Uhrzeit eintippen
+// ---------------------------------------------------------------------------
+// Die eingebauten Felder fuer Datum und Uhrzeit lassen sich je nach System
+// unterschiedlich gut betippen - mal klappt es, mal geht nur die Auswahl auf.
+// Deshalb steht davor ein normales Textfeld, und diese Funktionen uebersetzen
+// zwischen dem, was jemand tippt, und dem Format, das gespeichert wird.
+//
+// Grosszuegig beim Lesen, streng beim Schreiben: "1.2.26", "01.02.2026",
+// "2026-02-01" und "010226" meinen alle dasselbe.
+
+function nurZiffern(t) { return String(t == null ? '' : t).replace(/\D/g, ''); }
+
+// Zweistellige Jahre: an einer Bar geht es um dieses Jahrzehnt, nicht um 1926.
+function jahrVollstaendig(j) {
+  if (j >= 100) return j;
+  return j <= 79 ? 2000 + j : 1900 + j;
+}
+
+function gueltigesDatum(j, m, t) {
+  if (m < 1 || m > 12 || t < 1 || t > 31) return false;
+  const d = new Date(j, m - 1, t);
+  return d.getFullYear() === j && d.getMonth() === m - 1 && d.getDate() === t;
+}
+
+function zweistellig(n) { return String(n).padStart(2, '0'); }
+
+/** Freitext zu "JJJJ-MM-TT". Liefert null, wenn nichts Brauchbares drinsteht. */
+function datumParsen(text) {
+  const roh = String(text == null ? '' : text).trim();
+  if (!roh) return '';
+
+  // Schon im Speicherformat?
+  let m = roh.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) {
+    const j = +m[1], mo = +m[2], t = +m[3];
+    return gueltigesDatum(j, mo, t) ? j + '-' + zweistellig(mo) + '-' + zweistellig(t) : null;
+  }
+
+  // Getippt: Tag, Monat, Jahr - getrennt durch Punkt, Schraegstrich oder Strich
+  m = roh.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+  if (m) {
+    const t = +m[1], mo = +m[2], j = jahrVollstaendig(+m[3]);
+    return gueltigesDatum(j, mo, t) ? j + '-' + zweistellig(mo) + '-' + zweistellig(t) : null;
+  }
+
+  // Nur Ziffern: TTMMJJ oder TTMMJJJJ
+  const z = nurZiffern(roh);
+  if (z.length === 6 || z.length === 8) {
+    const t = +z.slice(0, 2), mo = +z.slice(2, 4), j = jahrVollstaendig(+z.slice(4));
+    return gueltigesDatum(j, mo, t) ? j + '-' + zweistellig(mo) + '-' + zweistellig(t) : null;
+  }
+  return null;
+}
+
+/** "JJJJ-MM-TT" zu "TT.MM.JJJJ" fuers Textfeld. */
+function datumAnzeige(iso) {
+  const m = String(iso == null ? '' : iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3] + '.' + m[2] + '.' + m[1] : '';
+}
+
+/** Freitext zu "HH:MM". Liefert null, wenn nichts Brauchbares drinsteht. */
+function zeitParsen(text) {
+  const roh = String(text == null ? '' : text).trim();
+  if (!roh) return '';
+
+  // Mit Trenner ist auch eine einstellige Minute eindeutig: "7:5" meint 07:05.
+  let m = roh.match(/^(\d{1,2})[:.\s](\d{1,2})$/);
+  if (m) {
+    const h = +m[1], mi = +m[2];
+    return (h <= 23 && mi <= 59) ? zweistellig(h) + ':' + zweistellig(mi) : null;
+  }
+
+  const z = nurZiffern(roh);
+  // Nur Stunde: "9" wird 09:00 - spart bei vollen Stunden das halbe Tippen
+  if (z.length === 1 || z.length === 2) {
+    const h = +z;
+    return h <= 23 ? zweistellig(h) + ':00' : null;
+  }
+  if (z.length === 3 || z.length === 4) {
+    const h = +z.slice(0, z.length - 2), mi = +z.slice(-2);
+    return (h <= 23 && mi <= 59) ? zweistellig(h) + ':' + zweistellig(mi) : null;
+  }
+  return null;
+}
+
+/** "HH:MM" bleibt "HH:MM" - eigene Funktion, damit beide Wege gleich aussehen. */
+function zeitAnzeige(hhmm) {
+  const m = String(hhmm == null ? '' : hhmm).match(/^(\d{1,2}):(\d{2})$/);
+  return m ? zweistellig(+m[1]) + ':' + m[2] : '';
+}

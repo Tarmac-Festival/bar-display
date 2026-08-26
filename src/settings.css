@@ -91,6 +91,35 @@ h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: 
 .hidden { display: none !important; }
 
 /* ------------------------------- Inputs ------------------------------ */
+/* ------------------------ Datum und Uhrzeit -------------------------- */
+/* Textfeld zum Tippen, daneben ein Knopf fuer die eingebaute Auswahl. Das
+   eingebaute Feld bleibt im Dokument - es haelt weiterhin den Wert - ist aber
+   nur ein Pixel gross. Ganz ausblenden geht nicht: showPicker() verlangt ein
+   Feld, das tatsaechlich dargestellt wird. */
+.feldPaar { position: relative; display: inline-flex; align-items: stretch; gap: 4px; }
+.feldPaar .feldText { width: 108px; text-align: center; font-variant-numeric: tabular-nums; }
+.feldPaar .feldText.feldFehler { border-color: var(--danger); color: var(--danger); }
+.feldPaar .feldWahl {
+  padding: 0 0.45rem;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.feldPaar .feldWahl:hover { border-color: var(--accent); }
+.feldNativ {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
   background: var(--bg);
   border: 1px solid var(--line);

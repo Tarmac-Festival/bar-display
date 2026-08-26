@@ -13,7 +13,8 @@ vm.runInContext(code, ctx);
 const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster,
         fensterEnde, countdownText, aktiveDurchsage, durchsageTeile,
         fotoAusschnitt, fotoStil, ausschnittIstStandard,
-        mitgeliefertesLogo, durchsageStil, laufDauer } = ctx;
+        mitgeliefertesLogo, durchsageStil, laufDauer,
+        datumParsen, datumAnzeige, zeitParsen, zeitAnzeige } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -170,6 +171,49 @@ check('Ohne Countdown faellt der Platzhalter weg',
       durchsageTeile('Bar schliesst in {zeit}', false), [{ text: 'Bar schliesst in' }]);
 check('Grossschreibung des Platzhalters zaehlt auch',
       durchsageTeile('Noch {ZEIT}', true), [{ text: 'Noch ' }, { zeit: true }]);
+
+console.log('-- Datum und Uhrzeit eintippen --');
+check('Punktschreibweise', datumParsen('01.02.2026'), '2026-02-01');
+check('ohne fuehrende Nullen', datumParsen('1.2.2026'), '2026-02-01');
+check('zweistelliges Jahr', datumParsen('1.2.26'), '2026-02-01');
+check('mit Schraegstrich', datumParsen('1/2/2026'), '2026-02-01');
+check('mit Bindestrich', datumParsen('1-2-2026'), '2026-02-01');
+check('schon im Speicherformat', datumParsen('2026-02-01'), '2026-02-01');
+check('Speicherformat ohne Nullen', datumParsen('2026-2-1'), '2026-02-01');
+check('nur Ziffern, sechsstellig', datumParsen('010226'), '2026-02-01');
+check('nur Ziffern, achtstellig', datumParsen('01022026'), '2026-02-01');
+check('mit Leerzeichen drumherum', datumParsen('  1.2.2026  '), '2026-02-01');
+check('leer bleibt leer', datumParsen(''), '');
+check('Unsinn wird abgelehnt', datumParsen('morgen'), null);
+check('31. Februar gibt es nicht', datumParsen('31.02.2026'), null);
+check('Monat 13 gibt es nicht', datumParsen('01.13.2026'), null);
+check('Tag 0 gibt es nicht', datumParsen('00.01.2026'), null);
+check('vierstellig ist zu mehrdeutig', datumParsen('0102'), null);
+check('Schaltjahr wird erkannt', datumParsen('29.02.2024'), '2024-02-29');
+check('kein Schaltjahr', datumParsen('29.02.2026'), null);
+
+check('Anzeige aus dem Speicherformat', datumAnzeige('2026-02-01'), '01.02.2026');
+check('Anzeige bei leer', datumAnzeige(''), '');
+// Hin und zurueck muss dasselbe ergeben, sonst aendert sich beim Ansehen etwas
+check('hin und zurueck', datumParsen(datumAnzeige('2026-08-28')), '2026-08-28');
+
+check('Uhrzeit mit Doppelpunkt', zeitParsen('21:00'), '21:00');
+check('ohne fuehrende Null', zeitParsen('9:05'), '09:05');
+check('mit Punkt', zeitParsen('21.30'), '21:30');
+check('nur Ziffern, vierstellig', zeitParsen('2130'), '21:30');
+check('nur Ziffern, dreistellig', zeitParsen('905'), '09:05');
+check('einstellige Minute mit Trenner', zeitParsen('7:5'), '07:05');
+check('einstellige Minute mit Punkt', zeitParsen('9.5'), '09:05');
+check('ohne Trenner bleibt es vierstellig gedacht', zeitParsen('2130'), '21:30');
+check('nur die Stunde', zeitParsen('9'), '09:00');
+check('nur die Stunde, zweistellig', zeitParsen('21'), '21:00');
+check('Mitternacht', zeitParsen('0'), '00:00');
+check('leer bleibt leer', zeitParsen(''), '');
+check('Stunde 24 gibt es nicht', zeitParsen('24:00'), null);
+check('Minute 60 gibt es nicht', zeitParsen('21:60'), null);
+check('Unsinn wird abgelehnt', zeitParsen('abends'), null);
+check('Uhrzeit-Anzeige', zeitAnzeige('9:05'), '09:05');
+check('hin und zurueck', zeitParsen(zeitAnzeige('01:30')), '01:30');
 
 console.log('-- Darstellung der Durchsagen --');
 check('ohne Angabe steht sie fest', durchsageStil({}), { modus: 'fest', tempo: 'normal' });
