@@ -83,7 +83,7 @@ test.describe('Was es am Handy nicht gibt', () => {
 test.describe('Haeufigkeiten stehen im jeweiligen Reiter', () => {
   const wo = [
     ['Timetable', ['s_timetableEvery', 's_timetableDuration', 's_timetableMaxNext']],
-    ['Getränkepreise', ['s_pricesEvery', 's_pricesDuration']],
+    ['Karte', ['s_pricesEvery', 's_pricesDuration']],
     ['Videos', ['s_imageDuration']]
   ];
 

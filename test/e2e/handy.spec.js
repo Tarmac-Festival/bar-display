@@ -45,7 +45,7 @@ test('jeder Reiter laesst sich antippen', async ({ page, bar }) => {
   bar.konfig(beispiel());
   await page.goto(bar.adresse + '/einstellungen');
 
-  for (const name of ['Durchsage', 'Timetable', 'Getränkepreise', 'Videos', 'Anzeige', 'System']) {
+  for (const name of ['Durchsage', 'Timetable', 'Karte', 'Videos', 'Anzeige', 'System']) {
     await page.getByRole('button', { name, exact: true }).tap();
     await expect(page.getByRole('button', { name, exact: true })).toHaveClass(/active/);
   }

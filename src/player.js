@@ -351,8 +351,7 @@ function buildPlaylist() {
   const runde = rundeBauen({
     aktiv: nurVorschau ? [] : (cfg.videos || []).filter(v => isVideoActive(v, now)),
     hatTimetable: (cfg.timetable || []).length > 0,
-    hatPreise: (cfg.prices || []).some(c => (c.items || []).length > 0) ||
-               !!(sp.enabled && sp.name),
+    hatPreise: preisGruppen(cfg.prices).length > 0 || !!(sp.enabled && sp.name),
     // Die Lichtseite laeuft nur mit, wenn ueberhaupt etwas angemeldet ist
     hatLicht: lichtFenster(cfg.lichteffekte).length > 0,
     timetableEvery: s.timetableEvery,
@@ -963,18 +962,16 @@ function renderLicht() {
 
 function renderPrices() {
   const s = cfg.settings;
-  const cats = (cfg.prices || []).filter(c => (c.items || []).length > 0);
+  const cats = preisGruppen(cfg.prices);
   let body = '<div class="priceGrid">';
   for (const c of cats) {
-    body += '<div class="priceCat"><h2>' + escapeHtml(c.category) + '</h2>';
-    for (const it of c.items) {
-      body += '<div class="priceItem">' +
-        '<span class="pn">' + escapeHtml(it.name) + '</span>' +
-        (it.size ? '<span class="psz">' + escapeHtml(it.size) + '</span>' : '') +
-        '<span class="dots"></span>' +
-        '<span class="pp">' + escapeHtml(it.price) + '</span>' +
-        '</div>';
+    const stil = preisStil(c);
+    body += '<div class="priceCat ' + stil + '"><h2>' + escapeHtml(c.category) + '</h2>';
+    for (const it of (c.items || [])) {
+      if (!it || (!it.name && !it.price)) continue;
+      body += stil === 'karten' ? essKarteHtml(it) : preisZeileHtml(it);
     }
+    body += gruppenSpezialHtml(c.spezial);
     body += '</div>';
   }
   body += '</div>';
@@ -990,6 +987,58 @@ function renderPrices() {
   return '<div class="slideInner">' +
     headHtml(s.pricesTitle || 'GETRÄNKE', s.pricesSubtitle) +
     '<div class="slideBody center">' + body + '</div>' + footHtml() + '</div>';
+}
+
+// Kompakt: Name, Punktlinie, Preis - so passen zwanzig Getraenke nebeneinander
+function preisZeileHtml(it) {
+  return '<div class="priceItem">' +
+    '<span class="pn">' + escapeHtml(it.name) + '</span>' +
+    (it.size ? '<span class="psz">' + escapeHtml(it.size) + '</span>' : '') +
+    '<span class="dots"></span>' +
+    '<span class="pp">' + escapeHtml(it.price) + '</span>' +
+    '</div>';
+}
+
+// Mit Foto: quadratisches Bild links, daneben Name, Beschreibung, Preis.
+// Gedacht fuer einen Essenstand - fuenf Gerichte, die etwas hermachen sollen.
+function essKarteHtml(it) {
+  return '<div class="essKarte">' +
+    (it.photo ? '<span class="essFoto"><img src="' + photoUrl(it.photo) +
+               '" alt="" style="' + fotoStil(it) + '"></span>' : '') +
+    '<div class="essText">' +
+      '<div class="essKopf">' +
+        '<span class="essName">' + escapeHtml(it.name) + '</span>' +
+        (it.size ? '<span class="essGroesse">' + escapeHtml(it.size) + '</span>' : '') +
+        '<span class="essDots"></span>' +
+        '<span class="essPreis">' + escapeHtml(it.price) + '</span>' +
+      '</div>' +
+      (it.text ? '<div class="essBeschreibung">' + escapeHtml(it.text) + '</div>' : '') +
+    '</div>' +
+    '</div>';
+}
+
+// Hervorgehobenes innerhalb einer Gruppe: das Tagesgericht beim Essenstand,
+// der Shot des Abends bei den Getraenken. Der Spezialshot fuer die ganze Seite
+// (cfg.special) bleibt davon unberuehrt und steht weiterhin ganz unten.
+function gruppenSpezialHtml(sp) {
+  const x = sp || {};
+  if (!x.enabled || !x.name) return '';
+  return '<div class="gruppenSpezial">' +
+    '<div class="gsTag">' + escapeHtml(x.label || 'EMPFEHLUNG') + '</div>' +
+    '<div class="gsInhalt">' +
+      (x.photo ? '<span class="essFoto"><img src="' + photoUrl(x.photo) +
+                '" alt="" style="' + fotoStil(x) + '"></span>' : '') +
+      '<div class="essText">' +
+        '<div class="essKopf">' +
+          '<span class="essName">' + escapeHtml(x.name) + '</span>' +
+          (x.size ? '<span class="essGroesse">' + escapeHtml(x.size) + '</span>' : '') +
+          '<span class="essDots"></span>' +
+          '<span class="essPreis">' + escapeHtml(x.price || '') + '</span>' +
+        '</div>' +
+        (x.text ? '<div class="essBeschreibung">' + escapeHtml(x.text) + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+    '</div>';
 }
 
 // Spezialshot: volle Breite, unter den Spalten, deutlich abgesetzt

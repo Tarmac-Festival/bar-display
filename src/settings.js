@@ -641,8 +641,10 @@ function sauber() {
 async function save() {
   // Aufräumen vor dem Speichern
   state.timetable = (state.timetable || []).filter(e => e.act || e.date);
-  state.prices = (state.prices || []).map(c => ({
-    id: c.id, category: c.category,
+  // Nur die leeren Zeilen wegwerfen, nicht die Gruppe neu zusammensetzen: sonst
+  // fallen alle Felder heraus, die hier nicht aufgezaehlt sind - die
+  // Darstellung der Gruppe und ihr Hervorgehobenes zum Beispiel.
+  state.prices = (state.prices || []).map(c => Object.assign({}, c, {
     items: (c.items || []).filter(i => i.name || i.price)
   }));
 
@@ -1640,7 +1642,9 @@ function renderPhotoCell(td, e) {
 // die Mitte gern den Bauch statt des Gesichts - hier lässt sich der Ausschnitt
 // vorher zurechtziehen. Das Fenster zeigt exakt dieselbe Form und denselben
 // Stil wie später auf dem Bildschirm.
-function ausschnittWaehlen(td, e) {
+// `nachher` bestimmt, was nach dem Zuschneiden neu gezeichnet wird. Ohne
+// Angabe die Fotozelle eines Acts - der urspruengliche Fall.
+function ausschnittWaehlen(td, e, nachher) {
   const stand = fotoAusschnitt(e);
   let x = stand.x, y = stand.y, z = stand.z;
 
@@ -1648,7 +1652,7 @@ function ausschnittWaehlen(td, e) {
   schirm.className = 'cropSchirm';
   schirm.innerHTML =
     '<div class="cropKasten">' +
-      '<h2>Ausschnitt für „' + escapeHtml(e.act || 'diesen Act') + '"</h2>' +
+      '<h2>Ausschnitt für „' + escapeHtml(e.act || e.name || 'dieses Foto') + '"</h2>' +
       '<p class="hint">Bild verschieben, bis der richtige Teil im Fenster steht. ' +
          'So sieht es später auf der Anzeige aus.</p>' +
       '<div class="cropBuehne"><img alt=""></div>' +
@@ -1721,7 +1725,7 @@ function ausschnittWaehlen(td, e) {
     // und alte Einträge sehen aus wie eh und je.
     if (ausschnittIstStandard(neu)) delete e.crop; else e.crop = neu;
     markDirty();
-    renderPhotoCell(td, e);
+    if (typeof nachher === 'function') nachher(); else renderPhotoCell(td, e);
     schliessen();
   });
 }
@@ -1762,16 +1766,29 @@ function renderPrices() {
 function catCard(c, ci) {
   const card = document.createElement('div');
   card.className = 'catCard';
+  const stil = preisStil(c);
   card.innerHTML =
     '<div class="catTop">' +
       '<input type="text" data-f="category" value="' + escapeHtml(c.category || '') + '" placeholder="Gruppenname">' +
+      '<select class="catStil" title="Darstellung dieser Gruppe">' +
+        PREIS_STILE.map(x => '<option value="' + x.wert + '"' +
+          (x.wert === stil ? ' selected' : '') + '>' + escapeHtml(x.name) + '</option>').join('') +
+      '</select>' +
       '<div class="spacer"></div>' +
       '<button class="icon" data-act="up" title="nach oben">&#9650;</button>' +
       '<button class="icon" data-act="down" title="nach unten">&#9660;</button>' +
       '<button class="danger" data-act="delcat">Gruppe l&ouml;schen</button>' +
     '</div>' +
     '<div data-items></div>' +
-    '<button data-act="additem" style="margin-top:0.5rem">+ Getr&auml;nk</button>';
+    '<button data-act="additem" style="margin-top:0.5rem">+ ' +
+      (stil === 'karten' ? 'Gericht' : 'Getr&auml;nk') + '</button>' +
+    '<div data-spezial></div>';
+
+  card.querySelector('.catStil').addEventListener('change', (ev) => {
+    c.stil = ev.target.value;
+    markDirty();
+    renderPrices();
+  });
 
   card.querySelector('[data-f=category]').addEventListener('input', (ev) => {
     c.category = ev.target.value; markDirty();
@@ -1792,17 +1809,63 @@ function catCard(c, ci) {
     markDirty(); renderPrices();
   });
 
+  card.querySelector('[data-spezial]').appendChild(gruppenSpezial(c));
   return card;
 }
 
+// Hervorgehobenes innerhalb der Gruppe: Tagesgericht, Shot des Abends.
+// Der seitenweite Spezialshot ganz unten bleibt davon unberuehrt.
+function gruppenSpezial(c) {
+  c.spezial = c.spezial || { enabled: false, label: '', name: '', size: '', price: '', text: '', photo: '' };
+  const sp = c.spezial;
+
+  const box = document.createElement('div');
+  box.className = 'gruppenSpezialBox';
+  box.innerHTML =
+    '<label class="checkline"><input type="checkbox" data-f="enabled"' +
+      (sp.enabled ? ' checked' : '') + '> <span>Etwas aus dieser Gruppe hervorheben</span></label>' +
+    '<div class="gsFelder' + (sp.enabled ? '' : ' gedimmt') + '">' +
+      '<div class="itemRow">' +
+        '<input class="iName" type="text" data-f="label" value="' + escapeHtml(sp.label || '') +
+          '" placeholder="\u00dcberschrift, z.B. TAGESGERICHT">' +
+        '<input class="iName" type="text" data-f="name" value="' + escapeHtml(sp.name || '') +
+          '" placeholder="Name">' +
+        '<input class="iSize" type="text" data-f="size" value="' + escapeHtml(sp.size || '') +
+          '" placeholder="Gr\u00f6\u00dfe">' +
+        '<input class="iPrice" type="text" data-f="price" value="' + escapeHtml(sp.price || '') +
+          '" placeholder="9,50 \u20ac">' +
+        '<span class="fotoZelle"></span>' +
+      '</div>' +
+      '<input type="text" data-f="text" value="' + escapeHtml(sp.text || '') +
+        '" placeholder="Beschreibung (optional)">' +
+    '</div>';
+
+  box.querySelector('[data-f=enabled]').addEventListener('change', (ev) => {
+    sp.enabled = ev.target.checked;
+    markDirty();
+    renderPrices();
+  });
+  box.querySelectorAll('input[type=text]').forEach(inp => {
+    inp.addEventListener('input', () => { sp[inp.dataset.f] = inp.value; markDirty(); });
+  });
+  renderEssFoto(box.querySelector('.fotoZelle'), sp, () => renderPrices());
+  return box;
+}
+
 function itemRow(c, it, ii) {
+  const karten = preisStil(c) === 'karten';
   const row = document.createElement('div');
-  row.className = 'itemRow';
+  row.className = 'itemRow' + (karten ? ' mitFoto' : '');
   row.innerHTML =
-    '<input class="iName" type="text" data-f="name" value="' + escapeHtml(it.name || '') + '" placeholder="Getränk">' +
-    '<input class="iSize" type="text" data-f="size" value="' + escapeHtml(it.size || '') + '" placeholder="0,3 l">' +
+    (karten ? '<span class="fotoZelle"></span>' : '') +
+    '<input class="iName" type="text" data-f="name" value="' + escapeHtml(it.name || '') +
+      '" placeholder="' + (karten ? 'Gericht' : 'Getränk') + '">' +
+    '<input class="iSize" type="text" data-f="size" value="' + escapeHtml(it.size || '') +
+      '" placeholder="' + (karten ? 'Portion' : '0,3 l') + '">' +
     '<input class="iPrice" type="text" data-f="price" value="' + escapeHtml(it.price || '') + '" placeholder="3,50 &euro;">' +
-    '<button class="danger icon" data-act="delitem">&times;</button>';
+    '<button class="danger icon" data-act="delitem">&times;</button>' +
+    (karten ? '<input class="iText" type="text" data-f="text" value="' + escapeHtml(it.text || '') +
+              '" placeholder="Beschreibung (optional)">' : '');
 
   row.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', () => { it[inp.dataset.f] = inp.value; markDirty(); });
@@ -1810,7 +1873,44 @@ function itemRow(c, it, ii) {
   row.querySelector('[data-act=delitem]').addEventListener('click', () => {
     c.items.splice(ii, 1); markDirty(); renderPrices();
   });
+  if (karten) renderEssFoto(row.querySelector('.fotoZelle'), it, () => renderPrices());
   return row;
+}
+
+// Fotozelle fuer eine Speisekarten-Position. Benutzt denselben Weg wie die
+// Act-Fotos: dieselbe Ablage, dieselbe Auswahl, derselbe Ausschnitt-Editor.
+function renderEssFoto(zelle, eintrag, neuZeichnen) {
+  if (!zelle) return;
+  if (eintrag.photo) {
+    zelle.innerHTML =
+      '<span class="photoWrap klein">' +
+        '<span class="photoBox"><img src="' + photoSrc(eintrag.photo) + '" alt="" ' +
+          'title="Anderes Foto wählen" style="' + fotoStil(eintrag) + '"></span>' +
+        '<button class="photoDel" title="Foto entfernen">&times;</button>' +
+        '<button class="photoCrop" title="Ausschnitt wählen">&#9635;</button>' +
+      '</span>';
+    zelle.querySelector('img').addEventListener('click', () => essFotoWaehlen(zelle, eintrag, neuZeichnen));
+    zelle.querySelector('.photoDel').addEventListener('click', () => {
+      eintrag.photo = '';
+      delete eintrag.crop;
+      markDirty();
+      neuZeichnen();
+    });
+    zelle.querySelector('.photoCrop').addEventListener('click',
+      () => ausschnittWaehlen(zelle, eintrag, () => renderEssFoto(zelle, eintrag, neuZeichnen)));
+  } else {
+    zelle.innerHTML = '<button class="photoAdd">+ Foto</button>';
+    zelle.querySelector('.photoAdd').addEventListener('click', () => essFotoWaehlen(zelle, eintrag, neuZeichnen));
+  }
+}
+
+async function essFotoWaehlen(zelle, eintrag, neuZeichnen) {
+  const datei = await window.api.addPhoto(toast);
+  if (!datei) return;
+  eintrag.photo = datei;
+  delete eintrag.crop;
+  markDirty();
+  neuZeichnen();
 }
 
 function moveCat(i, dir) {

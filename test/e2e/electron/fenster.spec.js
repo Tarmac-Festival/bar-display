@@ -23,7 +23,7 @@ test.describe('Einstellungsfenster', () => {
     async ({ rechner }) => {
       const w = await rechner.einstellungen();
       const reiter = await w.locator('.tab').allInnerTexts();
-      expect(reiter).toEqual(['Durchsage', 'Timetable', 'Getränkepreise', 'Videos',
+      expect(reiter).toEqual(['Durchsage', 'Timetable', 'Karte', 'Videos',
                               'Anzeige', 'System']);
     });
 

@@ -684,3 +684,36 @@ function lichtUebersicht(liste, now) {
   }
   return tage;
 }
+
+// ---------------------------------------------------------------------------
+// Preisgruppen: Getraenkekarte oder Speisekarte
+// ---------------------------------------------------------------------------
+// Eine Getraenkekarte lebt davon, dass zwanzig Positionen nebeneinander passen:
+// Name, Punktlinie, Preis. Ein Essenstand hat fuenf Gerichte, die ein Foto und
+// zwei Zeilen Beschreibung vertragen - und die in derselben kompakten Zeile
+// untergehen wuerden.
+//
+// Deshalb entscheidet jede Gruppe fuer sich, wie sie dargestellt wird. So kann
+// dieselbe Seite oben die Getraenke kompakt und unten die Speisen mit Foto
+// zeigen; ein reiner Essenstand stellt einfach alle Gruppen um.
+const PREIS_STILE = [
+  { wert: 'liste', name: 'Kompakt (Name \u2026 Preis)' },
+  { wert: 'karten', name: 'Mit Foto und Beschreibung' }
+];
+
+function preisStil(gruppe) {
+  return (gruppe && gruppe.stil === 'karten') ? 'karten' : 'liste';
+}
+
+/** Hat die Gruppe ueberhaupt etwas zu zeigen? */
+function gruppeHatInhalt(gruppe) {
+  const g = gruppe || {};
+  if ((g.items || []).some(i => i && (i.name || i.price))) return true;
+  const sp = g.spezial || {};
+  return !!(sp.enabled && sp.name);
+}
+
+/** Die Gruppen, die auf die Anzeige kommen. */
+function preisGruppen(prices) {
+  return (prices || []).filter(gruppeHatInhalt);
+}

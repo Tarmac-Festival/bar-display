@@ -39,7 +39,9 @@ Getränkepreise im Festival-Design.
 - **Datum und Uhrzeit tippen statt klicken** — `3.10.26`, `031026` oder
   `2026-10-03` führen zum selben Ergebnis. Die Auswahl gibt es weiterhin,
   über den Knopf daneben.
-- **Getränkepreise** in Gruppen, mit Größe und Preis.
+- **Getränke und Speisen** in Gruppen. Jede Gruppe entscheidet selbst, wie sie
+  aussieht: kompakt mit Punktlinie, oder mit Foto und Beschreibung für einen
+  Essenstand. Pro Gruppe lässt sich etwas hervorheben.
 - **Spezialshot** – ein hervorgehobenes Band über die volle Breite unter den
   Preisspalten, mit eigener Überschrift, Preis und Beschreibungstext.
 - **Häufigkeit einstellbar** – z. B. Timetable nach je 3 Beiträgen, Preise nach je 5.
@@ -154,7 +156,7 @@ xattr -dr com.apple.quarantine "/Applications/Bar Display.app"
 2. **ESC** drücken, um in die Einstellungen zu kommen.
 3. Unter *System* den Haken bei **Automatisch mit dem System starten** setzen.
 4. Unter *Videos* die Clips und Plakate hinzufügen, unter *Timetable* das Programm
-   eintragen, unter *Getränkepreise* die Karte pflegen.
+   eintragen, unter *Karte* die Getränke und Speisen pflegen.
 5. **Speichern** – die Anzeige übernimmt die Änderungen sofort. Der Beitrag, der
    gerade läuft, läuft dabei zu Ende; die Schleife fängt nicht von vorn an.
 
@@ -209,7 +211,7 @@ ohne dass jemand etwas anfassen muss.
 
 ![Timetable-Anzeige](docs/screenshots/anzeige-timetable.png)
 
-### Getränkepreise
+### Getränke und Speisen
 
 Die Gruppen stehen nebeneinander, die Anzahl der Spalten richtet sich nach dem Platz.
 Passt die Karte nicht auf den Bildschirm, verkleinert sich die Schrift automatisch,
@@ -418,7 +420,7 @@ teuerste Teil der ganzen Anzeige.
 
 ## Die Einstellungen
 
-Die Reiter stehen nach Häufigkeit: **Durchsage, Timetable, Getränkepreise,
+Die Reiter stehen nach Häufigkeit: **Durchsage, Timetable, Karte,
 Videos, Anzeige, System.** Vorn steht, was jeden Abend angefasst wird; hinten,
 was einmal beim Aufbau eingestellt wird. Beim Öffnen ist *Durchsage* aktiv —
 am Rechner wie am Handy.
@@ -572,13 +574,40 @@ steht, steht später auch auf dem Bildschirm. Der Ausschnitt gehört zum Act, ni
 zur Bilddatei: dasselbe Foto kann bei zwei Acts unterschiedlich sitzen, und beim
 *Timetable weitergeben* wandert er mit.
 
-### Getränkepreise
+### Karte
 
 ![Einstellungen Preise](docs/screenshots/einstellungen-preise.png)
 
-Gruppen wie *Bier*, *Alkoholfrei* oder *Longdrinks*, darin je ein Getränk pro Zeile mit
-Name, Größe und Preis. Die Größe darf leer bleiben. Die Reihenfolge der Gruppen lässt
-sich mit den Pfeilen ändern.
+Gruppen wie *Bier*, *Longdrinks* oder *Vom Grill*, darin je eine Position pro Zeile.
+Die Größe darf leer bleiben, die Reihenfolge der Gruppen lässt sich mit den Pfeilen
+ändern.
+
+**Jede Gruppe entscheidet selbst, wie sie aussieht** — der Umschalter steht neben
+dem Gruppennamen:
+
+| Darstellung | Wofür |
+|---|---|
+| **Kompakt** (Name … Preis) | Getränkekarte. Zwanzig Positionen passen nebeneinander. |
+| **Mit Foto und Beschreibung** | Essenstand. Foto links, daneben Name, Beschreibung und Preis. |
+
+Beides geht auf derselben Seite: oben die Getränke kompakt, daneben die Speisen mit
+Foto. Ein reiner Essenstand stellt einfach alle Gruppen um.
+
+![Karte mit Getränken und Speisen](docs/screenshots/anzeige-speisekarte.png)
+
+Die Fotos liegen im selben Ordner wie die Act-Fotos und werden genauso behandelt:
+quadratisch beschnitten, mit demselben Ausschnitt-Editor, vom Handy hochladbar.
+
+**Etwas hervorheben** kann jede Gruppe für sich — *Shot des Abends* bei den
+Getränken, *Tagesgericht* beim Essen, beides gleichzeitig. Überschrift, Name,
+Größe, Preis, Beschreibung und optional ein Foto. Eine Gruppe, in der nur das
+Hervorgehobene steht, erscheint trotzdem; am Essenstand ist das manchmal alles,
+was dransteht.
+
+> Der **Spezialshot** ganz unten auf der Seite gibt es weiterhin und er bleibt
+> unverändert: ein Band über die volle Breite, für die ganze Seite. Die neuen
+> Hervorhebungen stehen dagegen jeweils in ihrer Gruppe. Wer beides gleichzeitig
+> nutzt, hat zwei Blickfänge auf einer Seite — meist ist eines genug.
 
 Oben steht **Wie oft und wie lange**: nach wie vielen Beiträgen die Preisliste
 erscheint und wie lange sie stehen bleibt. `0` schaltet sie ab. Es gilt dasselbe

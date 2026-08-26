@@ -18,12 +18,14 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         wirksameHaeufigkeit, rundeBauen,
         istUebergang, uebergangsAuswahl, uebergangBeutel,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
-        lichtSpuren, lichtOhneZeile, timeLabel } = ctx;
+        lichtSpuren, lichtOhneZeile, timeLabel,
+        preisStil, gruppeHatInhalt, preisGruppen } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
 const MITGELIEFERTE_LOGOS = vm.runInContext('MITGELIEFERTE_LOGOS', ctx);
 const UEBERGAENGE = vm.runInContext('UEBERGAENGE', ctx);
+const PREIS_STILE = vm.runInContext('PREIS_STILE', ctx);
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -650,6 +652,38 @@ check('genau am Ende', !!lichtJetzt(lichtNacht, SA2(1, 0)), false);
   check('abgeschaltet bleibt sie auch ohne Beitraege weg',
         kurz(runde.items), ['timetable']);
 })();
+
+console.log('');
+console.log('-- Getraenke und Speisen --');
+
+check('zwei Darstellungen', PREIS_STILE.map(x => x.wert), ['liste', 'karten']);
+check('ohne Angabe kompakt', preisStil({}), 'liste');
+check('ohne Gruppe kompakt', preisStil(null), 'liste');
+check('karten wird uebernommen', preisStil({ stil: 'karten' }), 'karten');
+check('Unsinn faellt auf kompakt zurueck', preisStil({ stil: 'quatsch' }), 'liste');
+
+// Was kommt ueberhaupt auf die Anzeige?
+check('leere Gruppe nicht', gruppeHatInhalt({ category: 'Leer', items: [] }), false);
+check('Gruppe mit leeren Zeilen nicht',
+      gruppeHatInhalt({ items: [{ name: '', price: '' }] }), false);
+check('ein Name reicht', gruppeHatInhalt({ items: [{ name: 'Pils' }] }), true);
+check('ein Preis reicht auch', gruppeHatInhalt({ items: [{ price: '4,00' }] }), true);
+
+// Eine Gruppe, die nur ein Hervorgehobenes hat, soll trotzdem erscheinen -
+// beim Essenstand ist das Tagesgericht manchmal alles, was dransteht.
+check('nur ein Tagesgericht reicht',
+      gruppeHatInhalt({ items: [], spezial: { enabled: true, name: 'Chili sin Carne' } }), true);
+check('abgeschaltet zaehlt nicht',
+      gruppeHatInhalt({ items: [], spezial: { enabled: false, name: 'Chili' } }), false);
+check('ohne Namen zaehlt nicht',
+      gruppeHatInhalt({ items: [], spezial: { enabled: true, name: '' } }), false);
+
+check('leere Gruppen fallen heraus', preisGruppen([
+  { category: 'Bier', items: [{ name: 'Pils', price: '4,00' }] },
+  { category: 'Leer', items: [] },
+  { category: 'Grill', items: [], spezial: { enabled: true, name: 'Chili' } }
+]).map(g => g.category), ['Bier', 'Grill']);
+check('ohne Liste nichts', preisGruppen(null).length, 0);
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
 process.exit(fail ? 1 : 0);
