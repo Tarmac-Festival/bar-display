@@ -52,6 +52,20 @@ async function boot() {
 
   window.api.onConfigChanged((next) => konfigUebernehmen(next));
 
+  // Die Laufschrift rechnet ihre Strecke aus der gemessenen Textbreite aus.
+  // Wird die Schrift erst danach fertig geladen, ist der Text breiter als beim
+  // Messen und laeuft am Ende ein Stueck zu frueh aus dem Bild. Also einmal neu
+  // ausmessen, sobald die Schrift steht - genau wie nach einer
+  // Groessenaenderung des Fensters.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      durchsageStand = '';
+      skalaVergessen();
+      letzterSlideStand = '';
+      sonderzustaende();
+    }).catch(() => { /* dann eben mit der Ersatzschrift */ });
+  }
+
   starthinweisZeigen();
   zeitPruefen();
   setInterval(zeitPruefen, 60000);

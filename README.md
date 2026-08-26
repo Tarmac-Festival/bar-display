@@ -1048,11 +1048,60 @@ Zum Testen starten:
 npm start
 ```
 
-Tests für die Zeitfenster- und Timetable-Logik:
+### Tests
+
+Es gibt zwei Sorten. Die schnellen rechnen nur — Zeitfenster, Timetable,
+Häufigkeiten, Formathinweise, Stand der Fassung. Sie brauchen keinen Bildschirm
+und laufen in unter einer Sekunde:
 
 ```bash
 npm test
 ```
+
+Die zweite Sorte fährt das Programm wirklich: **Playwright** startet den
+Webdienst in einer Wegwerf-Ablage und bedient die Seiten in einem echten
+Browser — und das Electron-Programm gleich mit.
+
+```bash
+npm run test:e2e
+```
+
+Beides zusammen:
+
+```bash
+npm run test:alles
+```
+
+Was dabei geprüft wird:
+
+| Datei | Was läuft |
+|---|---|
+| `test/e2e/anzeige.spec.js` | die Anzeige, wie sie am Raspberry Pi läuft: Laufschrift, Schleife, Info-Slides |
+| `test/e2e/bedienseite.spec.js` | die Bedienseite über das Netz: Vorschaubilder, Hochladen, gleichzeitiges Speichern |
+| `test/e2e/handy.spec.js` | dieselbe Seite auf einem iPhone-Bildschirm — in **WebKit**, also der Engine, die auf dem Telefon wirklich rechnet |
+| `test/e2e/electron/` | das Fenster am Bar-Rechner: Bildschirmauswahl, Autostart, Speichern bis auf die Anzeige durch |
+
+Jeder Test bekommt einen eigenen Port und eine eigene, leere Datenablage in
+einem Wegwerf-Ordner. Eine echte Konfiguration kann ein Testlauf damit nicht
+anfassen — beim Entwickeln ist genau das einmal passiert.
+
+Beim ersten Mal müssen die Browser einmalig geholt werden (~250 MB, landen im
+Benutzerprofil, nicht im Projekt):
+
+```bash
+npx playwright install chromium webkit
+```
+
+Bei einem Fehlschlag legt Playwright Bild und Ablaufaufzeichnung unter
+`test-results/` ab. Zum Durchklicken:
+
+```bash
+npm run test:e2e:ui
+```
+
+> **Playwright wird nicht mitgeliefert.** Es steht in `devDependencies`, und ins
+> gebaute Programm gehen nur die Dateien aus `build.files` in der
+> `package.json`. Das Programm selbst hat überhaupt keine Produktivabhängigkeit.
 
 Pakete bauen – die Ergebnisse landen in `dist/`:
 
@@ -1123,9 +1172,13 @@ Zusammenfassung des Laufs.
 | `src/settings.*` | das Einstellungsfenster |
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
 | `src/branding/` | die mitgelieferten Logos (L300-Zeichen und TARMAC-Schriftzug) |
-| `test/schedule.test.js` | Tests |
+| `test/schedule.test.js` | Tests der Rechenlogik aus `src/common.js` |
+| `test/dienst.test.js` | Tests des Webdienstes: Stand der Fassung, Formathinweise |
+| `test/e2e/` | Playwright: das laufende Programm in Browser und Electron |
+| `playwright.config.js` | welche Tests in welchem Browser laufen |
 | `lib/webserver.js` | der Webdienst, von Electron und vom Pi gestartet |
-| `pi/server.js` | startet den Dienst auf dem Pi und verwaltet dort die Konfiguration |
+| `pi/server.js` | startet den Dienst auf dem Pi |
+| `lib/konfigablage.js` | liest und schreibt die Konfiguration auf dem Pi — und in den Tests |
 | `pi/install.sh` | Einrichtung auf dem Pi |
 | `pi/kiosk.sh` | startet die Vollbildanzeige, wartet vorher auf den Webdienst |
 | `src/api-http.js` | Ersatz für die Electron-Brücke im Browserbetrieb |

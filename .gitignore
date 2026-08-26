@@ -5,6 +5,12 @@ dist/
 # per npm run vendor:ffmpeg geholt, rund 155 MB
 vendor/
 
+# Was Playwright bei einem Testlauf hinterlaesst
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
 # Betriebssystem und Editor
 Thumbs.db
 Desktop.ini

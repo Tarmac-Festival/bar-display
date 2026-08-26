@@ -9,6 +9,10 @@
   "scripts": {
     "start": "electron .",
     "test": "node test/schedule.test.js && node test/dienst.test.js",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:bericht": "playwright show-report",
+    "test:alles": "npm test && playwright test",
     "vendor:ffmpeg": "node scripts/fetch-ffmpeg.js",
     "dist": "node scripts/fetch-ffmpeg.js && electron-builder --win nsis portable",
     "dist:linux": "node scripts/fetch-ffmpeg.js && electron-builder --linux AppImage deb tar.gz",
@@ -17,6 +21,7 @@
     "dist:mac": "node scripts/fetch-ffmpeg.js && electron-builder --mac dmg zip --arm64 --x64"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "electron": "^31.3.1",
     "electron-builder": "^24.13.3"
   },
