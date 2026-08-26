@@ -457,6 +457,7 @@ function rundeBauen(opt) {
   const aktiv = o.aktiv || [];
   const ttJede = o.hatTimetable ? wirksameHaeufigkeit(o.timetableEvery, aktiv.length) : 0;
   const prJede = o.hatPreise ? wirksameHaeufigkeit(o.pricesEvery, aktiv.length) : 0;
+  const liJede = o.hatLicht ? wirksameHaeufigkeit(o.lichtEvery, aktiv.length) : 0;
 
   let zaehler = Number(o.zaehler) || 0;
   const items = [];
@@ -466,12 +467,14 @@ function rundeBauen(opt) {
     zaehler++;
     if (ttJede && zaehler % ttJede === 0) items.push({ type: 'timetable' });
     if (prJede && zaehler % prJede === 0) items.push({ type: 'prices' });
+    if (liJede && zaehler % liJede === 0) items.push({ type: 'licht' });
   }
 
   if (items.length === 0) {
     // Kein Beitrag aktiv -> wenigstens die Informationen zeigen
     if (o.hatTimetable) items.push({ type: 'timetable' });
     if (o.hatPreise) items.push({ type: 'prices' });
+    if (o.hatLicht && Math.floor(Number(o.lichtEvery) || 0) > 0) items.push({ type: 'licht' });
     if (items.length === 0) items.push({ type: 'idle' });
   }
 
@@ -538,4 +541,112 @@ function uebergangBeutel(auswahl, zuletzt, zufall) {
     beutel[1] = zuletzt;
   }
   return beutel;
+}
+
+// ---------------------------------------------------------------------------
+// Starke Lichteffekte
+// ---------------------------------------------------------------------------
+// Stroboskop, Blitzer, harte Strahlenoptik: fuer Menschen mit Photosensibilitaet
+// ist das nicht Deko, sondern ein Grund, den Raum zu verlassen. Deshalb gilt
+// hier eine andere Messlatte als beim uebrigen Programm - eine ungefaehre
+// Angabe ist schlechter als gar keine.
+//
+// Die Zeiten stehen bewusst in einer eigenen Liste und nicht am Act: eine
+// Lichtphase faengt mitten in einem Set an, laeuft ueber zwei Acts hinweg oder
+// liegt in einer Pause. Wer sich darauf verlaesst, muss die echte Zeitspanne
+// sehen - nicht die des DJs, der zufaellig gerade spielt.
+//
+// Der Aufbau eines Eintrags ist derselbe wie beim Timetable
+// ({ date, start, end }), damit entryStartEnd() auch hier gilt - samt der
+// Rechnung ueber Mitternacht hinweg.
+
+const LICHT_SYMBOL = 'branding/lichteffekte.png';
+
+/**
+ * Die Lichtphasen, zeitlich sortiert. Ohne Ende faellt ein Eintrag heraus:
+ * "ab 23:00 Stroboskop" ohne Ende waere genau die ungefaehre Angabe, die hier
+ * nichts zu suchen hat.
+ */
+function lichtFenster(liste) {
+  return (liste || [])
+    .map(e => ({ eintrag: e, se: entryStartEnd(e) }))
+    .filter(x => x.se && x.se.end)
+    .sort((a, b) => a.se.start - b.se.start);
+}
+
+/** Ueberschneidet sich ein Zeitraum mit mindestens einer Lichtphase? */
+function lichtTrifft(se, fenster) {
+  if (!se || !se.start) return false;
+  // Ein Act ohne Ende wird mit einer Stunde angesetzt - dieselbe Annahme wie
+  // in timetableView().
+  const ende = se.end || new Date(se.start.getTime() + 60 * 60 * 1000);
+  for (const f of (fenster || [])) {
+    if (f.se.start < ende && se.start < f.se.end) return true;
+  }
+  return false;
+}
+
+/** Laeuft gerade eine Lichtphase? Liefert sie, sonst null. */
+function lichtJetzt(fenster, now) {
+  for (const f of (fenster || [])) {
+    if (f.se.start <= now && now < f.se.end) return f;
+  }
+  return null;
+}
+
+/**
+ * Die Zeilen fuer den Timetable-Slide: die kommenden Acts, und dazwischen
+ * chronologisch einsortiert die Lichtphasen mit ihrer echten Zeitspanne.
+ *
+ * Gezeigt werden nur Lichtphasen, die noch nicht angefangen haben und die in
+ * den Zeitraum fallen, den die Liste ohnehin abdeckt - sonst stuende unter den
+ * naechsten drei Acts noch das Licht von uebermorgen.
+ *
+ * Eine gerade laufende Phase bleibt hier bewusst aussen vor: die gehoert nicht
+ * in eine Liste kommender Dinge, sondern gross ueber alles andere. Darum
+ * kuemmert sich der Aufrufer, siehe lichtJetzt().
+ */
+function timetableZeilen(view, fenster, now) {
+  const acts = (view && view.next ? view.next : []).map(x => ({
+    art: 'act', se: x.se, eintrag: x.entry, licht: lichtTrifft(x.se, fenster)
+  }));
+
+  // Bis wohin reicht die Liste? Ohne Acts nehmen wir den Rest des Tages.
+  let bis = null;
+  for (const a of acts) {
+    const e = a.se.end || a.se.start;
+    if (!bis || e > bis) bis = e;
+  }
+  if (!bis) bis = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+
+  const lichter = (fenster || [])
+    .filter(f => f.se.start > now && f.se.start <= bis)
+    .map(f => ({ art: 'licht', se: f.se, eintrag: f.eintrag, licht: true }));
+
+  return acts.concat(lichter).sort((a, b) => a.se.start - b.se.start);
+}
+
+/**
+ * Uebersicht ueber alle Lichtphasen, nach Tagen gruppiert - fuer die eigene
+ * Anzeigeseite. Vergangenes faellt heraus, damit am Sonntag nicht mehr der
+ * Freitag oben steht.
+ */
+function lichtUebersicht(liste, now) {
+  const tage = [];
+  for (const f of lichtFenster(liste)) {
+    if (f.se.end <= now) continue;
+    const schluessel = todayISO(f.se.start);
+    let tag = tage.find(t => t.schluessel === schluessel);
+    if (!tag) {
+      tag = { schluessel, datum: f.se.start, zeiten: [] };
+      tage.push(tag);
+    }
+    tag.zeiten.push({
+      von: timeLabel(f.se.start),
+      bis: timeLabel(f.se.end),
+      hinweis: (f.eintrag && f.eintrag.note) || '',
+      laeuft: f.se.start <= now && now < f.se.end
+    });
+  }
+  return tage;
 }

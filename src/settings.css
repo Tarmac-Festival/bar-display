@@ -294,6 +294,36 @@ input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--b
 }
 .uWahl input { width: 16px; height: 16px; accent-color: var(--accent); }
 
+/* ------------------------- Starke Lichteffekte ---------------------- */
+/* Deutlich abgesetzt vom Timetable darueber: es ist eine eigene Liste mit
+   eigenen Zeiten, kein Anhaengsel der Spielzeiten. */
+.lichtBlock {
+  margin-top: 2.4rem;
+  padding-top: 1.6rem;
+  border-top: 2px solid var(--line);
+}
+.lichtBlock h1 { display: flex; align-items: center; gap: 0.6rem; }
+
+/* Auch hier auf heller Plakette - die Einstellungsseite ist ebenfalls dunkel */
+.lichtPlakette {
+  display: inline-flex;
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 5px;
+  line-height: 0;
+}
+.lichtPlakette img { height: 22px; width: auto; display: block; }
+
+/* Eine Zeile ohne Endzeit wird nicht angezeigt - das muss man sehen */
+tr.ohneEnde input { border-color: var(--danger); }
+tr.ohneEnde td:last-child::before {
+  content: 'ohne Ende';
+  color: var(--danger);
+  font-size: 11px;
+  white-space: nowrap;
+  margin-right: 0.4rem;
+}
+
 .planListe { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
 .planRow {
   display: flex;

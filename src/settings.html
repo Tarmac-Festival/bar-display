@@ -156,6 +156,73 @@
         <tbody id="ttBody"></tbody>
       </table>
       <div id="ttEmpty" class="empty hidden">Noch keine Acts eingetragen.</div>
+
+      <!-- ---------------------------------------------------------- -->
+      <div class="lichtBlock">
+        <div class="panelHead">
+          <div>
+            <h1><span id="lichtSymbol" class="lichtPlakette"></span> Starke Lichteffekte</h1>
+            <p class="hint">Stroboskop, Blitzer, harte Strahlenoptik. Diese Zeiten
+              d&uuml;rfen von den Spielzeiten abweichen &ndash; eine Lichtphase f&auml;ngt
+              mitten im Set an, l&auml;uft &uuml;ber zwei Acts oder liegt in einer Pause.
+              Deshalb stehen sie hier getrennt.<br>
+              <b>Ohne Endzeit wird ein Eintrag nicht angezeigt.</b> Wer sich darauf
+              verl&auml;sst, braucht eine belastbare Angabe, keine ungef&auml;hre.</p>
+          </div>
+          <div class="btnRow">
+            <button id="addLicht" class="primary">+ Zeitraum hinzuf&uuml;gen</button>
+            <button id="cleanLicht" class="danger">Vergangene l&ouml;schen</button>
+            <button id="lichtDoku">Doku &ouml;ffnen&hellip;</button>
+          </div>
+        </div>
+
+        <div class="card schmal">
+          <h2>Eigene Seite auf der Anzeige</h2>
+          <div class="dreiCol">
+            <label class="field">
+              <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
+              <input type="number" min="0" max="50" id="s_lichtEvery">
+              <em>0 = keine eigene Seite. Die Kennzeichnung im Timetable
+                erscheint trotzdem.</em>
+            </label>
+            <label class="field">
+              <span>Standzeit (Sekunden)</span>
+              <input type="number" min="3" max="300" id="s_lichtDuration">
+            </label>
+          </div>
+          <div class="dreiCol">
+            <label class="field">
+              <span>Titel der Seite</span>
+              <input type="text" id="s_lichtTitel">
+            </label>
+            <label class="field">
+              <span>Unterzeile</span>
+              <input type="text" id="s_lichtUnterzeile">
+            </label>
+          </div>
+          <label class="field">
+            <span>Adresse der Doku</span>
+            <input type="text" id="s_lichtDoku" placeholder="https://&hellip;">
+            <em>Der Knopf <b>Doku &ouml;ffnen</b> oben rechts f&uuml;hrt hierhin.
+              Am Rechner geht der Systembrowser auf, am Handy ein neuer Tab.</em>
+          </label>
+        </div>
+
+        <table id="lichtTable" class="grid">
+          <thead>
+            <tr>
+              <th style="width:9.5rem">Datum</th>
+              <th style="width:6rem">Von</th>
+              <th style="width:6rem">Bis</th>
+              <th>Bemerkung (optional)</th>
+              <th style="width:3rem"></th>
+            </tr>
+          </thead>
+          <tbody id="lichtBody"></tbody>
+        </table>
+        <div id="lichtEmpty" class="empty hidden">Keine Zeiten f&uuml;r starke
+          Lichteffekte eingetragen.</div>
+      </div>
     </section>
 
     <!-- ------------------------------------------------------------- -->

@@ -32,6 +32,8 @@ Getränkepreise im Festival-Design.
   *Fr + Sa, 20:00–02:00*. Fenster über Mitternacht funktionieren.
 - **Timetable** mit Datum, Uhrzeit, Act und optionalem Foto. Die Anzeige hebt den
   laufenden Act hervor und zeigt darunter die nächsten. Vergangenes verschwindet von selbst.
+- **Zeiten für starke Lichteffekte** — eigene Liste mit Warnzeichen im Timetable
+  und optionaler Übersichtsseite fürs ganze Wochenende.
 - **Bildausschnitt wählbar** — pro Act festlegen, welcher Teil des Fotos zu sehen
   ist. Kein abgeschnittener Kopf mehr bei Hochformat-Bildern.
 - **Datum und Uhrzeit tippen statt klicken** — `3.10.26`, `031026` oder
@@ -326,6 +328,44 @@ batteriegepufferte Uhr und startet ohne Netz mit der Zeit des letzten
 Herunterfahrens — das sieht völlig plausibel aus und ist trotzdem falsch. Mehr
 dazu unter [Raspberry Pi](#raspberry-pi).
 
+### Starke Lichteffekte
+
+Stroboskop, Blitzer und harte Strahlenoptik sind für Menschen mit
+Photosensibilität kein Deko-Detail, sondern ein Grund, den Raum zu verlassen.
+Deshalb gilt hier eine andere Messlatte als beim übrigen Programm: **eine
+ungefähre Angabe ist schlechter als gar keine.**
+
+Die Zeiten stehen in einer eigenen Liste unter *Timetable → Starke
+Lichteffekte* — nicht am Act. Eine Lichtphase fängt mitten in einem Set an,
+läuft über zwei Acts hinweg oder liegt in einer Pause; wer sich darauf verlässt,
+muss die echte Zeitspanne sehen und nicht die des DJs, der zufällig gerade
+spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
+
+Auf dem Timetable erscheint beides: betroffene Acts bekommen das Warnzeichen,
+und die Lichtphase steht zusätzlich als eigene Zeile mit ihrer eigenen Zeit.
+
+![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
+
+Läuft gerade eine, steht sie als Balken über der Liste — nicht in einer
+Tabellenzeile, aus der man sie erst heraussuchen müsste.
+
+![Laufende Lichtphase](docs/screenshots/anzeige-lichteffekte-jetzt.png)
+
+Optional läuft eine **eigene Seite fürs ganze Wochenende** in der Schleife mit,
+nach Tagen sortiert. Sie ist ab Werk aus; einschalten über *Zeigen nach je…
+Beiträgen* im selben Reiter. Vergangenes fällt von selbst heraus.
+
+![Übersicht der Lichteffekte](docs/screenshots/anzeige-lichteffekte.png)
+
+Das Warnzeichen sitzt überall auf einer weißen Plakette. Die gelieferte Grafik
+ist für hellen Grund gezeichnet — schwarzes Dreieck, schwarzer Scheinwerfer —
+und wäre auf dem dunklen Hintergrund der Anzeige kaum zu sehen. Eine Warnung,
+die niemand liest, ist keine.
+
+Der Knopf **Doku öffnen** oben rechts führt zu einem hinterlegten Dokument, in
+dem die Crew nachschlagen kann. Die Adresse steht in denselben Einstellungen;
+am Rechner geht der Systembrowser auf, am Handy ein neuer Tab.
+
 ### Übergänge
 
 Einstellbar unter *Anzeige → Stil & Übergänge*:
@@ -489,6 +529,9 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
   das rote × entfernt es.
 - **Ausschnitt**: der kleine Knopf unten rechts auf der Miniatur öffnet die
   Ausschnittwahl — siehe unten.
+- **Starke Lichteffekte**: darunter die eigene Liste — Datum, Von, Bis und eine
+  Bemerkung. Eine Zeile ohne Endzeit wird rot umrandet, weil sie auf der Anzeige
+  nicht erscheint. Siehe [Starke Lichteffekte](#starke-lichteffekte).
 - **Nach Zeit sortieren** bringt die Liste in die richtige Reihenfolge.
 - **Vergangene löschen** räumt nach dem Festival auf.
 - **Unbenutzte Fotos aufräumen** löscht Bilder, die keinem Act mehr zugeordnet sind.
@@ -1197,7 +1240,7 @@ Zusammenfassung des Laufs.
 | `src/player.*` | die Vollbild-Anzeige: Schleife, Übergänge, Slides |
 | `src/settings.*` | das Einstellungsfenster |
 | `src/fonts/` | Josefin Sans (Open Font License, Lizenztext liegt bei) |
-| `src/branding/` | die mitgelieferten Logos (L300-Zeichen und TARMAC-Schriftzug) |
+| `src/branding/` | die mitgelieferten Logos und das Warnzeichen für Lichteffekte |
 | `test/schedule.test.js` | Tests der Rechenlogik aus `src/common.js` |
 | `test/dienst.test.js` | Tests des Webdienstes: Stand der Fassung, Formathinweise |
 | `test/e2e/` | Playwright: das laufende Programm in Browser und Electron |

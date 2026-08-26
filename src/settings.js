@@ -51,6 +51,7 @@ function fillAll() {
   fillRuhezeit();
   renderVideos();
   renderTimetable();
+  renderLichteffekte();
   renderPrices();
 }
 
@@ -735,6 +736,40 @@ function wireButtons() {
     renderTimetable();
   });
 
+  $('addLicht').addEventListener('click', () => {
+    state.lichteffekte = state.lichteffekte || [];
+    const letzte = state.lichteffekte[state.lichteffekte.length - 1];
+    state.lichteffekte.push({
+      id: uid(),
+      date: letzte ? letzte.date : todayISO(),
+      start: '', end: '', note: ''
+    });
+    markDirty();
+    renderLichteffekte();
+  });
+
+  $('cleanLicht').addEventListener('click', () => {
+    const jetzt = new Date();
+    const vorher = (state.lichteffekte || []).length;
+    state.lichteffekte = (state.lichteffekte || []).filter(e => {
+      const se = entryStartEnd(e);
+      if (!se) return true;             // unfertige Zeile stehen lassen
+      return (se.end || se.start) >= jetzt;
+    });
+    const weg = vorher - state.lichteffekte.length;
+    if (weg > 0) { markDirty(); renderLichteffekte(); toast(weg + ' vergangene Zeitr\u00e4ume entfernt'); }
+    else toast('Es gab nichts aufzur\u00e4umen');
+  });
+
+  // Nachschlagewerk der Crew. Am Rechner oeffnet es der Systembrowser, am Handy
+  // ein neuer Tab.
+  $('lichtDoku').addEventListener('click', () => {
+    const adresse = (state.settings.lichtDoku || '').trim();
+    if (!adresse) return toast('Keine Adresse hinterlegt', true);
+    if (window.api.oeffneLink) window.api.oeffneLink(adresse);
+    else window.open(adresse, '_blank', 'noopener');
+  });
+
   $('cleanActs').addEventListener('click', () => {
     const now = new Date();
     const before = (state.timetable || []).length;
@@ -848,7 +883,7 @@ function wireButtons() {
       state = cfg;
       sauber();
       fillSettingsFields();
-      renderVideos(); renderTimetable(); renderPrices();
+      renderVideos(); renderTimetable(); renderLichteffekte(); renderPrices();
       toast('Konfiguration geladen');
     }
   });
@@ -868,11 +903,12 @@ function wireButtons() {
 // Anzeige-/System-Felder
 // ---------------------------------------------------------------------------
 const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'pricesDuration',
-                    'timetableMaxNext', 'fadeMs', 'logoHeight', 'transitionMs', 'imageDuration'];
+                    'timetableMaxNext', 'fadeMs', 'logoHeight', 'transitionMs', 'imageDuration',
+                    'lichtEvery', 'lichtDuration'];
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
                      'timetableTitle', 'timetableSubtitle', 'pricesTitle', 'pricesSubtitle',
                      'titleStyle', 'pattern', 'transition', 'rotation',
-                     'qrUrl', 'qrLabel'];
+                     'qrUrl', 'qrLabel', 'lichtTitel', 'lichtUnterzeile', 'lichtDoku'];
 
 function fillSettingsFields() {
   const s = state.settings;
@@ -1316,6 +1352,65 @@ function ttRow(e, i) {
     renderTimetable();
   });
   return tr;
+}
+
+// ---------------------------------------------------------------------------
+// Starke Lichteffekte
+// ---------------------------------------------------------------------------
+// Eigene Liste, bewusst getrennt vom Timetable: die Zeiten weichen von den
+// Spielzeiten ab. Siehe lichtFenster() in common.js.
+function renderLichteffekte() {
+  const body = $('lichtBody');
+  if (!body) return;
+  body.innerHTML = '';
+  const rows = state.lichteffekte || [];
+  $('lichtEmpty').classList.toggle('hidden', rows.length > 0);
+  rows.forEach((e, i) => body.appendChild(lichtRow(e, i)));
+  lichtZeilenPruefen();
+
+  // Das Zeichen einmal setzen - dasselbe, das auch auf der Anzeige steht
+  const plakette = $('lichtSymbol');
+  if (plakette && !plakette.firstChild) {
+    plakette.innerHTML = '<img src="' + LICHT_SYMBOL + '" alt="Starke Lichteffekte">';
+  }
+}
+
+function lichtRow(e, i) {
+  const tr = document.createElement('tr');
+  tr.dataset.eid = e.id || (e.id = uid());
+  tr.innerHTML =
+    '<td data-titel="Datum"><input type="date" data-f="date" value="' + escapeHtml(e.date || '') + '"></td>' +
+    '<td data-titel="Von"><input type="time" data-f="start" value="' + escapeHtml(e.start || '') + '"></td>' +
+    '<td data-titel="Bis"><input type="time" data-f="end" value="' + escapeHtml(e.end || '') + '"></td>' +
+    '<td data-titel="Bemerkung"><input type="text" data-f="note" value="' + escapeHtml(e.note || '') +
+      '" placeholder="z.B. Stroboskop Hauptb\u00fchne"></td>' +
+    '<td><button class="danger icon" data-act="del">&times;</button></td>';
+
+  tr.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      e[inp.dataset.f] = inp.value;
+      markDirty();
+      lichtZeilenPruefen();
+    });
+  });
+  tr.querySelector('[data-act=del]').addEventListener('click', () => {
+    state.lichteffekte.splice(i, 1);
+    markDirty();
+    renderLichteffekte();
+  });
+  return tr;
+}
+
+// Ein Eintrag ohne Endzeit wird auf der Anzeige nicht gezeigt. Das darf nicht
+// erst abends auffallen, also steht es hier dran.
+function lichtZeilenPruefen() {
+  const rows = state.lichteffekte || [];
+  Array.from($('lichtBody').children).forEach((tr, i) => {
+    const e = rows[i] || {};
+    const unvollstaendig = !!(e.date || e.start || e.end || e.note) &&
+                           !(e.date && e.start && e.end);
+    tr.classList.toggle('ohneEnde', unvollstaendig);
+  });
 }
 
 // Adresse eines Bildes im Medien-, Foto- oder Logo-Ordner.

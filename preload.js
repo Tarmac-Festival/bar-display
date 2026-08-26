@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   saveConfig: (cfg) => ipcRenderer.invoke('config:save', cfg),
   onConfigChanged: (cb) => ipcRenderer.on('config:changed', (_e, cfg) => cb(cfg)),
+  oeffneLink: (adresse) => ipcRenderer.invoke('link:oeffnen', adresse),
 
   paths: () => ipcRenderer.invoke('app:paths'),
   zeitStatus: () => ipcRenderer.invoke('zeit:status'),

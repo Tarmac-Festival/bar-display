@@ -311,6 +311,11 @@ body[data-pattern="confetti"] .slide {
   font-weight: 700;
   line-height: 1.03;
   text-shadow: 0.03em 0.04em 0.1em rgba(0, 0, 0, 0.4);
+  /* Sitzt ein Warnzeichen daneben, soll es neben dem Namen stehen und ihn
+     nicht ueberdecken. */
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
 }
 .ttNow .info { font-size: 1.15em; color: var(--muted); margin-top: 0.2em; }
 
@@ -905,3 +910,109 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   25% { transform: translateX(-9px); }
   75% { transform: translateX(9px); }
 }
+
+/* ------------------------------------------------------------------ */
+/* Starke Lichteffekte                                                  */
+/* ------------------------------------------------------------------ */
+/* Das gelieferte Zeichen ist fuer hellen Grund gezeichnet: schwarzes
+   Warndreieck, schwarzer Scheinwerfer, rotes Ausrufezeichen. Auf dem dunklen
+   Hintergrund der Anzeige waere davon fast nichts zu sehen - deshalb sitzt es
+   auf einer hellen Plakette, wie ein Warnschild. Das Original bleibt dabei
+   unangetastet.
+
+   Alle Masse in em: die Anzeige skaliert ueber fitToBox() die Grundschrift,
+   und das Zeichen soll mitwachsen statt bei jeder Bildschirmgroesse anders
+   gross zu sein. */
+.lichtZeichen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 0.22em;
+  padding: 0.1em 0.16em;
+  flex: none;
+  vertical-align: middle;
+}
+.lichtZeichen img {
+  display: block;
+  /* Deutlich hoeher als die Zeile: es ist eine Warnung, kein Aufzaehlungszeichen */
+  height: 1.25em;
+  width: auto;
+}
+.lichtZeichen.gross { border-radius: 0.3em; padding: 0.16em 0.24em; }
+.lichtZeichen.gross img { height: 2.1em; }
+
+/* Eigene Zeile im Timetable. Die Zeitspanne weicht bewusst von den Spielzeiten
+   ab, deshalb steht sie fuer sich und nicht am Act. */
+.ttRow.licht {
+  background: color-mix(in srgb, var(--accent2) 26%, transparent);
+  border-radius: 0.4em;
+}
+.ttRow.licht .act { color: #fff; font-weight: 700; }
+.ttRow.licht .when { color: #fff; }
+
+/* Laeuft gerade eine Lichtphase, steht sie ueber der Liste - wer den Raum
+   deswegen verlassen will, soll das nicht aus einer Tabellenzeile heraussuchen
+   muessen. */
+.lichtJetzt {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  background: var(--accent2);
+  color: #fff;
+  border-radius: 0.5em;
+  padding: 0.6em 0.9em;
+  margin-bottom: 1em;
+  font-size: 1.6em;
+}
+.lichtJetzt .lichtTitel { font-size: 1.15em; font-weight: 700; letter-spacing: 0.02em; }
+.lichtJetzt .lichtZeit { font-size: 0.85em; opacity: 0.92; }
+
+/* Die eigene Uebersichtsseite */
+.lichtKopf {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  margin-bottom: 1.4em;
+  font-size: 1.6em;
+}
+.lichtKopf p { line-height: 1.45; max-width: 44ch; }
+.lichtKopf b { color: var(--accent); }
+
+.lichtTage { display: flex; flex-wrap: wrap; gap: 1.6em; align-items: flex-start; }
+.lichtTag { flex: 1 1 18em; min-width: 14em; }
+.lichtDatum {
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-bottom: 0.4em;
+}
+.lichtSpanne {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  padding: 0.3em 0.45em;
+  border-radius: 0.35em;
+  border-bottom: 0.05em solid color-mix(in srgb, #fff 14%, transparent);
+}
+.lichtSpanne .lz { font-size: 2em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lichtSpanne .lHinweis { font-size: 1.3em; opacity: 0.8; }
+.lichtSpanne .lLauf {
+  font-size: 1.1em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--accent2);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 0.45em;
+}
+.lichtSpanne.laeuft { background: color-mix(in srgb, var(--accent2) 30%, transparent); }
+
+/* Im Sparmodus faellt die Farbmischung weg - color-mix kostet auf dem Pi
+   spuerbar. Die Warnung bleibt, sie wird nur schlichter. */
+body.spar .ttRow.licht,
+body.spar .lichtSpanne.laeuft { background: none; }
+body.spar .ttRow.licht .act,
+body.spar .lichtSpanne.laeuft .lz { color: var(--accent2); }

@@ -16,7 +16,9 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         mitgeliefertesLogo, durchsageStil, laufDauer,
         datumParsen, datumAnzeige, zeitParsen, zeitAnzeige,
         wirksameHaeufigkeit, rundeBauen,
-        istUebergang, uebergangsAuswahl, uebergangBeutel } = ctx;
+        istUebergang, uebergangsAuswahl, uebergangBeutel,
+        lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
+        timeLabel } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -466,6 +468,137 @@ check('Unsinn in der Auswahl wird aussortiert',
   }
   check('nie zweimal hintereinander derselbe', zweimalHintereinander, 0);
   check('jeder kommt gleich oft dran', auswahl.map(w => zaehler[w]), [100, 100, 100, 100]);
+})();
+
+console.log('');
+console.log('-- Starke Lichteffekte --');
+
+// 2026-08-28 ist ein Freitag
+const L = (start, end, note) => ({ id: start, date: '2026-08-28', start, end, note });
+const FR2 = (h, m) => new Date(2026, 7, 28, h, m);
+const SA2 = (h, m) => new Date(2026, 7, 29, h, m);
+
+// Ohne Endzeit ist die Angabe wertlos - so ein Eintrag darf nicht erscheinen
+check('vollstaendiger Eintrag zaehlt', lichtFenster([L('23:30', '01:00')]).length, 1);
+check('ohne Ende faellt heraus', lichtFenster([{ date: '2026-08-28', start: '23:30' }]).length, 0);
+check('ohne Anfang faellt heraus', lichtFenster([{ date: '2026-08-28', end: '01:00' }]).length, 0);
+check('ohne Datum faellt heraus', lichtFenster([{ start: '23:30', end: '01:00' }]).length, 0);
+check('leere Liste', lichtFenster(null).length, 0);
+
+// Ueber MitterlichtNacht hinweg - derselbe Weg wie beim Timetable
+const lichtNacht = lichtFenster([L('23:30', '01:00')]);
+check('Ende liegt am naechsten Tag', lichtNacht[0].se.end.getTime(), SA2(1, 0).getTime());
+
+// Ueberschneidung mit einem Act
+const actSE = (start, end) => entryStartEnd({ date: '2026-08-28', start, end });
+check('Act mittendrin', lichtTrifft(actSE('23:00', '01:30'), lichtNacht), true);
+check('Act in der Nacht danach ueberschneidet sich',
+      lichtTrifft(entryStartEnd({ date: '2026-08-29', start: '00:30', end: '02:00' }), lichtNacht), true);
+// Dasselbe Uhrzeitpaar am Vortag meint den Freitagmorgen - und beruehrt die
+// Nacht nicht. Die Datumsangabe entscheidet, genau wie beim Timetable.
+check('dieselbe Uhrzeit am Vortag trifft nicht',
+      lichtTrifft(actSE('00:30', '02:00'), lichtNacht), false);
+check('Act davor', lichtTrifft(actSE('20:00', '22:00'), lichtNacht), false);
+check('Act endet genau zum Beginn', lichtTrifft(actSE('22:00', '23:30'), lichtNacht), false);
+check('Act beginnt genau zum Ende', lichtTrifft(actSE('01:00', '02:00'), lichtNacht), false);
+check('Act ohne Ende wird mit einer Stunde gerechnet',
+      lichtTrifft(entryStartEnd({ date: '2026-08-28', start: '23:00' }), lichtNacht), true);
+check('ohne Fenster nichts betroffen', lichtTrifft(actSE('23:00', '01:00'), []), false);
+
+// Laeuft gerade?
+check('mittendrin', !!lichtJetzt(lichtNacht, SA2(0, 15)), true);
+check('davor', !!lichtJetzt(lichtNacht, FR2(23, 0)), false);
+check('genau am Anfang', !!lichtJetzt(lichtNacht, FR2(23, 30)), true);
+check('genau am Ende', !!lichtJetzt(lichtNacht, SA2(1, 0)), false);
+
+// Zeilen fuer den Slide: Acts und Lichtphasen zusammen, nach Uhrzeit
+(function () {
+  const acts = [
+    { date: '2026-08-28', start: '21:00', end: '23:00', act: 'Vorband' },
+    { date: '2026-08-28', start: '23:00', end: '01:30', act: 'Nachtflug' }
+  ];
+  const jetzt = FR2(20, 0);
+  const sicht = timetableView(acts, jetzt, 5);
+  const zeilen = timetableZeilen(sicht, lichtNacht, jetzt);
+
+  check('Acts und Lichtphase in einer Liste', zeilen.map(z => z.art),
+        ['act', 'act', 'licht']);
+  check('nach Uhrzeit sortiert',
+        zeilen.map(z => timeLabel(z.se.start)), ['21:00', '23:00', '23:30']);
+  check('nur der ueberschneidende Act ist markiert',
+        zeilen.filter(z => z.art === 'act').map(z => z.licht), [false, true]);
+  check('die Lichtzeile traegt ihre eigene Zeitspanne',
+        timeLabel(zeilen[2].se.start) + '-' + timeLabel(zeilen[2].se.end), '23:30-01:00');
+
+  // Vergangene Lichtphasen gehoeren nicht mehr in die Liste
+  const spaeter = SA2(2, 0);
+  check('vorbei ist vorbei',
+        timetableZeilen(timetableView(acts, spaeter, 5), lichtNacht, spaeter).length, 0);
+
+  // Eine gerade laufende Phase steht gross ueber der Liste, nicht darin -
+  // sonst stuende dieselbe Angabe zweimal auf dem Schirm.
+  const drin = SA2(0, 15);
+  check('laufende Phase nicht in der Liste',
+        timetableZeilen(timetableView(acts, drin, 5), lichtNacht, drin)
+          .filter(z => z.art === 'licht').length, 0);
+  check('aber sie laeuft', !!lichtJetzt(lichtNacht, drin), true);
+})();
+
+// Eine Lichtphase weit in der Zukunft gehoert nicht unter die naechsten Acts
+(function () {
+  const acts = [{ date: '2026-08-28', start: '21:00', end: '22:00', act: 'Vorband' }];
+  const jetzt = FR2(20, 0);
+  const weit = lichtFenster([{ id: 'x', date: '2026-08-30', start: '23:00', end: '23:30' }]);
+  check('Licht von uebermorgen bleibt weg',
+        timetableZeilen(timetableView(acts, jetzt, 5), weit, jetzt).length, 1);
+})();
+
+// Uebersicht fuers Wochenende
+(function () {
+  const liste = [
+    { id: 'a', date: '2026-08-28', start: '23:30', end: '01:00', note: 'Hauptbuehne' },
+    { id: 'b', date: '2026-08-28', start: '21:00', end: '21:30' },
+    { id: 'c', date: '2026-08-29', start: '22:00', end: '23:00' },
+    { id: 'd', date: '2026-08-27', start: '22:00', end: '23:00' }   // vorbei
+  ];
+  const jetzt = FR2(20, 0);
+  const tage = lichtUebersicht(liste, jetzt);
+
+  check('nach Tagen gruppiert', tage.length, 2);
+  check('Vergangenes faellt heraus', tage.map(t => t.schluessel), ['2026-08-28', '2026-08-29']);
+  check('innerhalb des Tages sortiert', tage[0].zeiten.map(z => z.von), ['21:00', '23:30']);
+  check('Bemerkung kommt mit', tage[0].zeiten[1].hinweis, 'Hauptbuehne');
+  check('nichts laeuft gerade', tage[0].zeiten.some(z => z.laeuft), false);
+
+  const drin = lichtUebersicht(liste, FR2(21, 10));
+  check('laufende Phase ist markiert', drin[0].zeiten[0].laeuft, true);
+})();
+
+// Die eigene Seite in der Schleife
+(function () {
+  const bei = (...n) => n.map(x => ({ file: x, enabled: true, always: true }));
+  const kurz = (items) => items.map(i => i.type === 'video' ? 'v:' + i.video.file : i.type);
+
+  let runde = rundeBauen({ aktiv: bei('a', 'b'), hatTimetable: true, hatLicht: true,
+                           timetableEvery: 3, lichtEvery: 2, zaehler: 0 });
+  check('Lichtseite laeuft mit', kurz(runde.items), ['v:a', 'v:b', 'timetable', 'licht']);
+
+  runde = rundeBauen({ aktiv: bei('a', 'b'), hatTimetable: true, hatLicht: true,
+                       timetableEvery: 3, lichtEvery: 0, zaehler: 0 });
+  check('0 laesst die Seite weg', kurz(runde.items), ['v:a', 'v:b', 'timetable']);
+
+  runde = rundeBauen({ aktiv: bei('a'), hatTimetable: false, hatLicht: false,
+                       lichtEvery: 3, zaehler: 0 });
+  check('ohne angemeldete Zeiten keine Seite', kurz(runde.items), ['v:a']);
+
+  runde = rundeBauen({ aktiv: [], hatTimetable: true, hatLicht: true,
+                       timetableEvery: 3, lichtEvery: 2, zaehler: 0 });
+  check('ohne Beitraege trotzdem beide Seiten', kurz(runde.items), ['timetable', 'licht']);
+
+  runde = rundeBauen({ aktiv: [], hatTimetable: true, hatLicht: true,
+                       timetableEvery: 3, lichtEvery: 0, zaehler: 0 });
+  check('abgeschaltet bleibt sie auch ohne Beitraege weg',
+        kurz(runde.items), ['timetable']);
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

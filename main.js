@@ -74,6 +74,14 @@ const DEFAULT_CONFIG = {
     timetableDuration: 20,    // Sekunden
     pricesEvery: 5,           // nach wie vielen Videos ein Preis-Slide
     pricesDuration: 25,       // Sekunden
+    // Eigene Seite mit den Zeiten fuer starke Lichteffekte. 0 = aus; sie kommt
+    // also nur, wenn die Bar sie ausdruecklich einschaltet.
+    lichtEvery: 0,
+    lichtDuration: 20,
+    lichtTitel: 'LICHTEFFEKTE',
+    lichtUnterzeile: 'wann es blitzt',
+    // Nachschlagewerk fuer die Crew, im Reiter Timetable verlinkt
+    lichtDoku: 'https://docs.google.com/document/d/1N-lTeO5lJyfZbEJVk--TiU1DMayqi5ldfZ8Uu_MODT4/edit',
     showClock: true,
     fadeMs: 700,
     imageDuration: 12,
@@ -83,6 +91,9 @@ const DEFAULT_CONFIG = {
   videos: [],
   timetable: [],
   prices: [],
+  // Zeiten fuer starke Lichteffekte: { id, date, start, end, note }
+  // Bewusst eigene Liste, nicht am Act - siehe lichtFenster() in common.js
+  lichteffekte: [],
   // Durchsage, die sich vom Handy ueber alles legen laesst
   // enabled/text/until = die von Hand ausgeloeste Durchsage,
   // plans = der Wochenplan, siehe aktiveDurchsage() in src/common.js
@@ -455,6 +466,19 @@ if (!gotLock) {
 ipcMain.handle('zeit:status', () => zeitStatus());
 
 ipcMain.handle('fern:info', () => fernInfo());
+
+// Eine Adresse im Systembrowser oeffnen. Bewusst nur http/https: alles andere
+// waere ein Weg, ueber die Konfiguration ein beliebiges Programm zu starten.
+ipcMain.handle('link:oeffnen', async (_e, adresse) => {
+  try {
+    const u = new URL(String(adresse || ''));
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+    await shell.openExternal(u.href);
+    return true;
+  } catch (err) {
+    return false;
+  }
+});
 
 ipcMain.handle('config:get', () => loadConfig());
 

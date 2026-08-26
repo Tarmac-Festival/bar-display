@@ -353,8 +353,11 @@ function buildPlaylist() {
     hatTimetable: (cfg.timetable || []).length > 0,
     hatPreise: (cfg.prices || []).some(c => (c.items || []).length > 0) ||
                !!(sp.enabled && sp.name),
+    // Die Lichtseite laeuft nur mit, wenn ueberhaupt etwas angemeldet ist
+    hatLicht: lichtFenster(cfg.lichteffekte).length > 0,
     timetableEvery: s.timetableEvery,
     pricesEvery: s.pricesEvery,
+    lichtEvery: s.lichtEvery,
     zaehler: videoCounter
   });
 
@@ -502,6 +505,7 @@ function playSlide(item) {
   let secs = 15;
   if (item.type === 'timetable') secs = s.timetableDuration || 20;
   else if (item.type === 'prices') secs = s.pricesDuration || 25;
+  else if (item.type === 'licht') secs = s.lichtDuration || 20;
   else secs = 30;
   if (nurVorschau) secs = 8;      // in der Vorschau zuegig durchwechseln
 
@@ -703,6 +707,7 @@ function photoUrl(file) { return fileUrl(photoDir, file); }
 function renderSlide(kind) {
   if (kind === 'timetable') return renderTimetable();
   if (kind === 'prices') return renderPrices();
+  if (kind === 'licht') return renderLicht();
   return renderIdle();
 }
 
@@ -788,6 +793,7 @@ function renderTimetable() {
   const s = cfg.settings;
   const now = new Date();
   const view = timetableView(cfg.timetable, now, s.timetableMaxNext);
+  const fenster = lichtFenster(cfg.lichteffekte);
   let body = '';
 
   if (view.current) {
@@ -798,28 +804,59 @@ function renderTimetable() {
       (e.photo ? '<div class="ttPhoto"><img src="' + photoUrl(e.photo) +
                  '" alt="" style="' + fotoStil(e) + '"></div>' : '') +
       '<div class="ttWhen"><div class="tag">JETZT</div><div class="time">' + times + '</div></div>' +
-      '<div class="ttWho"><div class="act">' + escapeHtml(e.act) + '</div>' +
+      '<div class="ttWho"><div class="act">' + escapeHtml(e.act) +
+        (lichtTrifft(se, fenster) ? lichtZeichen() : '') + '</div>' +
       (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') + '</div>' +
       '</div>';
+  }
+
+  // Laeuft gerade eine Lichtphase, steht das ueber allem anderen - wer den
+  // Raum deswegen verlassen will, soll es nicht aus einer Tabellenzeile
+  // heraussuchen muessen.
+  const jetztLicht = lichtJetzt(fenster, now);
+  if (jetztLicht) {
+    body += '<div class="lichtJetzt">' + lichtZeichen('gross') +
+      '<div><div class="lichtTitel">Starke Lichteffekte</div>' +
+      '<div class="lichtZeit">noch bis ' + timeLabel(jetztLicht.se.end) +
+      (jetztLicht.eintrag.note ? ' &middot; ' + escapeHtml(jetztLicht.eintrag.note) : '') +
+      '</div></div></div>';
   }
 
   // Platz für die Miniatur nur reservieren, wenn überhaupt ein Foto dabei ist -
   // dann fangen alle Act-Namen auf derselben Kante an
   const anyPhoto = view.next.some(x => x.entry.photo);
 
-  if (view.next.length) {
+  // Acts und Lichtphasen in einer Liste, nach Uhrzeit sortiert
+  const zeilen = timetableZeilen(view, fenster, now);
+
+  if (zeilen.length) {
     body += '<div class="ttLabel">' + (view.current ? 'ALS N&Auml;CHSTES' : 'DEMN&Auml;CHST') + '</div>';
     body += '<div class="ttList">';
-    for (const x of view.next) {
-      const e = x.entry;
+    for (const x of zeilen) {
+      const e = x.eintrag;
       const when = timeLabel(x.se.start) + (x.se.end ? '&ndash;' + timeLabel(x.se.end) : '');
-      body += '<div class="ttRow">' +
+
+      if (x.art === 'licht') {
+        // Eigene Zeile mit der echten Zeitspanne. Sie weicht bewusst von den
+        // Spielzeiten ab und darf deshalb nicht an einen Act angehaengt werden.
+        body += '<div class="ttRow licht">' +
+          '<div class="when">' + when + '</div>' +
+          '<div class="act">' + (anyPhoto ? '<span class="ttThumb empty"></span>' : '') +
+            lichtZeichen() + '<span>Starke Lichteffekte</span></div>' +
+          '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +
+          (e.note ? '<div class="info">' + escapeHtml(e.note) + '</div>' : '') +
+          '</div>';
+        continue;
+      }
+
+      body += '<div class="ttRow' + (x.licht ? ' hatLicht' : '') + '">' +
         '<div class="when">' + when + '</div>' +
         '<div class="act">' +
           (e.photo ? '<span class="ttThumb"><img src="' + photoUrl(e.photo) +
                      '" alt="" style="' + fotoStil(e) + '"></span>'
                    : (anyPhoto ? '<span class="ttThumb empty"></span>' : '')) +
-          '<span>' + escapeHtml(e.act) + '</span></div>' +
+          '<span>' + escapeHtml(e.act) + '</span>' +
+          (x.licht ? lichtZeichen() : '') + '</div>' +
         '<div class="day">' + escapeHtml(dayLabel(x.se.start, now)) + '</div>' +
         (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') +
         '</div>';
@@ -827,7 +864,7 @@ function renderTimetable() {
     body += '</div>';
   }
 
-  if (!view.current && !view.next.length) {
+  if (!view.current && !zeilen.length) {
     body += '<div class="emptyNote">' +
       (view.total === 0 ? 'Timetable noch nicht eingepflegt.' : 'F&uuml;r heute ist das Programm durch. Bis bald!') +
       '</div>';
@@ -835,6 +872,48 @@ function renderTimetable() {
 
   return '<div class="slideInner">' +
     headHtml(s.timetableTitle || 'TIMETABLE', s.timetableSubtitle) +
+    '<div class="slideBody">' + body + '</div>' + footHtml(true) + '</div>';
+}
+
+// Das Warnzeichen sitzt auf einer hellen Plakette. Die gelieferte Grafik ist
+// fuer hellen Grund gezeichnet - schwarzes Dreieck, schwarzer Scheinwerfer.
+// Auf dem dunklen Hintergrund der Anzeige waere davon kaum etwas zu sehen, und
+// eine Warnung, die niemand liest, ist keine.
+function lichtZeichen(groesse) {
+  return '<span class="lichtZeichen' + (groesse === 'gross' ? ' gross' : '') + '">' +
+         '<img src="' + LICHT_SYMBOL + '" alt="Starke Lichteffekte"></span>';
+}
+
+// Uebersicht ueber das ganze Wochenende - eigene Seite in der Schleife.
+function renderLicht() {
+  const s = cfg.settings;
+  const tage = lichtUebersicht(cfg.lichteffekte, new Date());
+
+  let body = '<div class="lichtKopf">' + lichtZeichen('gross') +
+    '<p>Zu diesen Zeiten laufen <b>starke Lichteffekte</b> \u2013 Stroboskop und ' +
+    'Blitzer. Wer darauf empfindlich reagiert, plant am besten drumherum.</p></div>';
+
+  if (!tage.length) {
+    body += '<div class="emptyNote">F\u00fcr die kommenden Stunden ist nichts angemeldet.</div>';
+  } else {
+    body += '<div class="lichtTage">';
+    for (const t of tage) {
+      body += '<div class="lichtTag"><div class="lichtDatum">' +
+        escapeHtml(dayLabel(t.datum, new Date())) + '</div>';
+      for (const z of t.zeiten) {
+        body += '<div class="lichtSpanne' + (z.laeuft ? ' laeuft' : '') + '">' +
+          '<span class="lz">' + z.von + '&ndash;' + z.bis + '</span>' +
+          (z.laeuft ? '<span class="lLauf">l\u00e4uft</span>' : '') +
+          (z.hinweis ? '<span class="lHinweis">' + escapeHtml(z.hinweis) + '</span>' : '') +
+          '</div>';
+      }
+      body += '</div>';
+    }
+    body += '</div>';
+  }
+
+  return '<div class="slideInner">' +
+    headHtml(s.lichtTitel || 'LICHTEFFEKTE', s.lichtUnterzeile || 'wann es blitzt') +
     '<div class="slideBody">' + body + '</div>' + footHtml(true) + '</div>';
 }
 
@@ -1018,7 +1097,8 @@ async function zeitPruefen() {
 function refreshVisibleSlide(auchPreise) {
   if (!currentLayer || currentLayer.tagName === 'VIDEO') return;
   const kind = currentLayer.dataset.kind;
-  if (kind !== 'timetable' && !(auchPreise && kind === 'prices')) return;
+  if (kind !== 'timetable' && kind !== 'licht' &&
+      !(auchPreise && kind === 'prices')) return;
 
   const frisch = renderSlide(kind);
   const stand = ohneUhrzeit(frisch);
