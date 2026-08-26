@@ -56,6 +56,7 @@ const STANDARD = {
     logo: '', logoHeight: 9, fontFile: '',
     titleStyle: 'blob', pattern: 'dots', displayId: '', rotation: 0,
     sparmodus: false,
+    fernbedienung: true, fernPort: 8080, fernHinweis: true,
     transition: 'fade', transitionMs: 900,
     qrEnabled: false, qrUrl: '', qrLabel: 'Programm & Infos',
     timetableTitle: 'TIMETABLE', timetableSubtitle: 'line up',
@@ -65,7 +66,8 @@ const STANDARD = {
     fadeMs: 700, imageDuration: 12, timetableMaxNext: 5, priceNote: ''
   },
   videos: [], timetable: [], prices: [],
-  announcement: { enabled: false, text: '', until: '', plans: [] },
+  announcement: { enabled: false, text: '', until: '',
+                  modus: 'fest', tempo: 'normal', plans: [] },
   quiet: { enabled: false, from: '06:00', to: '14:00' },
   special: { enabled: false, label: 'SPEZIALSHOT', name: '', size: '', price: '', text: '' }
 };

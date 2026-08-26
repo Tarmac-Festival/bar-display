@@ -193,20 +193,51 @@ function aktiveDurchsage(cfg, now) {
       const ende = new Date(a.until);
       if (!isNaN(ende) && now.getTime() >= ende.getTime()) offen = false;
     }
-    if (offen) return { text: a.text, ende: null, quelle: 'sofort' };
+    if (offen) {
+      return Object.assign({ text: a.text, ende: null, quelle: 'sofort' },
+                           durchsageStil(a));
+    }
   }
 
   for (const p of (a.plans || [])) {
     if (!p || p.enabled === false || !p.text) continue;
     if (!windowMatches(p, now)) continue;
-    return {
+    return Object.assign({
       text: p.text,
       ende: p.countdown === false ? null : fensterEnde(p, now),
       quelle: 'plan',
       id: p.id
-    };
+    }, durchsageStil(p));
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Darstellung einer Durchsage
+// ---------------------------------------------------------------------------
+// 'fest' steht einfach da - kurz, laut, fertig. 'lauf' zieht den Text von
+// rechts nach links durch wie die Laufschrift bei einem Nachrichtensender;
+// damit passt auch ein laengerer Satz auf den Balken.
+//
+// Das Tempo steht in Bildschirmbreiten pro Sekunde, nicht in Pixeln: sonst
+// liefe dieselbe Einstellung auf einem grossen Fernseher gemuetlich und auf
+// einem kleinen Bildschirm hektisch.
+const LAUF_TEMPO = { langsam: 5, normal: 9, schnell: 15 };
+
+function durchsageStil(quelle) {
+  const q = quelle || {};
+  const modus = q.modus === 'lauf' ? 'lauf' : 'fest';
+  const tempo = LAUF_TEMPO[q.tempo] ? q.tempo : 'normal';
+  return { modus, tempo };
+}
+
+// Wie lange braucht ein Durchlauf? Haengt an der Textlaenge, damit die
+// Geschwindigkeit gleich bleibt und nicht der lange Text schneller wirkt.
+function laufDauer(breitePx, fensterPx, tempo) {
+  const proSekunde = LAUF_TEMPO[tempo] || LAUF_TEMPO.normal;
+  if (!breitePx || !fensterPx) return 12;
+  const inBreiten = breitePx / fensterPx * 100;
+  return Math.max(4, Math.round(inBreiten / proSekunde * 10) / 10);
 }
 
 // Platzhalter im Text durch die Restzeit ersetzen. Steht kein Platzhalter drin,

@@ -143,23 +143,49 @@ function durchsagePruefen() {
     return;
   }
 
-  const kennung = (d.quelle || '') + '|' + (d.id || '') + '|' + d.text + '|' + (d.ende ? d.ende.getTime() : '');
+  const kennung = [d.quelle || '', d.id || '', d.text, d.ende ? d.ende.getTime() : '',
+                   d.modus, d.tempo].join('|');
+  // Sichtbar machen, bevor der Inhalt gebaut wird: die Laufschrift misst ihre
+  // eigene Breite, um die Dauer zu bestimmen, und in einem ausgeblendeten
+  // Element ist jede Breite null.
+  el.classList.add('an');
   if (kennung !== durchsageStand) {
     durchsageStand = kennung;
     durchsageEnde = d.ende;
     durchsageAufbauen(el, d);
   }
   durchsageTicken();
-  el.classList.add('an');
 }
 
 // Der Text wird in Stuecke zerlegt; das Stueck mit dem Countdown bekommt ein
 // eigenes Element, damit jede Sekunde nur diese Zahl neu geschrieben wird.
 function durchsageAufbauen(el, d) {
   const ziel = el.querySelector('.durchsageText');
-  ziel.innerHTML = durchsageTeile(d.text, !!d.ende).map(t =>
+  const inhalt = durchsageTeile(d.text, !!d.ende).map(t =>
     t.zeit ? '<b class="durchsageZeit">--:--</b>' : escapeHtml(t.text)
   ).join('');
+
+  if (d.modus !== 'lauf') {
+    ziel.className = 'durchsageText';
+    ziel.removeAttribute('style');
+    ziel.innerHTML = inhalt;
+    return;
+  }
+
+  // Laufschrift: der Inhalt steht zweimal hintereinander und die Spur wandert
+  // um genau die Haelfte nach links. Am Ende sitzt das zweite Stueck exakt da,
+  // wo das erste begann - dadurch laeuft es ohne sichtbaren Sprung weiter.
+  ziel.className = 'durchsageText lauf';
+  ziel.innerHTML = '<div class="laufSpur">' +
+    '<span class="laufStueck">' + inhalt + '</span>' +
+    '<span class="laufStueck" aria-hidden="true">' + inhalt + '</span>' +
+    '</div>';
+
+  const spur = ziel.querySelector('.laufSpur');
+  const stueck = ziel.querySelector('.laufStueck');
+  const dauer = laufDauer(stueck.getBoundingClientRect().width,
+                          ziel.getBoundingClientRect().width, d.tempo);
+  spur.style.animationDuration = dauer + 's';
 }
 
 function durchsageTicken() {

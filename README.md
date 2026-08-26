@@ -59,6 +59,9 @@ Getränkepreise im Festival-Design.
 - **Countdown im Balken** — mit `{zeit}` im Text läuft eine Uhr mit, die
   sekundengenau auf das Ende des Fensters herunterzählt: „Letzte Runde – die Bar
   schließt in 11:30"
+- **Laufschrift** — der Text zieht von rechts nach links durch wie bei einem
+  Nachrichtensender, in drei Geschwindigkeiten. Damit passt auch ein längerer
+  Satz auf den Balken.
 - **Ruhezeit** — außerhalb der Öffnungszeiten bleibt der Bildschirm schwarz und
   die Schleife steht still. Schont das Gerät und spart Strom.
 - **QR-Code** auf dem Timetable, der auf eure Festivalseite zeigt – abschaltbar,
@@ -216,6 +219,27 @@ und verschwindet von allein; niemand muss daran denken.
 
 ![Durchsage mit Countdown über einem laufenden Clip](docs/screenshots/anzeige-durchsage.png)
 
+#### Darstellung
+
+Zwei Möglichkeiten, für jede Durchsage einzeln einstellbar:
+
+| Darstellung | Wann |
+|---|---|
+| **steht fest** | Kurze Ansagen. Der Text steht ruhig da und ist im Vorbeigehen zu erfassen |
+| **läuft von rechts nach links** | Längere Texte. Zieht durch wie bei einem Nachrichtensender |
+
+![Laufschrift über einem Clip](docs/screenshots/anzeige-lauftext.png)
+
+Die Laufschrift läuft ohne Sprung: der Text steht zweimal hintereinander in der
+Spur, und wenn die zweite Fassung dort ankommt, wo die erste anfing, beginnt
+sie wieder von vorn. Das Tempo gibt es in **langsam**, **normal** und
+**schnell** – gerechnet in Bildschirmbreiten pro Sekunde, damit dieselbe
+Einstellung auf einem großen Fernseher und auf einem kleinen Bildschirm gleich
+schnell wirkt. Ein längerer Text braucht entsprechend länger, statt schneller
+durchzuhuschen.
+
+Ein Countdown läuft dabei ganz normal mit.
+
 #### Countdown
 
 Steht `{zeit}` im Text, läuft an dieser Stelle eine Uhr mit, die sekundengenau auf
@@ -326,7 +350,7 @@ Darunter liegen die **geplanten Durchsagen**.
 
 ![Geplante Durchsagen](docs/screenshots/einstellungen-durchsage-plan.png)
 
-Pro Eintrag: Text, Wochentage, Von–Bis und zwei Haken.
+Pro Eintrag: Text, Wochentage, Von–Bis, Darstellung und zwei Haken.
 
 - **aktiv** schaltet einen Eintrag vorübergehend ab, ohne ihn zu löschen.
 - **{zeit} einfügen** setzt den Platzhalter dort ein, wo der Cursor gerade steht.

@@ -184,6 +184,10 @@ function fillDurchsage() {
   const a = state.announcement;
   const feld = $('an_text');
   if (document.activeElement !== feld) feld.value = a.text || '';
+  const stil = durchsageStil(a);
+  $('an_modus').value = stil.modus;
+  $('an_tempo').value = stil.tempo;
+  tempoZeigen($('an_modus'), $('an_tempo'));
   durchsageStatus();
   renderPlaene();
   fillUhr();
@@ -192,12 +196,23 @@ function fillDurchsage() {
     feld.dataset.wired = '1';
     feld.addEventListener('input', () => { state.announcement.text = feld.value; markDirty(); });
 
+    for (const [id, feld] of [['an_modus', 'modus'], ['an_tempo', 'tempo']]) {
+      $(id).addEventListener('change', () => {
+        state.announcement = state.announcement || {};
+        state.announcement[feld] = $(id).value;
+        tempoZeigen($('an_modus'), $('an_tempo'));
+        markDirty();
+      });
+    }
+
     $('an_zeigen').addEventListener('click', async () => {
       const text = feld.value.trim();
       if (!text) { toast('Bitte erst einen Text eingeben', true); return; }
       const minuten = Number($('an_dauer').value) || 0;
       state.announcement = Object.assign({}, state.announcement, {
         enabled: true,
+        modus: $('an_modus').value,
+        tempo: $('an_tempo').value,
         text,
         until: minuten ? new Date(Date.now() + minuten * 60000).toISOString() : ''
       });
@@ -347,12 +362,20 @@ async function fillUhr() {
     + 'Pr\u00fcfen mit <code>timedatectl status</code> auf dem Pi.';
 }
 
+// Das Tempo betrifft nur die Laufschrift - bei "steht fest" waere es ein Feld,
+// das nichts tut.
+function tempoZeigen(modusFeld, tempoFeld) {
+  const box = tempoFeld && tempoFeld.closest('.field');
+  if (box) box.style.visibility = modusFeld.value === 'lauf' ? '' : 'hidden';
+}
+
 // ---------------------------------------------------------------------------
 // Geplante Durchsagen
 // ---------------------------------------------------------------------------
 function neuerPlan() {
   return { id: uid(), enabled: true, text: '', days: [5, 6],
-           from: '01:40', to: '02:00', countdown: true };
+           from: '01:40', to: '02:00', countdown: true,
+           modus: 'fest', tempo: 'normal' };
 }
 
 function plaene() {
@@ -414,6 +437,19 @@ function planZeile(pl, i) {
       + '<textarea data-f="text" rows="2" maxlength="200" '
       + 'placeholder="z.B. Letzte Runde \u2013 die Bar schlie\u00dft in {zeit}">'
       + escapeHtml(pl.text || '') + '</textarea></label>'
+    + '<div class="twoCol">'
+      + '<label class="field"><span>Darstellung</span>'
+        + '<select data-f="modus">'
+        + '<option value="fest">steht fest</option>'
+        + '<option value="lauf">l\u00e4uft von rechts nach links</option>'
+        + '</select></label>'
+      + '<label class="field"><span>Tempo der Laufschrift</span>'
+        + '<select data-f="tempo">'
+        + '<option value="langsam">langsam</option>'
+        + '<option value="normal">normal</option>'
+        + '<option value="schnell">schnell</option>'
+        + '</select></label>'
+    + '</div>'
     + '<div class="btnRow planWerkzeug">'
       + '<button data-act="zeit">{zeit} einf\u00fcgen</button>'
       + '<label class="checkline"><input type="checkbox" data-f="countdown"'
@@ -430,6 +466,20 @@ function planZeile(pl, i) {
 
   const txt = wrap.querySelector('[data-f=text]');
   txt.addEventListener('input', () => { pl.text = txt.value; markDirty(); planStatusSetzen(wrap, pl); });
+
+  const stil = durchsageStil(pl);
+  const modusFeld = wrap.querySelector('[data-f=modus]');
+  const tempoFeld = wrap.querySelector('[data-f=tempo]');
+  modusFeld.value = stil.modus;
+  tempoFeld.value = stil.tempo;
+  tempoZeigen(modusFeld, tempoFeld);
+  wrap.querySelectorAll('select[data-f]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      pl[sel.dataset.f] = sel.value;
+      tempoZeigen(modusFeld, tempoFeld);
+      markDirty();
+    });
+  });
 
   wrap.querySelectorAll('input[type=time]').forEach(inp => {
     inp.addEventListener('input', () => {

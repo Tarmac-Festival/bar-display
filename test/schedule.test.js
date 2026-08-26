@@ -13,7 +13,7 @@ vm.runInContext(code, ctx);
 const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, zeitImFenster,
         fensterEnde, countdownText, aktiveDurchsage, durchsageTeile,
         fotoAusschnitt, fotoStil, ausschnittIstStandard,
-        mitgeliefertesLogo } = ctx;
+        mitgeliefertesLogo, durchsageStil, laufDauer } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -170,6 +170,35 @@ check('Ohne Countdown faellt der Platzhalter weg',
       durchsageTeile('Bar schliesst in {zeit}', false), [{ text: 'Bar schliesst in' }]);
 check('Grossschreibung des Platzhalters zaehlt auch',
       durchsageTeile('Noch {ZEIT}', true), [{ text: 'Noch ' }, { zeit: true }]);
+
+console.log('-- Darstellung der Durchsagen --');
+check('ohne Angabe steht sie fest', durchsageStil({}), { modus: 'fest', tempo: 'normal' });
+check('ohne Quelle auch', durchsageStil(null), { modus: 'fest', tempo: 'normal' });
+check('Laufschrift wird uebernommen',
+      durchsageStil({ modus: 'lauf', tempo: 'schnell' }), { modus: 'lauf', tempo: 'schnell' });
+check('unbekannter Modus faellt auf fest zurueck',
+      durchsageStil({ modus: 'blinken' }).modus, 'fest');
+check('unbekanntes Tempo faellt auf normal zurueck',
+      durchsageStil({ modus: 'lauf', tempo: 'rasend' }).tempo, 'normal');
+
+// Der Plan liefert die Darstellung mit, sonst wuesste die Anzeige sie nicht
+const laufPlan = { id: 'l', text: 'Hallo', days: [0,1,2,3,4,5,6],
+                   from: '00:01', to: '23:59', modus: 'lauf', tempo: 'langsam' };
+const mitLauf = aktiveDurchsage({ announcement: { plans: [laufPlan] } }, FR(12, 0));
+check('Plan reicht den Modus durch', mitLauf.modus, 'lauf');
+check('Plan reicht das Tempo durch', mitLauf.tempo, 'langsam');
+const sofortLauf = aktiveDurchsage(
+  { announcement: { enabled: true, text: 'x', modus: 'lauf' } }, FR(12, 0));
+check('Sofort-Durchsage reicht den Modus durch', sofortLauf.modus, 'lauf');
+
+// Doppelte Textlaenge heisst doppelte Dauer - sonst waere ein langer Text
+// schneller unterwegs als ein kurzer
+check('Dauer waechst mit der Textlaenge',
+      laufDauer(3840, 1920, 'normal') / laufDauer(1920, 1920, 'normal'), 2);
+check('schneller ist kuerzer als langsamer',
+      laufDauer(1920, 1920, 'schnell') < laufDauer(1920, 1920, 'langsam'), true);
+check('nie unter vier Sekunden', laufDauer(10, 1920, 'schnell'), 4);
+check('ohne Masse ein brauchbarer Ersatzwert', laufDauer(0, 0, 'normal'), 12);
 
 console.log('-- Bildausschnitt --');
 check('ohne Angabe die Mitte', fotoAusschnitt({}), { x: 50, y: 50, z: 1 });
