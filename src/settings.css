@@ -55,6 +55,8 @@ body {
 .dirty { color: var(--accent); font-size: 12px; }
 /* Jemand anders hat gespeichert, waehrend hier noch etwas offen ist. */
 .fremd { color: var(--warn); font-size: 12px; }
+/* Hinweis, der auf einen Zustand aufmerksam macht, ohne ein Fehler zu sein */
+.hinweisWarn { color: var(--warn); }
 
 /* ------------------------------- Buttons ----------------------------- */
 button {

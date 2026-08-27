@@ -697,7 +697,10 @@ Unter **System** dazugekommen:
   die wichtigste Zeile im ganzen Fenster.
 - **Bildschirm**: auf welchem Monitor die Anzeige läuft. *Bildschirme nummerieren*
   blendet kurz eine große Ziffer auf jedem Schirm ein, damit die Zuordnung klar ist.
-  Wird der gewählte Monitor abgezogen, wandert die Anzeige auf den Hauptbildschirm.
+  Wird der gewählte Monitor abgezogen oder ausgeschaltet, wandert die Anzeige auf
+  den Hauptbildschirm — die Einstellung bleibt aber stehen und springt zurück,
+  sobald er wieder da ist. Die Einstellungsseite sagt in dem Fall, dass gerade
+  eingesprungen wird.
 - **Konfiguration sichern / laden** als JSON-Datei
 - **Programm beenden**
 

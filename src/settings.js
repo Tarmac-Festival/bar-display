@@ -1631,9 +1631,25 @@ async function renderDisplays() {
   sel.innerHTML = liste.map(d =>
     '<option value="' + d.id + '">Bildschirm ' + d.nummer + ' – ' + d.breite + '×' + d.hoehe +
     (d.primary ? ' (Hauptbildschirm)' : '') + '</option>').join('');
-  // gespeicherter Monitor kann abgezogen sein - dann steht der tatsächlich genutzte drin
+  // Der gespeicherte Monitor kann abgezogen oder ausgeschaltet sein. Dann laeuft
+  // die Anzeige so lange auf dem Hauptbildschirm - die Einstellung bleibt aber
+  // stehen, damit sie zurueckspringt, sobald der Schirm wieder da ist.
   const gespeichert = state.settings.displayId;
-  sel.value = liste.some(d => d.id === gespeichert) ? gespeichert : (liste.find(d => d.aktiv) || liste[0]).id;
+  const da = liste.some(d => d.id === gespeichert);
+  sel.value = da ? gespeichert : (liste.find(d => d.aktiv) || liste[0]).id;
+
+  // Ohne diesen Hinweis behauptet die Auswahl, die Anzeige liefe dauerhaft auf
+  // dem Schirm, der gerade einspringt.
+  const fehlt = $('schirmFehlt');
+  if (fehlt) {
+    const ersatz = liste.find(d => String(d.id) === String(sel.value));
+    fehlt.classList.toggle('hidden', da || !gespeichert);
+    fehlt.textContent = (da || !gespeichert) ? '' :
+      'Der eingestellte Bildschirm ist gerade nicht angeschlossen. Die Anzeige ' +
+      'läuft so lange auf Bildschirm ' + (ersatz ? ersatz.nummer : '?') +
+      ' und springt zurück, sobald er wieder da ist. Zum dauerhaften Wechseln ' +
+      'hier einen anderen wählen und speichern.';
+  }
 
   if (!sel.dataset.wired) {
     sel.dataset.wired = '1';
