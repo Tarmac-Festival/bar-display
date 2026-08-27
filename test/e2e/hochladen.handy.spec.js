@@ -53,3 +53,53 @@ test('die Auswahl laesst mehrere Clips zu', async ({ page, bar }) => {
   expect(wahl.isMultiple()).toBe(true);
   await wahl.setFiles([]);
 });
+
+test('ein Abbrechen wird sofort gemeldet', async ({ page, bar }) => {
+  // Seit Safari 16 sagt der Browser selbst Bescheid. Vorher hing die Auswahl
+  // bis zum Ablauf einer Uhr - und die riss das Feld unter einer noch offenen
+  // Auswahl weg.
+  await timetableOeffnen(page, bar);
+  await page.getByRole('button', { name: 'Videos', exact: true }).click();
+
+  const [wahl] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: '+ Videos & Bilder hinzufügen' }).click()
+  ]);
+  void wahl;
+
+  // Playwright loest kein "cancel" aus - das Ereignis wird hier von Hand
+  // geschickt, um zu pruefen, dass die Seite darauf hoert.
+  const weg = await page.evaluate(async () => {
+    const feld = document.querySelector('input[type=file]');
+    feld.dispatchEvent(new Event('cancel'));
+    await new Promise(r => setTimeout(r, 50));
+    return !document.querySelector('input[type=file]');
+  });
+  expect(weg, 'die Auswahl ist beendet und aufgeraeumt').toBe(true);
+});
+
+test('das Feld wird nicht weggeraeumt, solange die Auswahl laeuft',
+  async ({ page, bar }) => {
+    // Der gemeldete Ablauf: in der Cloud auf einen Fehler laufen, mehrfach
+    // "Wiederholen" tippen - das dauert. Vorher gab die Seite nach einer halben
+    // Minute auf und nahm das Feld mit; ein Tippen auf eine Datei fuehrte dann
+    // ins Leere. Jetzt wartet sie auf "change" oder "cancel" und sonst nichts.
+    // Die Uhr muss vor dem Laden stehen, sonst uebernimmt sie das laufende
+    // Intervall der Seite nicht und der Test misst nichts.
+    await page.clock.install();
+    await timetableOeffnen(page, bar);
+    await page.getByRole('button', { name: 'Videos', exact: true }).click();
+
+    const [wahl] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: '+ Videos & Bilder hinzufügen' }).click()
+    ]);
+    void wahl;
+
+    // Fokus kommt zurueck (die Auswahl liegt darueber), danach vergeht Zeit
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.clock.runFor(5 * 60000);
+
+    const da = await page.evaluate(() => !!document.querySelector('input[type=file]'));
+    expect(da, 'auch nach fuenf Minuten ist das Feld noch da').toBe(true);
+  });

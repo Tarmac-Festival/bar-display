@@ -69,15 +69,25 @@
       };
 
       // Ein gerade aufgenommenes Foto ist nicht sofort da: das Handy schreibt es
-      // erst weg, rechnet es um und reicht es dann herein. Vorher stand hier eine
-      // feste Frist von knapp zwei Sekunden - war das Bild bis dahin nicht fertig,
-      // galt die Auswahl als abgebrochen und das Foto verschwand stillschweigend.
-      // Also nachsehen statt raten: bis zu einer halben Minute im Takt schauen,
-      // ob etwas angekommen ist, und erst dann aufgeben.
-      const GEDULD = 30000;
+      // erst weg, rechnet es um und reicht es dann herein. Eine feste Frist,
+      // nach der die Auswahl als abgebrochen galt, hat es deshalb verschluckt.
+      //
+      // Seit Safari 16 und Chrome 113 sagt der Browser selbst Bescheid, wenn die
+      // Auswahl ohne Datei geschlossen wurde: das Ereignis "cancel". Wo es das
+      // gibt, braucht es gar keine Uhr - "change" oder "cancel", eines von
+      // beiden kommt, und zwar dann, wenn es wirklich so weit ist.
+      //
+      // Das ist mehr als Kosmetik. Die Uhr lief eine halbe Minute und raeumte
+      // danach das Feld weg. Wer in der Dateien-App durch eine Cloud blaettert,
+      // dort auf einen Fehler laeuft und mehrfach "Wiederholen" tippt, ist
+      // laengst darueber - und tippte dann auf eine Datei, die nirgends mehr
+      // ankam.
+      const kenntCancel = ('oncancel' in feld);
+
       const TAKT = 250;
+      const GEDULD = 30000;
       const beiFokus = () => {
-        if (erledigt || warten) return;
+        if (erledigt || warten || kenntCancel) return;
         const bis = Date.now() + GEDULD;
         // Damit niemand vor einem scheinbar toten Bildschirm sitzt
         hinweis = setTimeout(() => { if (!erledigt) melden('Bild wird übernommen …'); }, 1200);
@@ -89,7 +99,8 @@
       };
 
       feld.addEventListener('change', () => schliessen(Array.from(feld.files || [])));
-      window.addEventListener('focus', beiFokus);
+      feld.addEventListener('cancel', () => schliessen([]));
+      if (!kenntCancel) window.addEventListener('focus', beiFokus);
       feld.click();
     });
   }

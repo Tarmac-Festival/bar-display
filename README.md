@@ -1246,7 +1246,8 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Bedienseite vom Handy nicht erreichbar | *System → Bedienung vom Handy*: eingeschaltet? Adresse und Port stimmen? Firewall des Rechners? |
 | „Port 8080 ist schon belegt" | Anderen Port eintragen – oder läuft das Programm zweimal? |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
-| iPhone: „Inhalt nicht verfügbar" in Google Drive o. ä. | Sollte nicht mehr vorkommen – auf iOS wird kein Typfilter mehr gesetzt. Bleibt der Ordner leer, ist es die Cloud-App selbst: Datei dort erst „In Dateien sichern" |
+| iPhone: „Inhalt nicht verfügbar" in Google Drive o. ä. | Auf iOS wird kein Typfilter mehr gesetzt, und die Auswahl darf beliebig lange offen bleiben. Hilft das nicht, ist es die Cloud-App selbst: Datei dort erst „In Dateien sichern", dann von „Auf meinem iPhone" wählen |
+| Änderung am Programm wirkt am Handy nicht | Das Programm am Rechner neu starten – die Bedienseite wird von dort ausgeliefert – und die Seite am Handy neu laden |
 | Anzeige steht auf dem Kopf oder quer | *Anzeige → Anzeige drehen* auf „Nicht drehen" |
 | QR-Code fehlt auf dem Timetable | *Anzeige → Beschriftung*: Haken setzen und Adresse eintragen |
 | macOS: „unbekannter Entwickler" oder „beschädigt" | Rechtsklick → Öffnen, siehe Abschnitt macOS. Das Programm ist unsigniert, nicht kaputt |

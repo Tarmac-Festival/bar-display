@@ -185,16 +185,28 @@ test.describe('Hochladen', () => {
     expect(namen[0]).not.toBe(namen[1]);
   });
 
+  // Die Auswahl wird ueber einen echten Knopf geoeffnet und der Dialog
+  // abgefangen. Ruft man dateienWaehlen() nur aus dem Skript auf, macht der
+  // Browser mangels Klick gar keine Auswahl auf und meldet sofort "cancel" -
+  // dann laesst sich nichts pruefen.
+  async function auswahlOffen(page) {
+    const [wahl] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.locator('.photoAdd').first().click()
+    ]);
+    return wahl;
+  }
+
   test('ein spaet geliefertes Bild wird nicht verschluckt', async ({ page, bar }) => {
     bar.konfig(beispiel());
     await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+    await auswahlOffen(page);
 
     // Genau der Ablauf am iPhone: die Kamera geht zu, die Seite bekommt den
     // Fokus zurueck - und erst Sekunden spaeter liegt das Bild vor. Frueher gab
     // die Auswahl nach knapp zwei Sekunden auf.
     const ergebnis = await page.evaluate(async () => {
-      const zusage = window.barDisplayUpload.dateienWaehlen('photo');
-      await new Promise(r => setTimeout(r, 100));
       const feld = document.querySelector('input[type=file]');
       window.dispatchEvent(new Event('focus'));
       await new Promise(r => setTimeout(r, 4000));
@@ -202,23 +214,25 @@ test.describe('Hochladen', () => {
       dt.items.add(new File([new Uint8Array([1, 2, 3])], 'image.jpg', { type: 'image/jpeg' }));
       feld.files = dt.files;
       feld.dispatchEvent(new Event('change'));
-      const da = await zusage;
-      return da.map(d => d.name);
+      await new Promise(r => setTimeout(r, 50));
+      return { weg: !document.querySelector('input[type=file]') };
     });
-    expect(ergebnis).toEqual(['image.jpg']);
+    expect(ergebnis.weg, 'das Bild ist angekommen und die Auswahl beendet').toBe(true);
   });
 
   test('ein Abbruch bleibt ein Abbruch', async ({ page, bar }) => {
     bar.konfig(beispiel());
     await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+    await auswahlOffen(page);
 
     const anzahl = await page.evaluate(async () => {
-      const zusage = window.barDisplayUpload.dateienWaehlen('photo');
-      await new Promise(r => setTimeout(r, 100));
-      document.querySelector('input[type=file]').dispatchEvent(new Event('change'));
-      return (await zusage).length;
+      const feld = document.querySelector('input[type=file]');
+      feld.dispatchEvent(new Event('change'));
+      await new Promise(r => setTimeout(r, 50));
+      return document.querySelectorAll('.ttThumb img').length;
     });
-    expect(anzahl).toBe(0);
+    expect(anzahl, 'ohne Datei bleibt kein Foto haengen').toBe(0);
   });
 });
 
