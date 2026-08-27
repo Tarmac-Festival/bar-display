@@ -18,7 +18,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         wirksameHaeufigkeit, rundeBauen,
         istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
-        lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel,
+        lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
         preisStil, gruppeHatInhalt, preisGruppen } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
@@ -621,25 +621,58 @@ check('genau am Ende', !!lichtJetzt(lichtNacht, SA2(1, 0)), false);
   check('aber gemerkt', lichtOhneZeile(zeilen, weit, jetzt).length, 1);
 })();
 
-// Uebersicht fuers Wochenende
+// Uebersicht nach Naechten, nicht nach Kalendertagen
+//
+// Frueher wurde nach dem Kalendertag des Beginns gruppiert. Damit stand 01:00
+// unter "Samstag", obwohl es zur Freitagnacht gehoert - eine Nacht wurde auf
+// zwei Spalten zerrissen. Die Doku der Lichtcrew ordnet nach Naechten, und
+// genau so denkt auch, wer abends davorsteht.
 (function () {
+  const um = (t, h, m) => new Date(2026, 9, t, h, m);
+
+  check('abends gehoert zum eigenen Abend', todayISO(nachtVon(um(9, 22, 0))), '2026-10-09');
+  check('nach Mitternacht noch zum Vorabend', todayISO(nachtVon(um(10, 1, 0))), '2026-10-09');
+  check('kurz vor sechs noch zum Vorabend', todayISO(nachtVon(um(10, 5, 59))), '2026-10-09');
+  check('ab sechs beginnt der neue Tag', todayISO(nachtVon(um(10, 6, 0))), '2026-10-10');
+  check('mittags ebenfalls', todayISO(nachtVon(um(10, 14, 0))), '2026-10-10');
+
+  // Genau die Zeiten vom Schirm an der Bar
   const liste = [
-    { id: 'a', date: '2026-08-28', start: '23:30', end: '01:00', note: 'Hauptbuehne' },
-    { id: 'b', date: '2026-08-28', start: '21:00', end: '21:30' },
-    { id: 'c', date: '2026-08-29', start: '22:00', end: '23:00' },
-    { id: 'd', date: '2026-08-27', start: '22:00', end: '23:00' }   // vorbei
+    { id: 'a', date: '2026-10-09', start: '22:00', end: '23:00' },
+    { id: 'b', date: '2026-10-10', start: '01:00', end: '02:00' },
+    { id: 'c', date: '2026-10-10', start: '03:00', end: '04:00' },
+    { id: 'd', date: '2026-10-10', start: '23:00', end: '00:00' },
+    { id: 'e', date: '2026-10-11', start: '02:00', end: '03:00' },
+    { id: 'f', date: '2026-10-11', start: '04:00', end: '05:00' }
   ];
-  const jetzt = FR2(20, 0);
-  const tage = lichtUebersicht(liste, jetzt);
+  const naechte = lichtUebersicht(liste, um(9, 18, 0));
 
-  check('nach Tagen gruppiert', tage.length, 2);
-  check('Vergangenes faellt heraus', tage.map(t => t.schluessel), ['2026-08-28', '2026-08-29']);
-  check('innerhalb des Tages sortiert', tage[0].zeiten.map(z => z.von), ['21:00', '23:30']);
-  check('Bemerkung kommt mit', tage[0].zeiten[1].hinweis, 'Hauptbuehne');
-  check('nichts laeuft gerade', tage[0].zeiten.some(z => z.laeuft), false);
+  check('zwei Naechte statt drei Kalendertage', naechte.length, 2);
+  check('erste Nacht vollstaendig', naechte[0].zeiten.map(z => z.von),
+        ['22:00', '01:00', '03:00']);
+  check('zweite Nacht vollstaendig', naechte[1].zeiten.map(z => z.von),
+        ['23:00', '02:00', '04:00']);
+  check('die laufende heisst HEUTE NACHT', naechte[0].titel, 'HEUTE NACHT');
+  check('die naechste beim Namen', naechte[1].titel, 'NACHT AUF SONNTAG');
+  check('Datum wie in der Doku', naechte[0].datum, '09.10. auf 10.10.');
 
-  const drin = lichtUebersicht(liste, FR2(21, 10));
-  check('laufende Phase ist markiert', drin[0].zeiten[0].laeuft, true);
+  // Mitten in der Nacht ist immer noch dieselbe Nacht "heute nacht" - um genau
+  // 04:00 waere die Phase 03:00-04:00 schon vorbei und faellt heraus, deshalb
+  // hier halb vier.
+  const spaet = lichtUebersicht(liste, um(10, 3, 30));
+  check('um halb vier immer noch dieselbe Nacht', spaet[0].titel, 'HEUTE NACHT');
+  check('und die gerade laufende ist markiert',
+        spaet[0].zeiten.filter(z => z.laeuft).map(z => z.von), ['03:00']);
+
+  // Vergangenes faellt heraus
+  const danach = lichtUebersicht(liste, um(10, 12, 0));
+  check('die durchgelaufene Nacht ist weg', danach.length, 1);
+  check('und die verbliebene heisst wieder heute nacht', danach[0].titel, 'HEUTE NACHT');
+
+  check('Bemerkung kommt mit',
+        lichtUebersicht([{ id: 'x', date: '2026-10-09', start: '22:00', end: '23:00',
+                           note: 'Hauptbuehne' }], um(9, 18, 0))[0].zeiten[0].hinweis,
+        'Hauptbuehne');
 })();
 
 // Die eigene Seite in der Schleife

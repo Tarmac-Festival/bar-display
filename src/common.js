@@ -715,24 +715,58 @@ function lichtOhneZeile(zeilen, fenster, now) {
  * Anzeigeseite. Vergangenes faellt heraus, damit am Sonntag nicht mehr der
  * Freitag oben steht.
  */
+// Wo endet eine Nacht? Alles vor dieser Stunde zaehlt noch zum Vorabend.
+// Sechs Uhr passt zu dem, was an der Bar passiert: um 04:00 ist noch Freitag,
+// auch wenn der Kalender schon Samstag sagt.
+const NACHT_ENDET_UM = 6;
+
+/** Der Abend, zu dem ein Zeitpunkt gehoert - auf Mitternacht gesetzt. */
+function nachtVon(zeitpunkt) {
+  const d = new Date(zeitpunkt.getTime());
+  if (d.getHours() < NACHT_ENDET_UM) d.setDate(d.getDate() - 1);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** "HEUTE NACHT", sonst "NACHT AUF SAMSTAG". */
+function nachtTitel(abend, now) {
+  const morgen = new Date(abend.getFullYear(), abend.getMonth(), abend.getDate() + 1);
+  if (todayISO(abend) === todayISO(nachtVon(now))) return 'HEUTE NACHT';
+  return 'NACHT AUF ' + DAY_NAMES_LONG[morgen.getDay()].toUpperCase();
+}
+
+/** "09.10. auf 10.10." - dieselbe Schreibweise wie in der Doku der Lichtcrew. */
+function nachtDatum(abend) {
+  const morgen = new Date(abend.getFullYear(), abend.getMonth(), abend.getDate() + 1);
+  const kurz = (d) => pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.';
+  return kurz(abend) + ' auf ' + kurz(morgen);
+}
+
+/**
+ * Uebersicht ueber alle Lichtphasen, nach Naechten gruppiert - fuer die eigene
+ * Anzeigeseite. Vergangenes faellt heraus, damit am Sonntag nicht mehr der
+ * Freitag oben steht.
+ */
 function lichtUebersicht(liste, now) {
-  const tage = [];
+  const naechte = [];
   for (const f of lichtFenster(liste)) {
     if (f.se.end <= now) continue;
-    const schluessel = todayISO(f.se.start);
-    let tag = tage.find(t => t.schluessel === schluessel);
-    if (!tag) {
-      tag = { schluessel, datum: f.se.start, zeiten: [] };
-      tage.push(tag);
+
+    const abend = nachtVon(f.se.start);
+    const schluessel = todayISO(abend);
+    let nacht = naechte.find(n => n.schluessel === schluessel);
+    if (!nacht) {
+      nacht = { schluessel, abend, titel: nachtTitel(abend, now),
+                datum: nachtDatum(abend), zeiten: [] };
+      naechte.push(nacht);
     }
-    tag.zeiten.push({
+    nacht.zeiten.push({
       von: timeLabel(f.se.start),
       bis: timeLabel(f.se.end),
       hinweis: (f.eintrag && f.eintrag.note) || '',
       laeuft: f.se.start <= now && now < f.se.end
     });
   }
-  return tage;
+  return naechte;
 }
 
 // ---------------------------------------------------------------------------

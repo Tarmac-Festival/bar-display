@@ -349,17 +349,22 @@
         <div class="card">
           <h2>Beschriftung</h2>
           <label class="field">
-            <span>Name der Bar</span>
-            <input type="text" id="s_barName" maxlength="40">
-            <em>Leer lassen, wenn nur das Logo zu sehen sein soll.</em>
+            <span>Floor- oder Bar-Name</span>
+            <input type="text" id="s_barName" maxlength="40" placeholder="z.B. L300 oder Hangar-Bar">
+            <em>Steht oben links neben dem Logo. Leer lassen, wenn dort nur das
+                Logo zu sehen sein soll.</em>
           </label>
           <label class="field">
-            <span>Untertitel</span>
-            <input type="text" id="s_subtitle" maxlength="40">
+            <span>Zweite Zeile darunter</span>
+            <input type="text" id="s_subtitle" maxlength="40" placeholder="z.B. by L300">
+            <em>Kleiner Zusatz unter dem Namen &ndash; Betreiber, Ort oder Motto.</em>
           </label>
+          <p class="hint" style="margin:0.2rem 0 0.9rem">Die folgenden Paare sind
+             die &Uuml;berschriften der Info-Seiten: gro&szlig; rechts oben, die
+             Unterzeile klein darunter.</p>
           <div class="twoCol">
             <label class="field">
-              <span>Titel Timetable-Slide</span>
+              <span>Timetable-Seite</span>
               <input type="text" id="s_timetableTitle" maxlength="24">
             </label>
             <label class="field">
@@ -369,7 +374,7 @@
           </div>
           <div class="twoCol">
             <label class="field">
-              <span>Titel Preis-Slide</span>
+              <span>Karten-Seite</span>
               <input type="text" id="s_pricesTitle" maxlength="24">
             </label>
             <label class="field">

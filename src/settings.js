@@ -722,12 +722,7 @@ function wireButtons() {
 
   $('addAct').addEventListener('click', () => {
     state.timetable = state.timetable || [];
-    const last = state.timetable[state.timetable.length - 1];
-    state.timetable.push({
-      id: uid(),
-      date: last ? last.date : todayISO(),
-      start: '', end: '', act: '', info: ''
-    });
+    state.timetable.push(naechsterAct(state.timetable[state.timetable.length - 1]));
     markDirty();
     renderTimetable();
   });
@@ -1978,6 +1973,31 @@ async function essFotoWaehlen(zelle, eintrag, neuZeichnen) {
   delete eintrag.crop;
   markDirty();
   neuZeichnen();
+}
+
+// Ein Timetable wird der Reihe nach eingetippt: ein Act faengt da an, wo der
+// vorige aufhoert. Das von Hand nachzutragen ist Tipparbeit, die sich vermeiden
+// laesst - und ueber Mitternacht hinweg auch fehleranfaellig ist, weil dann das
+// Datum umspringt.
+function naechsterAct(vorheriger) {
+  const neu = { id: uid(), date: todayISO(), start: '', end: '', act: '', info: '' };
+  if (!vorheriger) return neu;
+
+  neu.date = vorheriger.date || neu.date;
+
+  const se = entryStartEnd(vorheriger);
+  if (se && se.end) {
+    // se.end ist ein echter Zeitpunkt - ueber Mitternacht steht dort schon der
+    // Folgetag, das Datum wandert also von allein mit.
+    neu.date = todayISO(se.end);
+    neu.start = zeitAnzeige(zweistelligeZeit(se.end));
+  }
+  return neu;
+}
+
+function zweistelligeZeit(d) {
+  const zwei = (n) => String(n).padStart(2, '0');
+  return zwei(d.getHours()) + ':' + zwei(d.getMinutes());
 }
 
 function moveCat(i, dir) {

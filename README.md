@@ -361,9 +361,16 @@ Tabellenzeile, aus der man sie erst heraussuchen müsste.
 
 ![Laufende Lichtphase](docs/screenshots/anzeige-lichteffekte-jetzt.png)
 
-Optional läuft eine **eigene Seite fürs ganze Wochenende** in der Schleife mit,
-nach Tagen sortiert. Sie ist ab Werk aus; einschalten über *Zeigen nach je…
-Beiträgen* im selben Reiter. Vergangenes fällt von selbst heraus.
+Optional läuft eine **eigene Seite fürs ganze Wochenende** in der Schleife mit.
+Sie ist ab Werk aus; einschalten über *Zeigen nach je… Beiträgen* im selben
+Reiter. Vergangenes fällt von selbst heraus.
+
+Sortiert wird **nach Nächten, nicht nach Kalendertagen** — genau wie in den
+Ablaufplänen der Lichtcrew. Alles vor 6 Uhr zählt noch zum Vorabend: eine Phase
+um 03:00 steht unter der Freitagnacht, nicht unter Samstag. Sonst würde eine
+Nacht auf zwei Spalten zerrissen. Die laufende Nacht heißt **HEUTE NACHT**, die
+folgenden **NACHT AUF SAMSTAG** und so weiter, mit dem Datumspaar klein
+darunter.
 
 ![Übersicht der Lichteffekte](docs/screenshots/anzeige-lichteffekte.png)
 
@@ -541,6 +548,8 @@ Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
   ihn ganz ab. **Bilder zählen als Beitrag mit.** Gibt es weniger Beiträge als
   die eingestellte Zahl, kommt der Timetable am Ende jeder Runde — siehe
   [Wie oft die Info-Slides kommen](#wie-oft-die-info-slides-kommen).
+- **+ Act hinzufügen** setzt die Startzeit automatisch auf das Ende des vorigen
+  Acts — über Mitternacht hinweg springt dabei auch das Datum mit.
 - **Foto**: Klick auf *+ Foto* wählt ein Bild, Klick auf die Miniatur tauscht es,
   das rote × entfernt es.
 - **Ausschnitt**: der kleine Knopf unten rechts auf der Miniatur öffnet die
@@ -651,8 +660,9 @@ sonst passt.
 
   Die Höhe ist in Prozent der Bildschirmhöhe angegeben. Sehr breite Logos werden
   zusätzlich in der Breite gedeckelt, damit sie die Kopfzeile nicht sprengen.
-- **Beschriftung**: Bar-Name, Untertitel und die Titel beider Info-Slides. Lässt man den
-  Bar-Namen leer, steht dort nur das Logo.
+- **Beschriftung**: der **Floor- oder Bar-Name** oben links, eine zweite Zeile
+  darunter (Betreiber, Ort oder Motto) und die Überschriften der Info-Seiten.
+  Lässt man den Namen leer, steht dort nur das Logo.
 - **Übergänge**: die Liste zum Anhaken, die Reihenfolge und die beiden Dauern —
   siehe [Übergänge](#übergänge).
 - **Farben, Form & Schrift**: Fläche hinter dem Seitentitel (Blob, Balken oder

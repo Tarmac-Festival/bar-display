@@ -265,6 +265,37 @@ test.describe('Eigene Seite fuers Wochenende', () => {
     await expect.poll(() => lauf.includes('licht'), { timeout: 25000 }).toBe(true);
   });
 
+  test('ordnet nach Naechten, nicht nach Kalendertagen', async ({ page, bar }) => {
+    // 01:00 gehoert zur Freitagnacht, nicht zum Samstag. Vorher wurde eine
+    // Nacht auf zwei Spalten zerrissen.
+    bar.konfig(programm({
+      settings: { lichtEvery: 1, lichtDuration: 60, timetableEvery: 0, pricesEvery: 0 },
+      timetable: [], prices: [],
+      lichteffekte: [
+        { id: 'a', date: '2026-08-28', start: '22:00', end: '23:00' },
+        { id: 'b', date: '2026-08-29', start: '01:00', end: '02:00' },
+        { id: 'c', date: '2026-08-29', start: '23:00', end: '00:00' }
+      ]
+    }));
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const seite = page.locator('.slide[data-kind=licht]');
+    await expect(seite).toBeVisible();
+    await expect(seite.locator('.lichtTag')).toHaveCount(2);
+
+    const erste = seite.locator('.lichtTag').first();
+    await expect(erste.locator('.lichtDatum')).toContainText('HEUTE NACHT');
+    await expect(erste.locator('.lichtSpanneDatum')).toHaveText('28.08. auf 29.08.');
+    await expect(erste.locator('.lichtSpanne')).toHaveCount(2);
+    await expect(erste).toContainText('22:00–23:00');
+    await expect(erste).toContainText('01:00–02:00');
+
+    const zweite = seite.locator('.lichtTag').nth(1);
+    await expect(zweite.locator('.lichtDatum')).toContainText('NACHT AUF SONNTAG');
+    await expect(zweite.locator('.lichtSpanne')).toHaveCount(1);
+  });
+
   test('zeigt die Zeiten nach Tagen, Vergangenes faellt weg', async ({ page, bar }) => {
     bar.konfig(programm({
       settings: { lichtEvery: 1, lichtDuration: 30, timetableEvery: 0, pricesEvery: 0 },

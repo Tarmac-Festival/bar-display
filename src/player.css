@@ -1110,6 +1110,16 @@ body.spar .lichtBalken { background: none; }
   color: var(--accent);
   margin-bottom: 0.4em;
 }
+/* Das Datum der Nacht steht klein darunter - "09.10. auf 10.10." wie in der
+   Doku, damit niemand raten muss, welche Nacht gemeint ist. */
+.lichtSpanneDatum {
+  display: block;
+  font-size: 0.62em;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 0.15em;
+}
 .lichtSpanne {
   display: flex;
   align-items: baseline;

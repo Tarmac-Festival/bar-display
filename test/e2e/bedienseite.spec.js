@@ -393,3 +393,56 @@ test.describe('Aufgeraeumtes Bedienmenue', () => {
     }
   });
 });
+
+test.describe('Timetable eintippen', () => {
+  test('ein neuer Act faengt da an, wo der vorige aufhoert', async ({ page, bar }) => {
+    bar.konfig(beispiel({
+      timetable: [{ id: 'a', date: '2026-09-10', start: '18:00', end: '21:00', act: 'Karaoke' }]
+    }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+
+    await page.getByRole('button', { name: '+ Act hinzufügen' }).click();
+    const neu = page.locator('#ttBody tr').last();
+    await expect(neu.locator('[data-f=date]')).toHaveValue('2026-09-10');
+    await expect(neu.locator('[data-f=start]')).toHaveValue('21:00');
+  });
+
+  test('ueber Mitternacht wandert das Datum mit', async ({ page, bar }) => {
+    bar.konfig(beispiel({
+      timetable: [{ id: 'a', date: '2026-09-10', start: '23:00', end: '00:00', act: 'Knolle' }]
+    }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+
+    await page.getByRole('button', { name: '+ Act hinzufügen' }).click();
+    const neu = page.locator('#ttBody tr').last();
+    // 00:00 nach einem Act, der um 23:00 anfing, ist schon der Folgetag
+    await expect(neu.locator('[data-f=date]')).toHaveValue('2026-09-11');
+    await expect(neu.locator('[data-f=start]')).toHaveValue('00:00');
+  });
+
+  test('ohne Endzeit beim vorigen bleibt die Startzeit leer', async ({ page, bar }) => {
+    bar.konfig(beispiel({
+      timetable: [{ id: 'a', date: '2026-09-10', start: '18:00', act: 'Offen' }]
+    }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+
+    await page.getByRole('button', { name: '+ Act hinzufügen' }).click();
+    const neu = page.locator('#ttBody tr').last();
+    await expect(neu.locator('[data-f=date]')).toHaveValue('2026-09-10');
+    await expect(neu.locator('[data-f=start]')).toHaveValue('');
+  });
+
+  test('der allererste Act bekommt das heutige Datum', async ({ page, bar }) => {
+    bar.konfig(beispiel({ timetable: [] }));
+    await page.goto(bar.adresse + '/einstellungen');
+    await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+
+    await page.getByRole('button', { name: '+ Act hinzufügen' }).click();
+    const neu = page.locator('#ttBody tr').last();
+    await expect(neu.locator('[data-f=date]')).not.toHaveValue('');
+    await expect(neu.locator('[data-f=start]')).toHaveValue('');
+  });
+});

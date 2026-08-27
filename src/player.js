@@ -968,8 +968,11 @@ function renderLicht() {
   } else {
     body += '<div class="lichtTage">';
     for (const t of tage) {
+      // Nach Naechten, nicht nach Kalendertagen: 03:00 gehoert zum Vorabend.
+      // So steht es auch in der Doku der Lichtcrew.
       body += '<div class="lichtTag"><div class="lichtDatum">' +
-        escapeHtml(dayLabel(t.datum, new Date())) + '</div>';
+        escapeHtml(t.titel) + '<span class="lichtSpanneDatum">' +
+        escapeHtml(t.datum) + '</span></div>';
       for (const z of t.zeiten) {
         body += '<div class="lichtSpanne' + (z.laeuft ? ' laeuft' : '') + '">' +
           '<span class="lz">' + z.von + '&ndash;' + z.bis + '</span>' +
