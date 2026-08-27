@@ -249,13 +249,20 @@ eigener Standzeit.
 
 ### Durchsage
 
-Ein Balken am unteren Bildrand, über alles gelegt — auch über ein laufendes Video.
-Es gibt ihn auf zwei Wegen:
+Ein Balken am unteren Bildrand. Es gibt ihn auf zwei Wegen:
 
 **Von Hand**, wenn gerade etwas ansteht. Text eintippen, *Jetzt anzeigen* — der
 Balken steht binnen einer Sekunde auf jedem Bildschirm, der an derselben
 Konfiguration hängt, und blendet sich auf Wunsch nach 5 bis 60 Minuten von allein
 wieder aus.
+
+**Die Anzeige macht dem Balken Platz.** Er liegt nicht darüber, sondern der Rest
+rückt zusammen: ein Video bekommt **Ränder an der Seite**, statt unten
+angeschnitten zu werden, und Timetable und Karte rechnen sich in die kleinere
+Fläche — die Schrift wird also etwas kleiner, aber nichts verschwindet. Ist die
+Durchsage vorbei, ist wieder alles wie vorher.
+
+![Durchsage über einem Clip](docs/screenshots/anzeige-durchsage-platz.png)
 
 **Nach Plan**, für alles, was sich jeden Abend wiederholt. Wochentage und
 Zeitfenster wie bei den Videos, auch über Mitternacht hinweg. Der Balken erscheint
@@ -1317,6 +1324,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Nach einem System-Update startet nichts mehr | Autostart unter *System* neu setzen |
 | Bildschirm schwarz, Maus zeigt einen Hinweis | Ruhezeit ist aktiv – *Anzeige → Ruhezeit* |
 | Durchsage hängt fest | *Durchsage → Ausblenden*, oder eine Ausblendzeit setzen |
+| Video wirkt kleiner als sonst | Es läuft eine Durchsage – die Anzeige macht ihr Platz, statt das Bild anzuschneiden |
 | Geplante Durchsage erscheint nie | Status neben *aktiv* lesen: fehlt Text oder Wochentag? |
 | Countdown zählt nicht | `{zeit}` im Text und Haken bei *Countdown mitlaufen lassen* |
 | Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |

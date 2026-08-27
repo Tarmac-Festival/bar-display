@@ -83,7 +83,20 @@ body[data-rotation="180"] #dreh { transform: rotate(180deg); }
 body[data-rotation="90"],
 body[data-rotation="270"] { --u: min(1vh, 1.85vw); }
 
-#stage { position: fixed; inset: 0; background: #000; }
+/* Die Buehne endet ueber der Durchsage, nicht darunter.
+   Laeuft eine, setzt player.js hier ihre Hoehe ein: das Video bekommt dann
+   Raender an der Seite, statt unten angeschnitten zu werden, und Timetable und
+   Karte rechnen sich in die kleinere Flaeche (fitToBox). Eine Durchsage, die
+   den halben Act zudeckt, ist keine Verbesserung gegenueber keiner. */
+#stage {
+  position: fixed;
+  inset: 0;
+  bottom: var(--dsHoehe, 0px);
+  background: #000;
+  /* Bewusst ohne Ueberblendung: die Hoehe muss sofort stimmen. fitToBox() misst
+     unmittelbar danach, und waehrend einer laufenden Ueberblendung misst es die
+     alte Hoehe - der Inhalt bliebe dann zu gross und ragte unter den Balken. */
+}
 
 .layer {
   position: absolute;

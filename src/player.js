@@ -76,6 +76,14 @@ async function boot() {
       skalaVergessen();
       letzterSlideStand = '';
       sonderzustaende();
+      // Die gemerkte Groesse zu vergessen reicht nicht: die Seite, die gerade
+      // steht, wird davon nicht neu gemessen. Sie behielt die Groesse, die mit
+      // der Ersatzschrift ausgerechnet worden war - bis zum naechsten
+      // Auffrischen, also bis zu zwanzig Sekunden lang.
+      //
+      // Nur einpassen, nicht neu aufbauen: der Text bleibt derselbe, es aendern
+      // sich allein die Masse der Schrift.
+      if (currentLayer && currentLayer.tagName !== 'VIDEO') fitToBox(currentLayer);
     }).catch(() => { /* dann eben mit der Ersatzschrift */ });
   }
 
@@ -223,12 +231,36 @@ function sonderzustaende() {
 let durchsageStand = '';
 let durchsageEnde = null;
 
+/**
+ * Der Buehne so viel Platz geben, wie die Durchsage uebrig laesst.
+ *
+ * Ohne das lag der Balken einfach ueber dem Bild: beim Video war der untere
+ * Rand weg, beim Timetable die letzten Zeilen. Jetzt endet die Buehne darueber.
+ * Das Video bekommt dadurch Raender an der Seite (es ist auf "contain"
+ * gestellt), die Seiten rechnen sich in die kleinere Flaeche.
+ */
+let dsHoeheZuletzt = -1;
+
+function platzAnpassen() {
+  const el = document.getElementById('durchsage');
+  const hoch = el.classList.contains('an') ? Math.round(el.offsetHeight) : 0;
+  if (hoch === dsHoeheZuletzt) return;
+  dsHoeheZuletzt = hoch;
+
+  document.documentElement.style.setProperty('--dsHoehe', hoch + 'px');
+
+  // Die gemerkte Schriftgroesse galt fuer die alte Hoehe.
+  skalaVergessen();
+  if (currentLayer && currentLayer.tagName !== 'VIDEO') fitToBox(currentLayer);
+}
+
 function durchsagePruefen() {
   const el = document.getElementById('durchsage');
   const d = aktiveDurchsage(cfg, zeitJetzt());
 
   if (!d) {
     if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
+    platzAnpassen();
     return;
   }
 
@@ -236,6 +268,7 @@ function durchsagePruefen() {
   // zugleich das Ende der Anzeige.
   if (d.ende && zeitJetztMs() >= d.ende.getTime()) {
     if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
+    platzAnpassen();
     return;
   }
 
@@ -250,6 +283,9 @@ function durchsagePruefen() {
     durchsageEnde = d.ende;
     durchsageAufbauen(el, d);
   }
+  // Nach dem Aufbauen messen: ein zweizeiliger Text braucht mehr Platz als ein
+  // einzeiliger, und die Hoehe haengt ausserdem an der Schriftgroesse.
+  platzAnpassen();
   durchsageTicken();
 }
 
