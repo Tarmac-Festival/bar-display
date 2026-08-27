@@ -456,6 +456,12 @@ tr.ohneEnde td:last-child::before {
    Ausschnitt als der Bildschirm spaeter. */
 .photoWrap { position: relative; width: 54px; height: 54px; }
 .photoBox {
+  /* Ein <span> ist von Haus aus inline - Breite und Hoehe greifen dann nicht,
+     und die Zeilenschachtel wird hoeher als das Bild. Das Bild rutschte
+     dadurch nach unten weg, waehrend Loeschkreuz und Ausschnittknopf an der
+     alten Stelle blieben: sie standen neben dem Foto statt darauf und waren
+     kaum zu treffen. */
+  display: block;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -636,6 +642,45 @@ textarea { resize: vertical; min-height: 66px; line-height: 1.45; font-family: i
   input[type=text], input[type=number], input[type=time], input[type=date],
   input[type=datetime-local], select, textarea { padding: 0.65rem 0.7rem; font-size: 16px; }
   button { padding: 0.6rem 0.9rem; }
+
+  /* Preiszeilen stapeln statt quetschen.
+
+     Nebeneinander bleiben von den Handybreiten fuer den Namen keine vierzig
+     Pixel uebrig - und der Name ist das Wichtigste an der Zeile. Also zwei
+     Zeilen: oben Name und Loeschknopf, darunter Groesse und Preis, das Foto
+     links daneben ueber beide. */
+  .itemRow {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr auto;
+    grid-template-areas:
+      "foto name  name  loeschen"
+      "foto masse preis ."
+      "text text  text  text";
+    column-gap: 0.5rem;
+    row-gap: 0.4rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  /* Ohne min-width setzen Eingabefelder ihre Standardbreite durch und
+     sprengen die Zeile - das Raster gibt dann nach, nicht das Feld. */
+  .itemRow > * { min-width: 0; }
+  .itemRow > .fotoZelle { grid-area: foto; align-self: start; }
+  .itemRow .iName { grid-area: name; }
+  .itemRow .iSize { grid-area: masse; width: 100%; }
+  .itemRow .iPrice { grid-area: preis; width: 100%; }
+  .itemRow [data-act=delitem] { grid-area: loeschen; justify-self: end; }
+  .itemRow.mitFoto .iText { grid-area: text; margin-left: 0; }
+
+  /* Fingerfreundlich: zwanzig Pixel trifft man am Handy nicht zuverlaessig.
+     Deshalb ist die Miniatur groesser und die beiden Knoepfe darauf auch. */
+  .fotoZelle { width: 4.4rem; }
+  .photoWrap.klein,
+  .photoWrap.klein .photoBox { width: 4.4rem; height: 4.4rem; }
+  .photoDel {
+    width: 28px; height: 28px; line-height: 28px;
+    font-size: 16px; top: -9px; right: -9px;
+  }
+  .photoCrop { width: 26px; height: 26px; line-height: 26px; font-size: 14px; }
 
   /* Videokarten stapeln statt quetschen */
   .vTop { flex-wrap: wrap; }
