@@ -954,6 +954,10 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 }
 .lichtZeichen.gross { border-radius: 0.3em; padding: 0.16em 0.24em; }
 .lichtZeichen.gross img { height: 2.1em; }
+/* Im Spaltenreiter steht es fuer die ganze Spalte - dafuer darf es deutlich
+   groesser sein als eine Zeilenbeschriftung. */
+.lichtZeichen.kopf { border-radius: 0.28em; padding: 0.14em 0.2em; }
+.lichtZeichen.kopf img { height: 1.75em; }
 
 /* Eigene Spalte statt eigener Zeile.
 
@@ -983,7 +987,7 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 
    Die Beschriftung muss in die Spaltenbreite passen - mit der Sperrung des
    uebrigen Kleinkrams lief sie ueber den Bildrand hinaus. */
-.ttKopf { margin-bottom: 0.25em; }
+.ttKopf { margin-bottom: 0.1em; }
 .klLicht {
   grid-column: 4;
   justify-self: start;
@@ -999,7 +1003,7 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   /* Angedeuteter Reiter: oben rund, unten offen zur Spalte hin */
   background: color-mix(in srgb, var(--accent2) 18%, transparent);
   border-radius: 0.4em 0.4em 0 0;
-  padding: 0.22em 0.55em 0.18em;
+  padding: 0.18em 0.5em 0.14em;
 }
 body.spar .klLicht { background: none; }
 
@@ -1011,20 +1015,16 @@ body.spar .klLicht { background: none; }
   grid-row: 1 / -1;
   align-self: stretch;
   min-height: 2.6em;
+  /* Ueber das Polster der Zeile hinweg: sonst blieben von einer Zeile nur zwei
+     Drittel Spur uebrig, und die Lage einer Phase darin wurde zur Behauptung. */
+  margin-top: -0.5em;
+  margin-bottom: -0.5em;
 }
 
-/* Eine dezente Achse, damit die Spalte als Spalte lesbar ist und der Balken
-   erkennbar ein Ausschnitt davon. */
-.lichtSpur::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.15em;
-  bottom: 0.15em;
-  width: 0.32em;
-  border-radius: 0.16em;
-  background: color-mix(in srgb, #fff 12%, transparent);
-}
+/* Keine Bahn im Hintergrund mehr. Als duenner Strich stand sie als dritte
+   Kante neben dem Block, ueber die volle Breite sah jede lichtfreie Zeile aus
+   wie eine Phase. Wofuer die Spalte da ist, sagt der Reiter darueber - Farbe
+   bekommt nur, wo wirklich Licht ist. */
 
 .lichtBalken {
   position: absolute;
@@ -1033,43 +1033,58 @@ body.spar .klLicht { background: none; }
   /* Ein duenner Strich waere rechnerisch richtig und trotzdem aus drei Metern
      nicht zu sehen. Also eine Flaeche ueber die ganze Spaltenbreite: die Lage
      bleibt dieselbe, sie faellt nur auf. */
-  background: color-mix(in srgb, var(--accent2) 24%, transparent);
-  border-left: 0.3em solid var(--accent2);
-  /* Eine kurze Phase in einem langen Set ergibt sonst einen Streifen von
-     wenigen Pixeln. */
-  min-height: 1.1em;
+  background: color-mix(in srgb, var(--accent2) 34%, transparent);
+  /* Kein min-height: eine Mindesthoehe schob den Block aus seiner Zeile heraus,
+     neben den falschen Act. Die Hoehe kommt jetzt aus der Zeile selbst. */
   /* Laeuft die Phase ueber mehrere Acts, laeuft die Flaeche durch - rund wird
      sie nur da, wo die Phase wirklich anfaengt und aufhoert. */
   border-radius: 0;
 }
-.lichtBalken.beginnt { border-top-left-radius: 0.3em; border-top-right-radius: 0.3em; }
+/* Nur der Anfang bekommt eine kraeftige Kante. Sie sagt: hier geht es los -
+   und steht nicht mehr an jedem Durchlaufstueck. */
+.lichtBalken.beginnt {
+  border-top-left-radius: 0.3em;
+  border-top-right-radius: 0.3em;
+  box-shadow: inset 0 0.22em 0 0 var(--accent2);
+}
 .lichtBalken.endet { border-bottom-left-radius: 0.3em; border-bottom-right-radius: 0.3em; }
+/* Teilen sich zwei Phasen eine Zeile, trennt sie ein schmaler Spalt - sonst
+   sieht man einen Block mit einer Kante mittendrin. */
+.lichtBalken.geteilt { margin-bottom: 0.14em; }
 
 .lichtMarke {
   position: absolute;
-  left: 0.6em;
-  right: 0.2em;
+  left: 0.7em;
+  right: 0.5em;
   display: flex;
   align-items: center;
   gap: 0.35em;
-  /* Auf die Hoehe des Balkenanfangs setzen, nicht darunter haengen */
-  transform: translateY(0.25em);
+  /* Auf die Mitte des Blocks gesetzt (siehe lichtSpurHtml) und von dort aus
+     zentriert - so sitzt die Beschriftung im Block statt auf seiner Kante. */
+  transform: translateY(-50%);
   line-height: 1.15;
-  flex-wrap: wrap;
 }
 .lichtMarke .lmZeit {
-  font-size: 1.3em;
+  font-size: 1.35em;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #fff;
   white-space: nowrap;
 }
 .lichtMarke .lmNote {
+  /* Aus dem Fluss genommen: sonst zaehlt der Zusatz zur Hoehe der Marke, und
+     das Zentrieren schiebt die Uhrzeit ueber die Oberkante ihres Blocks. So
+     sitzt die Zeit mittig im Block und der Zusatz haengt buendig darunter. */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   font-size: 1.05em;
-  color: var(--muted);
-  flex-basis: 100%;
-  margin-left: 2em;
-  margin-top: 0.1em;
+  line-height: 1.2;
+  color: color-mix(in srgb, #fff 78%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Nichts danebenstehendes: Phasen, die in eine Pause fallen */
@@ -1083,8 +1098,7 @@ body.spar .klLicht { background: none; }
 }
 
 /* Im Sparmodus faellt color-mix weg - das kostet auf dem Pi spuerbar. */
-body.spar .lichtSpur::before { background: rgba(255, 255, 255, 0.12); }
-body.spar .lichtBalken { background: none; }
+body.spar .lichtBalken { background: rgba(255, 255, 255, 0.16); }
 
 /* Laeuft gerade eine Lichtphase, steht sie ueber der Liste - wer den Raum
    deswegen verlassen will, soll das nicht aus einer Tabellenzeile heraussuchen

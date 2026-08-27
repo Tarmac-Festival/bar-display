@@ -92,33 +92,65 @@ test.describe('Kennzeichnung im Timetable', () => {
     await expect(page.locator('.klLicht')).toHaveCount(0);
   });
 
-  test('der Balken sitzt versetzt - dort, wo die Phase wirklich anfaengt',
-    async ({ page, bar }) => {
-      bar.konfig(programm());
-      await zeitStellen(page, FREITAG_20_UHR);
-      await page.goto(bar.adresse + '/');
+  test('der Block fuellt die Zeile seines Acts aus', async ({ page, bar }) => {
+    bar.konfig(programm());
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
 
-      // Nachtflug 23:00-01:30, Licht 23:30-01:00: der Balken muss auf einem
-      // Fuenftel der Zeilenhoehe anfangen und bei vier Fuenfteln aufhoeren.
-      // Genau das war der Punkt an der eigenen Spalte - eine eigene Zeile
-      // konnte nicht zeigen, dass das Licht mitten im Set beginnt.
-      const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
-        const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
-        const balken = zeile.querySelector('.lichtBalken').getBoundingClientRect();
-        return {
-          von: (balken.top - spur.top) / spur.height,
-          bis: (balken.bottom - spur.top) / spur.height,
-          breite: balken.width
-        };
-      });
-
-      expect(lage.von).toBeGreaterThan(0.12);
-      expect(lage.von).toBeLessThan(0.28);
-      expect(lage.bis).toBeGreaterThan(0.72);
-      expect(lage.bis).toBeLessThan(0.88);
-      // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
-      expect(lage.breite).toBeGreaterThan(30);
+    // Der Block sass frueher zeitanteilig in der Zeile. Zu sehen war das nie:
+    // eine Zeile ist keine drei Zeilenhoehen hoch, und eine Mindesthoehe im
+    // CSS zog jeden Block auf dasselbe Mass - dafuer aber aus seiner Zeile
+    // heraus, neben den falschen Act. Jetzt fuellt er seine Zeile, und wann
+    // genau es blitzt, steht als Uhrzeit darin.
+    const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+      const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
+      const balken = zeile.querySelector('.lichtBalken').getBoundingClientRect();
+      return {
+        von: (balken.top - spur.top) / spur.height,
+        bis: (balken.bottom - spur.top) / spur.height,
+        breite: balken.width
+      };
     });
+
+    expect(lage.von).toBeLessThan(0.02);
+    expect(lage.bis).toBeGreaterThan(0.98);
+    // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
+    expect(lage.breite).toBeGreaterThan(30);
+  });
+
+  test('kein Block ragt in die Nachbarzeile', async ({ page, bar }) => {
+    // Der eigentliche Fehler: eine Mindesthoehe im CSS schob den Block ueber
+    // die Unterkante seiner Zeile hinaus - er stand dann neben dem naechsten
+    // Act. Gemessen wurden bis zu vierzehn Pixel daneben.
+    bar.konfig(programm({
+      lichteffekte: [
+        { id: 'l1', date: '2026-08-28', start: '23:30', end: '01:00', note: '' },
+        { id: 'l2', date: '2026-08-29', start: '01:15', end: '01:40', note: 'kurz' },
+        { id: 'l3', date: '2026-08-29', start: '02:50', end: '03:05', note: 'sehr kurz' }
+      ]
+    }));
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+    await page.waitForSelector('.ttRow.hatLicht');
+
+    const ausreisser = await page.evaluate(() => {
+      const raus = [];
+      document.querySelectorAll('.ttRow').forEach((zeile) => {
+        const spur = zeile.querySelector('.lichtSpur');
+        if (!spur) return;
+        const s = spur.getBoundingClientRect();
+        zeile.querySelectorAll('.lichtBalken').forEach((b) => {
+          const r = b.getBoundingClientRect();
+          if (r.top < s.top - 1 || r.bottom > s.bottom + 1) {
+            raus.push({ oben: Math.round(r.top - s.top),
+                        unten: Math.round(r.bottom - s.bottom) });
+          }
+        });
+      });
+      return raus;
+    });
+    expect(ausreisser).toEqual([]);
+  });
 
   test('ueber zwei Acts laeuft der Balken durch', async ({ page, bar }) => {
     bar.konfig(programm({
@@ -224,20 +256,32 @@ test.describe('Das Zeichen', () => {
     await zeitStellen(page, FREITAG_20_UHR);
     await page.goto(bar.adresse + '/');
 
-    const bild = page.locator('.lichtSpur .lichtZeichen img');
+    const bild = page.locator('.klLicht .lichtZeichen img');
     await expect(bild).toHaveAttribute('src', 'branding/lichteffekte.png');
     await bildGeladen(bild);
 
     // Die gelieferte Grafik ist schwarz auf transparent. Ohne helle Flaeche
     // waere sie auf dem dunklen Hintergrund praktisch unsichtbar.
-    const grund = await page.locator('.lichtSpur .lichtZeichen')
+    const grund = await page.locator('.klLicht .lichtZeichen')
       .evaluate(el => getComputedStyle(el).backgroundColor);
     expect(grund).toBe('rgb(255, 255, 255)');
 
     // Und sie muss eine brauchbare Groesse haben, nicht ein paar Pixel
     const hoehe = await bild.evaluate(el => el.getBoundingClientRect().height);
-    expect(hoehe).toBeGreaterThan(10);
+    expect(hoehe).toBeGreaterThan(20);
   });
+
+  test('steht einmal ueber der Spalte, nicht in jeder Zeile',
+    async ({ page, bar }) => {
+      // In jeder Zeile wiederholt war es Zierrat, der die Uhrzeiten zudeckte.
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+      await page.waitForSelector('.ttRow.hatLicht');
+
+      await expect(page.locator('.klLicht .lichtZeichen')).toHaveCount(1);
+      await expect(page.locator('.lichtSpur .lichtZeichen')).toHaveCount(0);
+    });
 });
 
 test.describe('Eigene Seite fuers Wochenende', () => {

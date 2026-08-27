@@ -913,7 +913,7 @@ function renderTimetable() {
     // Kopf ueber der Lichtspalte, damit klar ist, wofuer die Spalte steht -
     // ohne ihn waere der Balken nur ein Streifen neben dem Act.
     if (mitLicht) {
-      body += '<div class="ttKopf"><span class="klLicht">' + lichtZeichen() +
+      body += '<div class="ttKopf"><span class="klLicht">' + lichtZeichen('kopf') +
         '<span>Lichteffekte</span></span></div>';
     }
 
@@ -964,33 +964,50 @@ function renderTimetable() {
 
 // Die Lichtspalte einer Zeile.
 //
-// Der Balken sitzt genau dort, wo die Phase innerhalb der Zeile liegt - faengt
-// das Licht mitten im Set an, faengt auch der Balken mittendrin an. Genau das
-// war mit einer eigenen Zeile nicht zu sehen.
+// Ein Block je Phase, neben dem Act, zu dem sie gehoert. Der Block fuellt die
+// Zeile aus; wann genau es blitzt, steht als Uhrzeit darin.
+//
+// Er sass frueher zeitanteilig in der Zeile - fing das Licht mitten im Set an,
+// fing auch der Block mittendrin an. Das war nur nie zu sehen: eine Zeile ist
+// keine drei Zeilenhoehen hoch, ein Drittel davon sind zwanzig Pixel, und eine
+// Mindesthoehe im CSS zog ohnehin jeden Block auf dasselbe Mass - dafuer aber
+// aus seiner Zeile heraus, neben den falschen Act. Ein Block, in dem die
+// Uhrzeit lesbar steht, sagt mehr als ein Streifen an der richtigen Stelle.
 //
 // Beschriftet wird nur die Zeile, in der die Phase beginnt; laeuft sie ueber
-// mehrere Acts, laeuft der Balken einfach durch.
+// mehrere Acts, bleibt der Block dort unbeschriftet und ohne runde Kante - so
+// ist zu sehen, dass sie weiterlaeuft.
 function lichtSpurHtml(spuren) {
   if (!spuren.length) return '<div class="lichtSpur"></div>';
 
+  // Mehrere Phasen in einer Zeile teilen sie sich - sonst laegen sie
+  // uebereinander und man saehe nur die letzte. Wer hier anfaengt, bekommt
+  // mehr Platz: das ist die Nachricht, und nur dort steht eine Uhrzeit. Eine
+  // Phase, die bloss weiterlaeuft, ist Zusammenhang und darf schmaler sein.
+  const gewicht = (s) => (s.beginntHier ? 1 : 0.55);
+  const summe = spuren.reduce((n, s) => n + gewicht(s), 0);
+
   let inhalt = '';
-  for (const s of spuren) {
-    const oben = (s.von * 100).toFixed(2);
-    const hoch = Math.max(0, (s.bis - s.von) * 100).toFixed(2);
+  let oben = 0;
+  spuren.forEach((s) => {
+    const hoch = (gewicht(s) / summe) * 100;
     inhalt += '<span class="lichtBalken' +
       (s.beginntHier ? ' beginnt' : '') + (s.endetHier ? ' endet' : '') +
-      '" style="top:' + oben + '%;height:' + hoch + '%"></span>';
+      (spuren.length > 1 ? ' geteilt' : '') +
+      '" style="top:' + oben.toFixed(2) + '%;height:' + hoch.toFixed(2) + '%"></span>';
 
     if (s.beginntHier) {
-      inhalt += '<span class="lichtMarke" style="top:' + oben + '%">' +
-        lichtZeichen() +
+      // Kein Zeichen an der einzelnen Phase: es steht einmal ueber der Spalte.
+      // In jeder Zeile wiederholt war es Zierrat, der die Zeiten zudeckte.
+      inhalt += '<span class="lichtMarke" style="top:' + (oben + hoch / 2).toFixed(2) + '%">' +
         '<span class="lmZeit">' + timeLabel(s.fenster.se.start) + '&ndash;' +
         timeLabel(s.fenster.se.end) + '</span>' +
         (s.fenster.eintrag.note
           ? '<span class="lmNote">' + escapeHtml(s.fenster.eintrag.note) + '</span>' : '') +
         '</span>';
     }
-  }
+    oben += hoch;
+  });
   return '<div class="lichtSpur">' + inhalt + '</div>';
 }
 
@@ -999,7 +1016,8 @@ function lichtSpurHtml(spuren) {
 // Auf dem dunklen Hintergrund der Anzeige waere davon kaum etwas zu sehen, und
 // eine Warnung, die niemand liest, ist keine.
 function lichtZeichen(groesse) {
-  return '<span class="lichtZeichen' + (groesse === 'gross' ? ' gross' : '') + '">' +
+  const klasse = (groesse === 'gross' || groesse === 'kopf') ? ' ' + groesse : '';
+  return '<span class="lichtZeichen' + klasse + '">' +
          '<img src="' + LICHT_SYMBOL + '" alt="Starke Lichteffekte"></span>';
 }
 

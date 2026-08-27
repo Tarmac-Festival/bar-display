@@ -373,14 +373,22 @@ muss die echte Zeitspanne sehen und nicht die des DJs, der zufällig gerade
 spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 
 Auf dem Timetable bekommt das eine **eigene Spalte am rechten Rand**, mit dem
-Warnzeichen als Reiter darüber. Der Balken darin sitzt genau dort, wo die Phase
-innerhalb des Sets liegt: fängt das Licht mitten im Set an, fängt auch der
-Balken mittendrin an. Beschriftet wird er mit seiner eigenen Zeitspanne.
+Warnzeichen als Reiter darüber — einmal über der Spalte, nicht an jedem Block.
+Neben jedem betroffenen Act steht ein Block mit **seiner eigenen Zeitspanne**,
+nicht der des Acts. Eine kräftige Kante markiert, wo eine Phase anfängt.
+
+Der Block sitzt bewusst nicht zeitanteilig in der Zeile. Das war einmal so
+gedacht, ließ sich aber nicht einlösen: eine Zeile ist keine drei Zeilenhöhen
+hoch, ein Drittel davon sind zwanzig Pixel — und in zwanzig Pixel passt keine
+lesbare Uhrzeit. Ein Block, in dem **23:30–01:00** steht, sagt mehr als ein
+Streifen an der rechnerisch richtigen Stelle.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 
-Läuft eine Phase über zwei Acts hinweg, läuft der Balken durch — rund
-abgeschlossen wird er nur da, wo sie wirklich anfängt und aufhört. Und eine
+Läuft eine Phase über zwei Acts hinweg, steht sie neben beiden — beschriftet
+nur dort, wo sie anfängt, und rund abgeschlossen nur da, wo sie wirklich
+anfängt und aufhört. Fallen zwei Phasen in denselben Act, teilen sie sich die
+Zeile; die beginnende bekommt mehr Platz, denn sie ist die Nachricht. Und eine
 Phase, zu der gar kein Act danebensteht (in einer Pause etwa), erscheint als
 Zeile **Außerdem starke Lichteffekte** unter der Liste; sie fällt nicht unter
 den Tisch, nur weil die Spalte sie nicht aufnehmen kann.
