@@ -639,8 +639,62 @@ function sauber() {
   $('fremd').classList.add('hidden');
 }
 
+// ---------------------------------------------------------------------------
+// Den Fokus ueber ein Neuaufbauen der Listen retten
+// ---------------------------------------------------------------------------
+// Wer gerade in einem Feld steht, soll danach wieder dort stehen - sonst reisst
+// Strg+S mitten im Eintippen von zwanzig Acts jedes Mal den Faden ab.
+function fokusMerken() {
+  const el = document.activeElement;
+  if (!el || el === document.body || !el.closest) return null;
+
+  // Vor Datums- und Zeitfeldern steht ein Textfeld (siehe eingabefelder.js).
+  // Gemerkt wird das eingebaute Feld daneben - nur das traegt eine Kennung.
+  const paar = el.closest('.feldPaar');
+  const ziel = (paar && paar.querySelector('input[data-f], input[id]')) || el;
+  const zeile = ziel.closest('[data-eid]');
+  return {
+    eid: (zeile && zeile.dataset.eid) || '',
+    feld: (ziel.dataset && ziel.dataset.f) || '',
+    id: ziel.id || '',
+    imText: !!paar
+  };
+}
+
+function fokusZurueck(merker) {
+  if (!merker) return;
+
+  // Datums- und Zeitfelder werden sonst erst kurz nach dem Neuaufbau aufgewertet
+  // (MutationObserver in eingabefelder.js). Dabei wandert das eingebaute Feld in
+  // seine Huelle - und ein eben gesetzter Fokus ginge dabei wieder verloren.
+  if (window.barDisplayFelder) window.barDisplayFelder.felderAufwerten(document);
+
+  let ziel = null;
+  if (merker.eid && merker.feld) {
+    const zeile = document.querySelector('[data-eid="' + merker.eid + '"]');
+    if (zeile) ziel = zeile.querySelector('[data-f="' + merker.feld + '"]');
+  } else if (merker.id) {
+    ziel = document.getElementById(merker.id);
+  }
+  if (!ziel) return;
+  if (merker.imText) {
+    const paar = ziel.closest('.feldPaar');
+    const text = paar && paar.querySelector('.feldText');
+    if (text) { text.focus(); text.select(); return; }
+  }
+  ziel.focus();
+}
+
 // Gibt zurueck, ob wirklich gespeichert wurde.
 async function save() {
+  // Datum und Uhrzeit uebernehmen ihren Text erst beim Verlassen des Feldes.
+  // Ohne das wuerde Strg+S den alten Wert sichern, waehrend im Feld schon der
+  // neue steht.
+  const merker = fokusMerken();
+  if (document.activeElement && document.activeElement.blur) {
+    document.activeElement.blur();
+  }
+
   // Aufräumen vor dem Speichern
   state.timetable = (state.timetable || []).filter(e => e.act || e.date);
   // Nur die leeren Zeilen wegwerfen, nicht die Gruppe neu zusammensetzen: sonst
@@ -667,6 +721,7 @@ async function save() {
       state = antwort.aktuell;
       sauber();
       fillAll();
+      fokusZurueck(merker);
       updateBadges();
       toast('Neuer Stand geladen');
       return false;
@@ -682,6 +737,15 @@ async function save() {
 
   state = antwort;
   sauber();
+
+  // Der Server setzt die Konfiguration neu zusammen und gibt sie zurueck. Die
+  // Zeilen der Listen halten aber noch die alten Eintraege fest: ohne
+  // Neuaufbau liefe alles, was ab jetzt getippt wird, in abgehaengte Objekte -
+  // sichtbar im Feld, aber nicht im Zustand. Beim naechsten Neuaufbau, etwa
+  // durch "+ Act hinzufuegen", waere es dann weg.
+  fillAll();
+  fokusZurueck(merker);
+
   toast('Gespeichert - die Anzeige wurde aktualisiert');
   updateBadges();
   return true;
