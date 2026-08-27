@@ -88,6 +88,9 @@ const DEFAULT_CONFIG = {
     // Nachschlagewerk fuer die Crew, im Reiter Timetable verlinkt
     lichtDoku: 'https://docs.google.com/document/d/1N-lTeO5lJyfZbEJVk--TiU1DMayqi5ldfZ8Uu_MODT4/edit',
     showClock: true,
+    // Probezeit fuer den Aufbau: verschiebt nur, welche Zeit das Programm
+    // annimmt - nie die Systemuhr. 0 = echte Zeit.
+    zeitVersatz: 0,
     fadeMs: 700,
     imageDuration: 12,
     timetableMaxNext: 5,

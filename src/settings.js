@@ -919,6 +919,7 @@ function fillSettingsFields() {
   for (const k of NUM_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   for (const k of TEXT_FIELDS) { const el = $('s_' + k); if (el) el.value = s[k] != null ? s[k] : ''; }
   renderUebergaenge();
+  fillProbezeit();
   $('s_showClock').checked = !!s.showClock;
   $('s_qrEnabled').checked = !!s.qrEnabled;
   $('s_sparmodus').checked = !!s.sparmodus;
@@ -1456,6 +1457,64 @@ function fillSpecialFields() {
       markDirty();
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Probezeit
+// ---------------------------------------------------------------------------
+// Gespeichert wird ein Versatz in Millisekunden, keine feste Zeit. Sonst
+// bliebe die Anzeige beim Proben stehen, statt weiterzulaufen - und man saehe
+// nicht, wie der Timetable in einer halben Stunde aussieht.
+function fillProbezeit() {
+  const feld = $('s_probezeit');
+  if (!feld) return;
+
+  const versatz = zeitVersatz(state.settings);
+  feld.value = fuerFeld(new Date(Date.now() + versatz));
+  probeStandZeigen();
+
+  if (feld.dataset.wired) return;
+  feld.dataset.wired = '1';
+
+  feld.addEventListener('input', () => {
+    const gewaehlt = feld.value ? new Date(feld.value) : null;
+    if (!gewaehlt || isNaN(gewaehlt)) return;
+    state.settings.zeitVersatz = versatzFuer(gewaehlt, new Date());
+    markDirty();
+    probeStandZeigen();
+  });
+
+  $('probeJetzt').addEventListener('click', () => {
+    state.settings.zeitVersatz = 0;
+    markDirty();
+    fillProbezeit();
+    toast('Probezeit aufgehoben - die Anzeige läuft wieder nach der echten Uhr');
+  });
+}
+
+// "2026-08-27T23:00" - das Format, das ein datetime-local-Feld erwartet
+function fuerFeld(d) {
+  const z = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) +
+         'T' + z(d.getHours()) + ':' + z(d.getMinutes());
+}
+
+function probeStandZeigen() {
+  const stand = $('probeStand');
+  if (!stand) return;
+  const laeuft = probezeitLaeuft(state.settings);
+  stand.classList.toggle('hidden', !laeuft);
+  stand.classList.toggle('probe', laeuft);
+  if (!laeuft) { stand.textContent = ''; return; }
+
+  const minuten = Math.round(zeitVersatz(state.settings) / 60000);
+  const richtung = minuten > 0 ? 'vor' : 'zurück';
+  const betrag = Math.abs(minuten);
+  const text = betrag >= 60
+    ? Math.floor(betrag / 60) + ' h ' + (betrag % 60) + ' min'
+    : betrag + ' min';
+  stand.textContent = 'Probezeit läuft: ' + text + ' ' + richtung +
+                      '. Auf der Anzeige steht ein Hinweis.';
 }
 
 // ---------------------------------------------------------------------------

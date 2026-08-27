@@ -784,6 +784,19 @@ body.spar #curtain.wipe .curtainMark {
 }
 
 /* Zeigt nur, wenn die Systemuhr nicht aus dem Netz abgeglichen ist. */
+/* Marke, solange eine Probezeit laeuft. Absichtlich in der Signalfarbe und
+   nicht dezent - sie soll auffallen, damit sie niemand vergisst. */
+.probezeit {
+  background: var(--accent2);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.1em 0.6em;
+  margin-right: 0.6em;
+}
+
 .uhrWarnung { display: none; margin-left: 0.4em; }
 body.uhrUnsicher .uhrWarnung { display: inline; color: var(--accent2); }
 body.uhrUnsicher .fussUhr b { color: var(--accent2); }

@@ -76,6 +76,9 @@ button.danger { color: var(--danger); border-color: #4a2b28; }
 button.danger:hover { background: #3a2422; }
 button.icon { padding: 0.35rem 0.55rem; line-height: 1; }
 .btnRow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+/* Knoepfe, die unter der Liste stehen, an der sie arbeiten - dort, wo die
+   naechste Zeile entsteht. */
+.btnRow.untenAnListe { margin-top: 0.9rem; }
 
 /* ------------------------------- Panels ------------------------------ */
 main { flex: 1; overflow: auto; padding: 1.4rem 1.6rem 4rem; }
@@ -125,7 +128,8 @@ h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: 
   pointer-events: none;
 }
 
-input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
+input[type=text], input[type=number], input[type=time], input[type=date],
+input[type=datetime-local], select, textarea {
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -135,6 +139,11 @@ input[type=text], input[type=number], input[type=time], input[type=date], select
   font-family: inherit;
   width: 100%;
 }
+input[type=time], input[type=date], input[type=datetime-local] {
+  /* Sonst zeichnet der Browser Uhr- und Kalendersymbol dunkel auf dunkel */
+  color-scheme: dark;
+}
+
 input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 input[readonly] { color: var(--muted); }
 input[type=color] { padding: 2px; height: 34px; width: 70px; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; }
@@ -289,6 +298,13 @@ em.feldHinweis { display: block; font-size: 11.5px; color: #6d7580; font-style: 
 .card.schmal { max-width: 780px; margin-bottom: 1rem; }
 /* Zahl und Einheit gehoeren zusammen und sollen nebeneinander stehen */
 .taktZeile { display: flex; gap: 0.4rem; align-items: center; }
+/* Probezeit: deutlich abgesetzt vom Uhrstatus darueber, damit niemand die
+   Anzeige des Systems mit der eingestellten Probe verwechselt. */
+.probeBlock { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px dashed var(--line); }
+.probeBlock .uLabel { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 0.4rem; }
+.probeBlock .anStatus { margin-top: 0.6rem; }
+.probeBlock .anStatus.probe { color: var(--warn); border-color: var(--warn); }
+.probeBlock button { flex: none; }
 .taktZeile input[type=number] { flex: 1; min-width: 4rem; }
 .taktZeile .taktEinheit { width: auto; flex: none; }
 
@@ -618,7 +634,7 @@ textarea { resize: vertical; min-height: 66px; line-height: 1.45; font-family: i
 
   /* Eingabefelder gross genug fuer den Daumen */
   input[type=text], input[type=number], input[type=time], input[type=date],
-  select, textarea { padding: 0.65rem 0.7rem; font-size: 16px; }
+  input[type=datetime-local], select, textarea { padding: 0.65rem 0.7rem; font-size: 16px; }
   button { padding: 0.6rem 0.9rem; }
 
   /* Videokarten stapeln statt quetschen */

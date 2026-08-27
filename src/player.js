@@ -217,7 +217,7 @@ let durchsageEnde = null;
 
 function durchsagePruefen() {
   const el = document.getElementById('durchsage');
-  const d = aktiveDurchsage(cfg, new Date());
+  const d = aktiveDurchsage(cfg, zeitJetzt());
 
   if (!d) {
     if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
@@ -226,7 +226,7 @@ function durchsagePruefen() {
 
   // Ein abgelaufener Countdown nimmt die Durchsage mit - das Fensterende ist
   // zugleich das Ende der Anzeige.
-  if (d.ende && Date.now() >= d.ende.getTime()) {
+  if (d.ende && zeitJetztMs() >= d.ende.getTime()) {
     if (durchsageStand !== '') { el.classList.remove('an'); durchsageStand = ''; durchsageEnde = null; }
     return;
   }
@@ -286,7 +286,7 @@ function durchsageAufbauen(el, d) {
 
 function durchsageTicken() {
   if (!durchsageEnde) return;
-  const rest = durchsageEnde.getTime() - Date.now();
+  const rest = durchsageEnde.getTime() - zeitJetztMs();
   if (rest <= 0) return durchsagePruefen();   // Fenster vorbei, Balken raeumen
   const txt = countdownText(rest);
   document.querySelectorAll('.durchsageZeit').forEach(el => {
@@ -296,7 +296,7 @@ function durchsageTicken() {
 
 function ruhePruefen() {
   const q = cfg.quiet || {};
-  const jetzt = new Date();
+  const jetzt = zeitJetzt();
   // In der Vorschau nie schwarz schalten - sonst sieht man auf dem Handy nichts
   // und haelt die Bedienseite fuer kaputt.
   const soll = !nurVorschau && !!(q.enabled && zeitImFenster(q.from, q.to, jetzt));
@@ -334,7 +334,7 @@ function ruheHinweisSetzen() {
   const el = document.querySelector('.ruheHinweis');
   const q = cfg.quiet || {};
   el.textContent = nowHHMM() + '   ·   Ruhezeit bis ' + (q.to || '');
-  const minute = new Date().getMinutes();
+  const minute = zeitJetzt().getMinutes();
   el.style.left = (8 + (minute * 137) % 60) + '%';
   el.style.top = (8 + (minute * 89) % 70) + '%';
 }
@@ -349,7 +349,7 @@ function clearTimers() {
 // Playlist bauen: Videos in konfigurierter Reihenfolge, dazwischen Info-Slides
 // ---------------------------------------------------------------------------
 function buildPlaylist() {
-  const now = new Date();
+  const now = zeitJetzt();
   const s = cfg.settings;
   const sp = cfg.special || {};
 
@@ -396,6 +396,8 @@ function advance(delay) {
   const faellig = faelligeInfoSeite(cfg.settings, {
     hat: infoVorhanden(),
     zuletzt: letzteInfo,
+    // Bewusst die echte Uhr: hier wird gemessen, wie lange etwas her ist.
+    // Eine Probezeit verschiebt den Zeitpunkt, nicht den Lauf der Zeit.
     jetzt: Date.now()
   });
   if (faellig && playlist.some(i => i.type === 'video')) {
@@ -403,7 +405,7 @@ function advance(delay) {
     return;
   }
 
-  const now = new Date();
+  const now = zeitJetzt();
   let guard = 0;
   while (guard++ <= playlist.length + 1) {
     index++;
@@ -430,7 +432,7 @@ function infoVorhanden() {
   return {
     timetable: (cfg.timetable || []).length > 0,
     prices: preisGruppen(cfg.prices).length > 0 || !!(sp.enabled && sp.name),
-    licht: lichtOffen(cfg.lichteffekte, new Date()).length > 0
+    licht: lichtOffen(cfg.lichteffekte, zeitJetzt()).length > 0
   };
 }
 
@@ -810,11 +812,19 @@ function headHtml(title, sub) {
 function footHtml(mitQr) {
   const s = cfg.settings;
   const qr = mitQr ? qrHtml() : '';
+
+  // Eine Probezeit muss man sehen. Sonst steht die Anzeige an der Bar den
+  // ganzen Abend in einer Zeit, die jemand vor drei Tagen zum Ausprobieren
+  // eingestellt hat - und niemand versteht, warum der Timetable nicht stimmt.
+  const probe = probezeitLaeuft(s)
+    ? '<span class="probezeit">Probezeit</span>' : '';
+
   const uhr = s.showClock
-    ? '<div class="fussUhr"><span class="dot"></span>' +
+    ? '<div class="fussUhr"><span class="dot"></span>' + probe +
       escapeHtml(dateLine()) + ' &middot; <b data-clock>' + nowHHMM() + '</b>' +
       '<span class="uhrWarnung" title="Uhrzeit nicht abgeglichen">&#9888;</span></div>'
-    : '';
+    : (probe ? '<div class="fussUhr">' + probe + '</div>' : '');
+
   if (!qr && !uhr) return '';
   return '<div class="slideFoot' + (qr ? ' mitQr' : '') + '">' + qr + uhr + '</div>';
 }
@@ -845,18 +855,18 @@ function qrHtml() {
 }
 
 function nowHHMM() {
-  const d = new Date();
+  const d = zeitJetzt();
   return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
 function dateLine() {
-  const d = new Date();
+  const d = zeitJetzt();
   return DAY_NAMES_LONG[d.getDay()] + ', ' + pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.';
 }
 
 function renderTimetable() {
   const s = cfg.settings;
-  const now = new Date();
+  const now = zeitJetzt();
   const view = timetableView(cfg.timetable, now, s.timetableMaxNext);
   const fenster = lichtFenster(cfg.lichteffekte);
   let body = '';
@@ -996,7 +1006,7 @@ function lichtZeichen(groesse) {
 // Uebersicht ueber das ganze Wochenende - eigene Seite in der Schleife.
 function renderLicht() {
   const s = cfg.settings;
-  const tage = lichtUebersicht(cfg.lichteffekte, new Date());
+  const tage = lichtUebersicht(cfg.lichteffekte, zeitJetzt());
 
   let body = '<div class="lichtKopf">' + lichtZeichen('gross') +
     '<p>Zu diesen Zeiten laufen <b>starke Lichteffekte</b> \u2013 Stroboskop und ' +
@@ -1185,6 +1195,12 @@ function fitToBox(layer) {
   inner.style.setProperty('--scale', (lo / 100).toFixed(2));
   letzteSkala[art] = lo;
 }
+
+// Welche Zeit gilt fuer die Anzeige? Im Normalfall die echte; beim Einrichten
+// kann eine Probezeit eingestellt sein - siehe zeitVersatz() in common.js.
+// Alles, was die Crew beurteilen will, muss durch diese beiden Funktionen.
+function zeitJetzt() { return new Date(zeitJetztMs()); }
+function zeitJetztMs() { return Date.now() + zeitVersatz(cfg && cfg.settings); }
 
 function tickClock() {
   const txt = nowHHMM();

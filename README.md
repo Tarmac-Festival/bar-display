@@ -77,6 +77,9 @@ Getränkepreise im Festival-Design.
 - **Uhrzeit aus dem Netz** — der Raspberry Pi stellt seine Uhr gegen einen
   Zeitserver. Klappt das nicht, sagt das Programm Bescheid, statt stillschweigend
   mit der falschen Zeit zu arbeiten.
+- **Probezeit für den Aufbau** — die Anzeige tut so, als wäre es 23 Uhr, damit
+  sich der Abend am Nachmittag prüfen lässt. Die Uhr des Rechners bleibt
+  unangetastet.
 - **Sparmodus** für schwache Geräte — ein Schalter statt drei Einstellungen.
 - **Bedienung vom Handy auf jedem System** — Windows, Linux, macOS und
   Raspberry Pi bieten dieselbe Bedienseite im Netzwerk an. Die Adresse steht
@@ -329,6 +332,32 @@ Durchsagen hängen alle an der Systemuhr.** Ein Raspberry Pi hat keine
 batteriegepufferte Uhr und startet ohne Netz mit der Zeit des letzten
 Herunterfahrens — das sieht völlig plausibel aus und ist trotzdem falsch. Mehr
 dazu unter [Raspberry Pi](#raspberry-pi).
+
+### Probezeit für den Aufbau
+
+Wer den Timetable am Nachmittag einrichtet, will sehen, wie die Anzeige um
+23 Uhr aussieht – ohne bis 23 Uhr zu warten. Unter *System → Uhrzeit* lässt sich
+dafür eine **Probezeit** eintragen: das Programm rechnet dann mit dieser Zeit.
+Der laufende Act wird hervorgehoben, die Lichteffekte springen an, die Ruhezeit
+greift – alles so, wie es abends aussehen wird.
+
+![Probezeit unter System → Uhrzeit](docs/screenshots/einstellungen-probezeit.png)
+
+**Die Uhr des Rechners wird dabei nicht angefasst.** Gespeichert wird nur ein
+Versatz; Windows, Dateidaten und alles andere auf dem Gerät bleiben unberührt.
+Die Zeit läuft auch weiter – man sieht also, wie der Timetable in einer halben
+Stunde aussieht, nicht nur ein Standbild.
+
+*Auf jetzt* setzt die Probezeit mit einem Klick zurück. Und solange eine läuft,
+steht das unten auf der Anzeige, damit sie niemand über den Abend hinweg
+vergisst:
+
+![Anzeige mit laufender Probezeit](docs/screenshots/anzeige-probezeit.png)
+
+> Der Versatz steht in der Konfiguration und wird mitgesichert. Wer eine
+> gesicherte Konfiguration auf einen anderen Rechner spielt, nimmt eine
+> vergessene Probezeit also mit – der Hinweis auf der Anzeige fällt dort
+> genauso auf.
 
 ### Starke Lichteffekte
 
@@ -720,7 +749,8 @@ Unter **System** dazugekommen:
 - **Uhrzeit**: Datum, Uhrzeit und ob sie aus dem Netz abgeglichen ist. Unter
   Windows und macOS steht dort nur die Zeit — diese Systeme haben eine
   Hardware-Uhr und halten sie selbst in Ordnung. Auf einem Raspberry Pi ist das
-  die wichtigste Zeile im ganzen Fenster.
+  die wichtigste Zeile im ganzen Fenster. Darunter die **Probezeit für den
+  Aufbau** – siehe [Probezeit für den Aufbau](#probezeit-für-den-aufbau).
 - **Bildschirm**: auf welchem Monitor die Anzeige läuft. *Bildschirme nummerieren*
   blendet kurz eine große Ziffer auf jedem Schirm ein, damit die Zuordnung klar ist.
   Wird der gewählte Monitor abgezogen oder ausgeschaltet, wandert die Anzeige auf
@@ -1170,6 +1200,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Falsche Durchsage auf dem Schirm | Eine von Hand ausgelöste hat Vorrang – erst *Ausblenden* |
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
+| Uhr auf der Anzeige geht falsch, „PROBEZEIT“ steht daneben | Eine Probezeit läuft noch – *System → Uhrzeit → Auf jetzt* |
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Datum oder Uhrzeit färbt sich rot | Die Eingabe war nicht deutbar – Esc stellt den alten Wert wieder her |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |

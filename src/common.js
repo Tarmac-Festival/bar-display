@@ -866,3 +866,29 @@ function faelligeInfoSeite(settings, opt) {
   }
   return beste;
 }
+
+// ---------------------------------------------------------------------------
+// Probezeit
+// ---------------------------------------------------------------------------
+// Beim Einrichten will man sehen, wie die Anzeige um 23 Uhr aussieht, ohne bis
+// 23 Uhr zu warten. `zeitVersatz` verschiebt deshalb, welche Zeit das Programm
+// annimmt - in Millisekunden, positiv wie negativ.
+//
+// Ausdruecklich nicht die Systemuhr: die gehoert dem Rechner, nicht uns. Der
+// Versatz gilt nur fuer Timetable, Lichteffekte, Durchsagen, Ruhezeit und die
+// angezeigte Uhr - also fuer alles, was die Crew beim Proben beurteilen will.
+function zeitVersatz(settings) {
+  const v = Number((settings || {}).zeitVersatz);
+  return Number.isFinite(v) ? v : 0;
+}
+
+/** Laeuft gerade eine Probezeit? */
+function probezeitLaeuft(settings) {
+  // Unter einer Minute ist es kein Probelauf, sondern Rundungsrest
+  return Math.abs(zeitVersatz(settings)) >= 60000;
+}
+
+/** Der Versatz, der noetig ist, um auf eine gewuenschte Zeit zu kommen. */
+function versatzFuer(zielzeit, echteZeit) {
+  return zielzeit.getTime() - (echteZeit || new Date()).getTime();
+}

@@ -20,7 +20,8 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
         preisStil, gruppeHatInhalt, preisGruppen,
-        infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite } = ctx;
+        infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite,
+        zeitVersatz, probezeitLaeuft, versatzFuer } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -808,6 +809,36 @@ check('mit Beitraegen nicht nach der Uhr',
   check('und andersherum genauso',
         faelligeInfoSeite(zwei, { hat: beide, zuletzt: { timetable: min(4), licht: t0 },
                                   jetzt: min(6) }), 'licht');
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Probezeit --');
+(function () {
+  check('ohne Einstellung kein Versatz', zeitVersatz({}), 0);
+  check('ohne Settings auch nicht', zeitVersatz(null), 0);
+  check('Unfug ergibt 0', zeitVersatz({ zeitVersatz: 'gleich' }), 0);
+  check('unendlich ergibt 0', zeitVersatz({ zeitVersatz: Infinity }), 0);
+  check('ein Wert kommt durch', zeitVersatz({ zeitVersatz: -5000 }), -5000);
+
+  // Unter einer Minute ist Rundungsrest, kein Probelauf - sonst zeigte die
+  // Anzeige dauerhaft einen Hinweis wegen ein paar Millisekunden.
+  check('59 s sind keine Probezeit', probezeitLaeuft({ zeitVersatz: 59000 }), false);
+  check('genau eine Minute schon', probezeitLaeuft({ zeitVersatz: 60000 }), true);
+  check('auch rueckwaerts', probezeitLaeuft({ zeitVersatz: -60000 }), true);
+  check('gar nichts eingestellt', probezeitLaeuft({}), false);
+
+  const echtJetzt = new Date(2026, 7, 27, 20, 0, 0);
+  check('zwei Stunden vor',
+        versatzFuer(new Date(2026, 7, 27, 22, 0, 0), echtJetzt), 2 * 3600000);
+  check('eine Stunde zurueck',
+        versatzFuer(new Date(2026, 7, 27, 19, 0, 0), echtJetzt), -3600000);
+  check('gleiche Zeit heisst kein Versatz', versatzFuer(echtJetzt, echtJetzt), 0);
+
+  // Hin und zurueck: der Versatz muss die Zielzeit wieder ergeben
+  const probeZiel = new Date(2026, 7, 28, 3, 30, 0);
+  check('der Versatz fuehrt zur Zielzeit',
+        new Date(echtJetzt.getTime() + versatzFuer(probeZiel, echtJetzt)).getTime(),
+        probeZiel.getTime());
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

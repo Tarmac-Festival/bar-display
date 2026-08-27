@@ -113,7 +113,6 @@
              Vergangene Eintr&auml;ge verschwinden von selbst.</p>
         </div>
         <div class="btnRow">
-          <button id="addAct" class="primary">+ Act hinzuf&uuml;gen</button>
           <button id="sortActs">Nach Zeit sortieren</button>
           <button id="cleanActs" class="danger">Vergangene l&ouml;schen</button>
           <button id="cleanPhotos">Unbenutzte Fotos aufr&auml;umen</button>
@@ -161,6 +160,9 @@
         <tbody id="ttBody"></tbody>
       </table>
       <div id="ttEmpty" class="empty hidden">Noch keine Acts eingetragen.</div>
+      <div class="btnRow untenAnListe">
+        <button id="addAct" class="primary">+ Act hinzuf&uuml;gen</button>
+      </div>
 
       <!-- ---------------------------------------------------------- -->
       <div class="lichtBlock">
@@ -175,7 +177,6 @@
               verl&auml;sst, braucht eine belastbare Angabe, keine ungef&auml;hre.</p>
           </div>
           <div class="btnRow">
-            <button id="addLicht" class="primary">+ Zeitraum hinzuf&uuml;gen</button>
             <button id="cleanLicht" class="danger">Vergangene l&ouml;schen</button>
             <button id="lichtDoku">Doku &ouml;ffnen&hellip;</button>
           </div>
@@ -230,6 +231,9 @@
         </table>
         <div id="lichtEmpty" class="empty hidden">Keine Zeiten f&uuml;r starke
           Lichteffekte eingetragen.</div>
+        <div class="btnRow untenAnListe">
+          <button id="addLicht" class="primary">+ Zeitraum hinzuf&uuml;gen</button>
+        </div>
       </div>
     </section>
 
@@ -245,7 +249,6 @@
              Essenstand. Beides geht nebeneinander auf derselben Seite.</p>
         </div>
         <div class="btnRow">
-          <button id="addCat" class="primary">+ Gruppe hinzuf&uuml;gen</button>
         </div>
       </div>
       <div class="card schmal">
@@ -271,6 +274,9 @@
 
       <div id="priceList" class="list"></div>
       <div id="priceEmpty" class="empty hidden">Noch keine Preisgruppen angelegt.</div>
+      <div class="btnRow untenAnListe">
+        <button id="addCat" class="primary">+ Gruppe hinzuf&uuml;gen</button>
+      </div>
 
       <div class="card" style="margin-top:1.2rem">
         <h2>Spezialshot</h2>
@@ -318,7 +324,6 @@
              mitl&auml;uft; Bilder bekommen zus&auml;tzlich eine eigene Standzeit.</p>
         </div>
         <div class="btnRow">
-          <button id="addVideos" class="primary">+ Videos &amp; Bilder hinzuf&uuml;gen</button>
           <button id="openMedia">Medien-Ordner &ouml;ffnen</button>
           <button id="checkMedia">Clips pr&uuml;fen &amp; umwandeln</button>
         </div>
@@ -333,7 +338,11 @@
       </div>
 
       <div id="videoList" class="list"></div>
-      <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife. Oben auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
+      <div id="videoEmpty" class="empty hidden">Noch nichts in der Schleife.
+        Unten auf &bdquo;Videos &amp; Bilder hinzuf&uuml;gen&ldquo; klicken.</div>
+      <div class="btnRow untenAnListe">
+        <button id="addVideos" class="primary">+ Videos &amp; Bilder hinzuf&uuml;gen</button>
+      </div>
     </section>
 
     <!-- ------------------------------------------------------------- -->
@@ -533,6 +542,18 @@
           <h2>Uhrzeit</h2>
           <div id="uhrStatus" class="anStatus">wird gepr&uuml;ft &hellip;</div>
           <p class="hint" id="uhrHinweis" style="margin-top:0.7rem"></p>
+          <div class="probeBlock">
+            <span class="uLabel">Probezeit f&uuml;r den Aufbau</span>
+            <div class="taktZeile">
+              <input type="datetime-local" id="s_probezeit">
+              <button id="probeJetzt">Auf jetzt</button>
+            </div>
+            <em class="feldHinweis">Die Anzeige tut so, als w&auml;re es diese Zeit &ndash;
+              praktisch, um den Timetable f&uuml;r 23 Uhr anzusehen, ohne bis 23 Uhr
+              zu warten. <b>Die Uhr des Rechners bleibt unangetastet.</b> Solange
+              eine Probezeit l&auml;uft, steht das auch auf der Anzeige.</em>
+            <div id="probeStand" class="anStatus hidden"></div>
+          </div>
         </div>
 
         <div class="card">
