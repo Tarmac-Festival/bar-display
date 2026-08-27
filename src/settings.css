@@ -287,6 +287,11 @@ em.feldHinweis { display: block; font-size: 11.5px; color: #6d7580; font-style: 
 /* Schmale Karte fuer die Einstellungen oben in einem Reiter - soll nicht die
    ganze Breite fuellen wie die Listen darunter. */
 .card.schmal { max-width: 780px; margin-bottom: 1rem; }
+/* Zahl und Einheit gehoeren zusammen und sollen nebeneinander stehen */
+.taktZeile { display: flex; gap: 0.4rem; align-items: center; }
+.taktZeile input[type=number] { flex: 1; min-width: 4rem; }
+.taktZeile .taktEinheit { width: auto; flex: none; }
+
 .dreiCol { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 1rem; }
 /* Eine Zahl braucht kein Feld ueber die halbe Seite. */
 .card.schmal .field input[type=number] { max-width: 220px; }

@@ -911,7 +911,8 @@ const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'price
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
                      'timetableTitle', 'timetableSubtitle', 'pricesTitle', 'pricesSubtitle',
                      'titleStyle', 'pattern', 'rotation', 'uebergangsFolge',
-                     'qrUrl', 'qrLabel', 'lichtTitel', 'lichtUnterzeile', 'lichtDoku'];
+                     'qrUrl', 'qrLabel', 'lichtTitel', 'lichtUnterzeile', 'lichtDoku',
+                     'timetableEinheit', 'pricesEinheit', 'lichtEinheit'];
 
 function fillSettingsFields() {
   const s = state.settings;

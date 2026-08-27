@@ -19,7 +19,8 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
-        preisStil, gruppeHatInhalt, preisGruppen } = ctx;
+        preisStil, gruppeHatInhalt, preisGruppen,
+        infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
 // Objekt (Funktionsdeklarationen schon). Im Browser sehen die anderen
 // Skripte es trotzdem - hier muss man es ausdruecklich auswerten.
@@ -758,6 +759,55 @@ check('der Reihe nach: Unsinn faellt trotzdem raus',
   }
   check('neun Wechsel der Reihe nach', raus,
         ['fade', 'zoom', 'kreis', 'fade', 'zoom', 'kreis', 'fade', 'zoom', 'kreis']);
+})();
+
+console.log('');
+console.log('-- Info-Seiten nach der Uhr --');
+
+check('ohne Angabe zaehlen Beitraege', infoEinheit({}, 'timetable'), 'beitraege');
+check('Unsinn zaehlt Beitraege', infoEinheit({ timetableEinheit: 'quatsch' }, 'timetable'), 'beitraege');
+check('minuten wird uebernommen', infoEinheit({ timetableEinheit: 'minuten' }, 'timetable'), 'minuten');
+check('jede Seite fuer sich', infoEinheit({ pricesEinheit: 'minuten' }, 'timetable'), 'beitraege');
+check('Takt als ganze Zahl', infoTakt({ pricesEvery: '2.7' }, 'prices'), 2);
+
+check('nach der Uhr nur mit Einheit und Zahl',
+      nachDerUhr({ timetableEinheit: 'minuten', timetableEvery: 2 }, 'timetable'), true);
+check('mit 0 laeuft sie gar nicht',
+      nachDerUhr({ timetableEinheit: 'minuten', timetableEvery: 0 }, 'timetable'), false);
+check('mit Beitraegen nicht nach der Uhr',
+      nachDerUhr({ timetableEinheit: 'beitraege', timetableEvery: 3 }, 'timetable'), false);
+
+(function () {
+  const s = { timetableEvery: 2, timetableEinheit: 'minuten',
+              pricesEvery: 5, pricesEinheit: 'beitraege' };
+  const hat = { timetable: true, prices: true, licht: false };
+  const t0 = 1000000;
+  const min = (n) => t0 + n * 60000;
+
+  check('vor Ablauf nichts',
+        faelligeInfoSeite(s, { hat, zuletzt: { timetable: t0 }, jetzt: min(1) }), null);
+  check('genau nach zwei Minuten',
+        faelligeInfoSeite(s, { hat, zuletzt: { timetable: t0 }, jetzt: min(2) }), 'timetable');
+  check('spaeter erst recht',
+        faelligeInfoSeite(s, { hat, zuletzt: { timetable: t0 }, jetzt: min(9) }), 'timetable');
+  check('ohne Inhalt bleibt sie weg',
+        faelligeInfoSeite(s, { hat: { timetable: false }, zuletzt: { timetable: t0 },
+                               jetzt: min(9) }), null);
+  check('gezaehlte Seiten kommen hier nicht vor',
+        faelligeInfoSeite({ pricesEvery: 1, pricesEinheit: 'beitraege' },
+                          { hat, zuletzt: { prices: t0 }, jetzt: min(9) }), null);
+
+  // Sind zwei faellig, kommt die dran, die laenger wartet - sonst verdraengt
+  // eine haeufige Seite die seltene dauerhaft.
+  const zwei = { timetableEvery: 2, timetableEinheit: 'minuten',
+                 lichtEvery: 1, lichtEinheit: 'minuten' };
+  const beide = { timetable: true, prices: false, licht: true };
+  check('die laengere Wartezeit gewinnt',
+        faelligeInfoSeite(zwei, { hat: beide, zuletzt: { timetable: t0, licht: min(3) },
+                                  jetzt: min(5) }), 'timetable');
+  check('und andersherum genauso',
+        faelligeInfoSeite(zwei, { hat: beide, zuletzt: { timetable: min(4), licht: t0 },
+                                  jetzt: min(6) }), 'licht');
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

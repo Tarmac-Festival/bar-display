@@ -801,3 +801,68 @@ function gruppeHatInhalt(gruppe) {
 function preisGruppen(prices) {
   return (prices || []).filter(gruppeHatInhalt);
 }
+
+// ---------------------------------------------------------------------------
+// Info-Seiten nach der Uhr statt nach Beitraegen
+// ---------------------------------------------------------------------------
+// "Nach je 3 Beitraegen" ist schwer einzuschaetzen, wenn ein Clip acht Sekunden
+// und der naechste zwei Minuten laeuft. Deshalb laesst sich je Seite umstellen:
+// entweder zaehlt sie Beitraege, oder sie wartet eine Zeit ab.
+//
+// Nach der Uhr heisst: gerechnet wird ab dem letzten Erscheinen, und faellig
+// wird die Seite beim naechsten Wechsel. Der laufende Beitrag laeuft immer zu
+// Ende - eine Seite, die mitten in einen Clip platzt, will niemand.
+const INFO_SEITEN = ['timetable', 'prices', 'licht'];
+
+const INFO_EINHEITEN = [
+  { wert: 'beitraege', name: 'Beitr\u00e4gen' },
+  { wert: 'minuten',   name: 'Minuten' }
+];
+
+/** Feldnamen einer Info-Seite in den Einstellungen. */
+function infoFelder(art) {
+  const stamm = art === 'timetable' ? 'timetable' : (art === 'prices' ? 'prices' : 'licht');
+  return { takt: stamm + 'Every', einheit: stamm + 'Einheit', dauer: stamm + 'Duration' };
+}
+
+function infoEinheit(settings, art) {
+  const f = infoFelder(art);
+  return (settings || {})[f.einheit] === 'minuten' ? 'minuten' : 'beitraege';
+}
+
+function infoTakt(settings, art) {
+  return Math.floor(Number((settings || {})[infoFelder(art).takt]) || 0);
+}
+
+/** Laeuft diese Seite nach der Uhr? */
+function nachDerUhr(settings, art) {
+  return infoEinheit(settings, art) === 'minuten' && infoTakt(settings, art) > 0;
+}
+
+/**
+ * Welche Info-Seite ist gerade faellig? Liefert die Art oder null.
+ *
+ * opt.hat      { timetable, prices, licht } - gibt es dazu ueberhaupt Inhalt?
+ * opt.zuletzt  { timetable, prices, licht } - wann kam sie zuletzt (ms)
+ * opt.jetzt    Zeitpunkt in ms
+ *
+ * Sind mehrere faellig, kommt die dran, die am laengsten wartet - sonst
+ * verdraengt eine haeufige Seite die seltene dauerhaft.
+ */
+function faelligeInfoSeite(settings, opt) {
+  const o = opt || {};
+  const jetzt = o.jetzt || Date.now();
+  let beste = null;
+  let laengste = -1;
+
+  for (const art of INFO_SEITEN) {
+    if (!(o.hat || {})[art]) continue;
+    if (!nachDerUhr(settings, art)) continue;
+
+    const takt = infoTakt(settings, art) * 60000;
+    const seit = jetzt - ((o.zuletzt || {})[art] || 0);
+    if (seit < takt) continue;
+    if (seit > laengste) { laengste = seit; beste = art; }
+  }
+  return beste;
+}

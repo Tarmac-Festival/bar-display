@@ -496,9 +496,26 @@ Bildschirm, verschieben geht mit den Pfeilen links.
 
 ### Wie oft die Info-Slides kommen
 
-Timetable und Preisliste laufen zwischen den Beiträgen mit; wie oft, steht im
-jeweiligen Reiter unter *Wie oft und wie lange*. Der Zähler läuft über die
-Runden hinweg weiter — sonst käme „nach je 5 Beiträgen" bei drei Beiträgen nie.
+Timetable, Karte und Lichteffekte laufen zwischen den Beiträgen mit; wie oft,
+steht im jeweiligen Reiter unter *Wie oft und wie lange*. Neben der Zahl steht
+die **Einheit** — jede Seite entscheidet für sich:
+
+| Einheit | Wann die Seite kommt |
+|---|---|
+| **Beiträgen** | Nach so vielen Beiträgen. Bilder zählen mit. |
+| **Minuten** | Sobald die Zeit seit dem letzten Mal um ist. Der laufende Beitrag läuft noch zu Ende. |
+
+Nach Beiträgen zu zählen ist schwer einzuschätzen, wenn ein Clip acht Sekunden
+und der nächste zwei Minuten läuft — dann sind Minuten das ehrlichere Maß. Bei
+30-Sekunden-Beiträgen und „alle 2 Minuten" kommt die Seite nach je vier
+Beiträgen; die Runde selbst gerät dabei nicht durcheinander, die Beiträge laufen
+in ihrer Reihenfolge weiter.
+
+Sind zwei Seiten gleichzeitig fällig, kommt die dran, die länger gewartet hat —
+sonst würde eine häufige Seite die seltene dauerhaft verdrängen.
+
+Beim Zählen nach Beiträgen läuft der Zähler über die Runden hinweg weiter —
+sonst käme „nach je 5 Beiträgen" bei drei Beiträgen nie.
 
 Sind es **weniger Beiträge als die eingestellte Zahl**, lässt sich die Häufigkeit
 nicht wörtlich einhalten: bei zwei Bildern und „nach je 3" müsste ein Bild ein
@@ -543,10 +560,9 @@ Das gilt überall gleich: Timetable, Zeitfenster der Clips, geplante Durchsagen
 und Ruhezeit. Der gerade laufende
 Act ist in der Tabelle farbig hinterlegt, vergangene sind ausgegraut.
 
-- **Wie oft und wie lange**: nach wie vielen Beiträgen der Timetable erscheint,
-  wie lange er stehen bleibt und wie viele kommende Acts er zeigt. `0` schaltet
-  ihn ganz ab. **Bilder zählen als Beitrag mit.** Gibt es weniger Beiträge als
-  die eingestellte Zahl, kommt der Timetable am Ende jeder Runde — siehe
+- **Wie oft und wie lange**: nach wie vielen **Beiträgen oder Minuten** der
+  Timetable erscheint, wie lange er stehen bleibt und wie viele kommende Acts er
+  zeigt. `0` schaltet ihn ganz ab — siehe
   [Wie oft die Info-Slides kommen](#wie-oft-die-info-slides-kommen).
 - **+ Act hinzufügen** setzt die Startzeit automatisch auf das Ende des vorigen
   Acts — über Mitternacht hinweg springt dabei auch das Datum mit.

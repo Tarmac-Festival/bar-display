@@ -125,10 +125,15 @@
         <h2>Wie oft und wie lange</h2>
         <div class="dreiCol">
           <label class="field">
-            <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
-            <input type="number" min="0" max="50" id="s_timetableEvery">
-            <em>0 = gar nicht zeigen. Bilder z&auml;hlen als Beitrag mit. Gibt es
-              weniger Beitr&auml;ge, kommt der Timetable am Ende jeder Runde.</em>
+            <span>Zeigen nach je&hellip;</span>
+            <div class="taktZeile">
+              <input type="number" min="0" max="300" id="s_timetableEvery">
+              <select id="s_timetableEinheit" class="taktEinheit"><option value="beitraege">Beitr&auml;gen</option><option value="minuten">Minuten</option></select>
+            </div>
+            <em>0 = gar nicht zeigen. Bei <b>Beitr&auml;gen</b> z&auml;hlen Bilder
+              mit; gibt es weniger, kommt der Timetable am Ende jeder Runde. Bei
+              <b>Minuten</b> kommt er, sobald die Zeit um ist &ndash; der laufende
+              Beitrag l&auml;uft noch zu Ende.</em>
           </label>
           <label class="field">
             <span>Standzeit (Sekunden)</span>
@@ -180,8 +185,11 @@
           <h2>Eigene Seite auf der Anzeige</h2>
           <div class="dreiCol">
             <label class="field">
-              <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
-              <input type="number" min="0" max="50" id="s_lichtEvery">
+              <span>Zeigen nach je&hellip;</span>
+              <div class="taktZeile">
+                <input type="number" min="0" max="300" id="s_lichtEvery">
+                <select id="s_lichtEinheit" class="taktEinheit"><option value="beitraege">Beitr&auml;gen</option><option value="minuten">Minuten</option></select>
+              </div>
               <em>0 = keine eigene Seite. Die Kennzeichnung im Timetable
                 erscheint trotzdem.</em>
             </label>
@@ -244,10 +252,15 @@
         <h2>Wie oft und wie lange</h2>
         <div class="dreiCol">
           <label class="field">
-            <span>Zeigen nach je&hellip; Beitr&auml;gen</span>
-            <input type="number" min="0" max="50" id="s_pricesEvery">
-            <em>0 = gar nicht zeigen. Bilder z&auml;hlen als Beitrag mit. Gibt es
-              weniger Beitr&auml;ge, kommt die Preisliste am Ende jeder Runde.</em>
+            <span>Zeigen nach je&hellip;</span>
+            <div class="taktZeile">
+              <input type="number" min="0" max="300" id="s_pricesEvery">
+              <select id="s_pricesEinheit" class="taktEinheit"><option value="beitraege">Beitr&auml;gen</option><option value="minuten">Minuten</option></select>
+            </div>
+            <em>0 = gar nicht zeigen. Bei <b>Beitr&auml;gen</b> z&auml;hlen Bilder
+              mit; gibt es weniger, kommt die Karte am Ende jeder Runde. Bei
+              <b>Minuten</b> kommt sie, sobald die Zeit um ist &ndash; der laufende
+              Beitrag l&auml;uft noch zu Ende.</em>
           </label>
           <label class="field">
             <span>Standzeit (Sekunden)</span>

@@ -40,6 +40,10 @@ let letzterSlideStand = '';
 let uebergangsBeutel = [];
 let letzterUebergang = '';
 
+// Wann kam welche Info-Seite zuletzt? Nur fuer die Seiten, die nach der Uhr
+// laufen - siehe faelligeInfoSeite() in common.js.
+let letzteInfo = {};
+
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
@@ -132,6 +136,9 @@ function restart() {
   clearTimers();
   sonderzustaende();
   if (imRuhemodus) return;      // waehrend der Ruhezeit laeuft nichts
+  // Sonst waeren beim Start sofort alle zeitgesteuerten Seiten faellig
+  const jetzt = Date.now();
+  for (const art of INFO_SEITEN) letzteInfo[art] = jetzt;
   videoCounter = 0;
   neueRunde();
   index = -1;
@@ -363,7 +370,14 @@ function buildPlaylist() {
   });
 
   videoCounter = runde.zaehler;
-  playlist = runde.items;
+
+  // Seiten, die nach der Uhr laufen, werden nicht mitgezaehlt - sie kommen
+  // dazwischen, siehe advance(). Steht gar kein Beitrag in der Runde, bleiben
+  // sie drin: sonst zeigte die Anzeige nichts.
+  const hatBeitraege = runde.items.some(i => i.type === 'video');
+  playlist = hatBeitraege
+    ? runde.items.filter(i => !nachDerUhr(s, i.type))
+    : runde.items;
 }
 
 // ---------------------------------------------------------------------------
@@ -374,6 +388,18 @@ function advance(delay) {
   itemToken++;   // alle noch offenen Callbacks des alten Elements entwerten
   if (delay) {
     itemTimer = setTimeout(() => advance(), delay);
+    return;
+  }
+
+  // Zeitgesteuerte Info-Seiten schieben sich zwischen zwei Beitraege, ohne die
+  // Runde weiterzuruecken - der naechste Beitrag kommt danach ganz normal.
+  const faellig = faelligeInfoSeite(cfg.settings, {
+    hat: infoVorhanden(),
+    zuletzt: letzteInfo,
+    jetzt: Date.now()
+  });
+  if (faellig && playlist.some(i => i.type === 'video')) {
+    playItem({ type: faellig });
     return;
   }
 
@@ -398,8 +424,21 @@ function advance(delay) {
   playItem({ type: 'idle' });
 }
 
+// Gibt es zu einer Info-Seite ueberhaupt Inhalt?
+function infoVorhanden() {
+  const sp = cfg.special || {};
+  return {
+    timetable: (cfg.timetable || []).length > 0,
+    prices: preisGruppen(cfg.prices).length > 0 || !!(sp.enabled && sp.name),
+    licht: lichtOffen(cfg.lichteffekte, new Date()).length > 0
+  };
+}
+
 function playItem(item) {
   console.log('[schleife]', item.type, item.video ? item.video.file : '');
+  // Auch eine gezaehlte Seite stellt die Uhr zurueck - sonst kaeme sie kurz
+  // darauf noch einmal, nur weil die Zeit abgelaufen war.
+  if (INFO_SEITEN.indexOf(item.type) >= 0) letzteInfo[item.type] = Date.now();
   if (item.type !== 'video') return playSlide(item);
   if (isImageFile(item.video.file)) return playImage(item);
   playVideo(item);

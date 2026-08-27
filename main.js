@@ -73,12 +73,15 @@ const DEFAULT_CONFIG = {
     pricesSubtitle: 'preise',
     pin: '',
     timetableEvery: 3,        // nach wie vielen Videos ein Timetable-Slide
+    timetableEinheit: 'beitraege',   // beitraege | minuten
     timetableDuration: 20,    // Sekunden
     pricesEvery: 5,           // nach wie vielen Videos ein Preis-Slide
+    pricesEinheit: 'beitraege',
     pricesDuration: 25,       // Sekunden
     // Eigene Seite mit den Zeiten fuer starke Lichteffekte. 0 = aus; sie kommt
     // also nur, wenn die Bar sie ausdruecklich einschaltet.
     lichtEvery: 0,
+    lichtEinheit: 'beitraege',
     lichtDuration: 20,
     lichtTitel: 'LICHTEFFEKTE',
     lichtUnterzeile: 'wann es blitzt',
