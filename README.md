@@ -374,24 +374,31 @@ spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 
 Auf dem Timetable bekommt das eine **eigene Spalte am rechten Rand**, mit dem
 Warnzeichen als Reiter darüber — einmal über der Spalte, nicht an jedem Block.
-Neben jedem betroffenen Act steht ein Block mit **seiner eigenen Zeitspanne**,
-nicht der des Acts. Eine kräftige Kante markiert, wo eine Phase anfängt.
 
-Der Block sitzt bewusst nicht zeitanteilig in der Zeile. Das war einmal so
-gedacht, ließ sich aber nicht einlösen: eine Zeile ist keine drei Zeilenhöhen
-hoch, ein Drittel davon sind zwanzig Pixel — und in zwanzig Pixel passt keine
-lesbare Uhrzeit. Ein Block, in dem **23:30–01:00** steht, sagt mehr als ein
-Streifen an der rechnerisch richtigen Stelle.
+Hinter jedem betroffenen Act liegt eine blasse **Bahn: seine Spielzeit**. Der
+farbige Block darin sitzt genau dort, wo die Lichtphase liegt — fängt das Licht
+mitten im Set an, fängt auch der Block mittendrin an. So ist auf einen Blick zu
+sehen, ob es das ganze Set über blitzt oder nur die letzte halbe Stunde.
+
+Die Uhrzeit steht **links neben dem Block**, nicht darin. Im Block hätte sie
+nur Platz, wenn der Block hoch genug wäre — und eine halbe Stunde in einem
+neunzigminütigen Set ist eben nur ein Fünftel der Zeile. Links ist Platz: die
+Act-Spalte ist zu zwei Dritteln leer. So bleibt der Block zeitgenau und die
+Zeit trotzdem lesbar.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 
 Läuft eine Phase über zwei Acts hinweg, steht sie neben beiden — beschriftet
 nur dort, wo sie anfängt, und rund abgeschlossen nur da, wo sie wirklich
-anfängt und aufhört. Fallen zwei Phasen in denselben Act, teilen sie sich die
-Zeile; die beginnende bekommt mehr Platz, denn sie ist die Nachricht. Und eine
-Phase, zu der gar kein Act danebensteht (in einer Pause etwa), erscheint als
-Zeile **Außerdem starke Lichteffekte** unter der Liste; sie fällt nicht unter
-den Tisch, nur weil die Spalte sie nicht aufnehmen kann.
+anfängt und aufhört. Und eine Phase, zu der gar kein Act danebensteht (in einer
+Pause etwa), erscheint als Zeile **Außerdem starke Lichteffekte** unter der
+Liste; sie fällt nicht unter den Tisch, nur weil die Spalte sie nicht aufnehmen
+kann.
+
+Diese Zeile reicht nur bis zum Ende **dieser Nacht**. Ohne die Grenze standen
+dort auch die Zeiten von morgen und übermorgen — eine Aufzählung, die unter dem
+Timetable von heute Nacht niemandem etwas sagt. Was weiter weg ist, steht auf
+der Wochenendübersicht.
 
 Läuft gerade eine, steht sie als Balken über der Liste — nicht in einer
 Tabellenzeile, aus der man sie erst heraussuchen müsste.
@@ -716,6 +723,13 @@ sonst passt.
 - **Beschriftung**: der **Floor- oder Bar-Name** oben links, eine zweite Zeile
   darunter (Betreiber, Ort oder Motto) und die Überschriften der Info-Seiten.
   Lässt man den Namen leer, steht dort nur das Logo.
+
+  **Groß- und Kleinschreibung bleibt, wie sie getippt wurde.** Früher hat die
+  Anzeige den Namen in Großbuchstaben und die zweite Zeile in Kleinbuchstaben
+  gesetzt — aus *hosted by L300* wurde damit *hosted by l300*, und das große L
+  gehört zum Namen. Gestaltet wird die Schrift, nicht die Schreibweise: wer
+  Großbuchstaben will, tippt Großbuchstaben. Dasselbe gilt für den Namen im
+  Logo-Übergang und die Plakette über einer Preisgruppe.
 - **Übergänge**: die Liste zum Anhaken, die Reihenfolge und die beiden Dauern —
   siehe [Übergänge](#übergänge).
 - **Farben, Form & Schrift**: Fläche hinter dem Seitentitel (Blob, Balken oder

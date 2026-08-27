@@ -940,7 +940,10 @@ function renderTimetable() {
     // Phasen, zu denen kein Act danebensteht - in einer Pause etwa. Sie
     // duerfen nicht unter den Tisch fallen, nur weil die Spalte sie nicht
     // aufnehmen kann.
-    const offen = lichtOhneZeile(zeilen, fenster, now).filter(f => f.se.start > now);
+    // Nur was noch in diese Nacht faellt. Alles danach gehoert auf die
+    // Wochenenduebersicht, nicht unter den Timetable von heute.
+    const offen = lichtOhneZeile(zeilen, fenster, now, nachtEnde(now))
+      .filter(f => f.se.start > now);
     if (offen.length) {
       body += '<div class="lichtSonst">' + lichtZeichen() +
         '<span>Au&szlig;erdem starke Lichteffekte: ' +
@@ -964,51 +967,53 @@ function renderTimetable() {
 
 // Die Lichtspalte einer Zeile.
 //
-// Ein Block je Phase, neben dem Act, zu dem sie gehoert. Der Block fuellt die
-// Zeile aus; wann genau es blitzt, steht als Uhrzeit darin.
+// Der Block sitzt genau dort, wo die Phase in der Spielzeit liegt: faengt das
+// Licht mitten im Set an, faengt auch der Block mittendrin an. Genau dafuer ist
+// die Spalte da - eine eigene Zeile konnte das nie zeigen.
 //
-// Er sass frueher zeitanteilig in der Zeile - fing das Licht mitten im Set an,
-// fing auch der Block mittendrin an. Das war nur nie zu sehen: eine Zeile ist
-// keine drei Zeilenhoehen hoch, ein Drittel davon sind zwanzig Pixel, und eine
-// Mindesthoehe im CSS zog ohnehin jeden Block auf dasselbe Mass - dafuer aber
-// aus seiner Zeile heraus, neben den falschen Act. Ein Block, in dem die
-// Uhrzeit lesbar steht, sagt mehr als ein Streifen an der richtigen Stelle.
+// Damit das nicht auf Kosten der Lesbarkeit geht, steht die Uhrzeit nicht im
+// Block, sondern links daneben. Im Block hatte sie nur Platz, wenn der Block
+// hoch genug war - und das ist er bei einer halben Stunde in einem
+// neunzigminuetigen Set eben nicht. Links ist Platz: die Act-Spalte ist zu zwei
+// Dritteln leer. So bleibt der Block zeitgenau und die Zeit lesbar.
 //
 // Beschriftet wird nur die Zeile, in der die Phase beginnt; laeuft sie ueber
 // mehrere Acts, bleibt der Block dort unbeschriftet und ohne runde Kante - so
 // ist zu sehen, dass sie weiterlaeuft.
+//
+// Wie hoch die Beschriftung im Verhaeltnis zur Zeile ist, muss hier bekannt
+// sein, um sie in der Zeile zu halten: rund eineinhalb Zeilenhoehen Text auf
+// gut drei Zeilenhoehen Zeile. Die Masse stehen in player.css beieinander.
+const MARKE_ANTEIL = 0.38;
+
 function lichtSpurHtml(spuren) {
   if (!spuren.length) return '<div class="lichtSpur"></div>';
 
-  // Mehrere Phasen in einer Zeile teilen sie sich - sonst laegen sie
-  // uebereinander und man saehe nur die letzte. Wer hier anfaengt, bekommt
-  // mehr Platz: das ist die Nachricht, und nur dort steht eine Uhrzeit. Eine
-  // Phase, die bloss weiterlaeuft, ist Zusammenhang und darf schmaler sein.
-  const gewicht = (s) => (s.beginntHier ? 1 : 0.55);
-  const summe = spuren.reduce((n, s) => n + gewicht(s), 0);
-
   let inhalt = '';
-  let oben = 0;
-  spuren.forEach((s) => {
-    const hoch = (gewicht(s) / summe) * 100;
+  for (const s of spuren) {
+    const a = lichtAusschnitt(s.von, s.bis);
     inhalt += '<span class="lichtBalken' +
       (s.beginntHier ? ' beginnt' : '') + (s.endetHier ? ' endet' : '') +
-      (spuren.length > 1 ? ' geteilt' : '') +
-      '" style="top:' + oben.toFixed(2) + '%;height:' + hoch.toFixed(2) + '%"></span>';
+      '" style="top:' + (a.von * 100).toFixed(2) + '%' +
+      ';height:' + ((a.bis - a.von) * 100).toFixed(2) + '%"></span>';
 
     if (s.beginntHier) {
       // Kein Zeichen an der einzelnen Phase: es steht einmal ueber der Spalte.
       // In jeder Zeile wiederholt war es Zierrat, der die Zeiten zudeckte.
-      inhalt += '<span class="lichtMarke" style="top:' + (oben + hoch / 2).toFixed(2) + '%">' +
+      const lage = lichtMarkeLage(a.von, a.bis, MARKE_ANTEIL);
+      inhalt += '<span class="lichtMarke" style="top:' + (lage * 100).toFixed(2) + '%">' +
         '<span class="lmZeit">' + timeLabel(s.fenster.se.start) + '&ndash;' +
         timeLabel(s.fenster.se.end) + '</span>' +
         (s.fenster.eintrag.note
           ? '<span class="lmNote">' + escapeHtml(s.fenster.eintrag.note) + '</span>' : '') +
         '</span>';
     }
-    oben += hoch;
-  });
-  return '<div class="lichtSpur">' + inhalt + '</div>';
+  }
+  // Die Bahn dahinter zeigt die Spielzeit des Acts. Ohne sie ist ein Drittel
+  // nur ein duenner Streifen; mit ihr ist zu sehen, dass es ein Drittel dieses
+  // Sets ist. Nur in Zeilen mit Licht - sonst saehe jede leere Zeile aus, als
+  // waere dort etwas.
+  return '<div class="lichtSpur mitBalken">' + inhalt + '</div>';
 }
 
 // Das Warnzeichen sitzt auf einer hellen Plakette. Die gelieferte Grafik ist

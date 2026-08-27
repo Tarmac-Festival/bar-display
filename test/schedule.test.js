@@ -19,6 +19,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
+        lichtAusschnitt, lichtMarkeLage, nachtEnde,
         preisStil, gruppeHatInhalt, preisGruppen,
         infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite,
         zeitVersatz, probezeitLaeuft, versatzFuer } = ctx;
@@ -839,6 +840,77 @@ console.log('-- Probezeit --');
   check('der Versatz fuehrt zur Zielzeit',
         new Date(echtJetzt.getTime() + versatzFuer(probeZiel, echtJetzt)).getTime(),
         probeZiel.getTime());
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Lichtblock in seiner Zeile --');
+(function () {
+  const rund = (x) => Math.round(x * 1000) / 1000;
+
+  // Was lang genug ist, bleibt unveraendert
+  const a = lichtAusschnitt(0.2, 0.8);
+  check('lange Phase bleibt, wie sie ist', rund(a.von) + '/' + rund(a.bis), '0.2/0.8');
+
+  // Eine sehr kurze Phase bekommt einen Mindestanteil - um die Mitte herum
+  const b = lichtAusschnitt(0.5, 0.52, 0.2);
+  check('kurze Phase waechst um ihre Mitte', rund(b.von) + '/' + rund(b.bis), '0.41/0.61');
+
+  // ... aber nie ueber die Zeile hinaus. Das war der eigentliche Fehler:
+  // eine Mindesthoehe im CSS schob den Block neben den naechsten Act.
+  const c = lichtAusschnitt(0.95, 1, 0.3);
+  check('am unteren Rand bleibt sie drin', rund(c.von) + '/' + rund(c.bis), '0.7/1');
+  const d = lichtAusschnitt(0, 0.05, 0.3);
+  check('am oberen Rand auch', rund(d.von) + '/' + rund(d.bis), '0/0.3');
+
+  check('Unfug wird eingefangen', rund(lichtAusschnitt(-2, 5).bis), 1);
+  check('und nach unten auch', rund(lichtAusschnitt(-2, 5).von), 0);
+
+  // Die Beschriftung sitzt auf der Mitte ihres Blocks ...
+  check('Marke mittig zum Block', rund(lichtMarkeLage(0.4, 0.6, 0.4)), 0.5);
+  // ... wird aber hereingeholt, damit sie nicht beim Nachbaract landet
+  check('unten hereingeholt', rund(lichtMarkeLage(0.9, 1, 0.4)), 0.8);
+  check('oben hereingeholt', rund(lichtMarkeLage(0, 0.1, 0.4)), 0.2);
+  check('eine hohe Marke landet in der Mitte', rund(lichtMarkeLage(0, 0.1, 1)), 0.5);
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Nachtgrenze --');
+(function () {
+  const nacht = (d) => nachtEnde(d).toISOString().slice(0, 16);
+
+  // Die Nacht auf Samstag endet Samstag um 6
+  check('abends', nacht(new Date(2026, 8, 11, 22, 0)),
+        new Date(2026, 8, 12, 6, 0).toISOString().slice(0, 16));
+  check('nach Mitternacht dieselbe Nacht', nacht(new Date(2026, 8, 12, 3, 0)),
+        new Date(2026, 8, 12, 6, 0).toISOString().slice(0, 16));
+  check('nach sechs beginnt die naechste', nacht(new Date(2026, 8, 12, 7, 0)),
+        new Date(2026, 8, 13, 6, 0).toISOString().slice(0, 16));
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Lichtphasen ohne Zeile --');
+(function () {
+  const phase = (vonTag, vonStd, bisTag, bisStd) => ({
+    eintrag: { note: '' },
+    se: { start: new Date(2026, 8, vonTag, vonStd, 0),
+          end: new Date(2026, 8, bisTag, bisStd, 0) }
+  });
+  const jetzt = new Date(2026, 8, 11, 21, 0);
+  const echt = [
+    phase(11, 23, 12, 0),   // heute Nacht
+    phase(12, 2, 12, 3),    // heute Nacht
+    phase(12, 23, 13, 0)    // morgen Nacht
+  ];
+
+  check('ohne Grenze steht auch die naechste Nacht dabei',
+        lichtOhneZeile([], echt, jetzt).length, 3);
+  // Genau das war unbrauchbar: unter dem Timetable von heute Nacht standen
+  // die Zeiten von morgen.
+  check('mit Nachtgrenze nur diese Nacht',
+        lichtOhneZeile([], echt, jetzt, nachtEnde(jetzt)).length, 2);
+  check('Vergangenes faellt weiter heraus',
+        lichtOhneZeile([], echt, new Date(2026, 8, 12, 2, 30),
+                       nachtEnde(new Date(2026, 8, 12, 2, 30))).length, 1);
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

@@ -68,12 +68,13 @@ test.describe('Kennzeichnung im Timetable', () => {
         const zeile = document.querySelector('.ttRow.hatLicht');
         const s = (w) => zeile.querySelector(w).getBoundingClientRect();
         const k = document.querySelector('.klLicht').getBoundingClientRect();
-        const spur = s('.lichtSpur');
+        const block = s('.lichtBalken');
         return {
-          rechtsVomAct: spur.left >= s('.act').right,
-          rechtsVomTag: spur.left >= s('.day').right,
-          // Der Reiter sitzt ueber der Spalte, nicht irgendwo
-          kopfUeberSpalte: Math.abs(k.left - spur.left) < 4 && k.bottom <= spur.top,
+          rechtsVomAct: block.left >= s('.act').right,
+          rechtsVomTag: block.left >= s('.day').right,
+          // Der Reiter sitzt ueber den Bloecken, nicht ueber der Beschriftung
+          // links daneben - sonst zeigt er auf die falsche Stelle.
+          kopfUeberBlock: Math.abs(k.right - block.right) < 4 && k.bottom <= block.top,
           // und laeuft nicht ueber den Bildrand hinaus
           imBild: k.right <= window.innerWidth
         };
@@ -81,7 +82,7 @@ test.describe('Kennzeichnung im Timetable', () => {
 
       expect(lage.rechtsVomAct, 'die Spalte steht rechts vom Act').toBe(true);
       expect(lage.rechtsVomTag, 'und rechts vom Tag').toBe(true);
-      expect(lage.kopfUeberSpalte, 'der Reiter sitzt ueber der Spalte').toBe(true);
+      expect(lage.kopfUeberBlock, 'der Reiter sitzt ueber den Bloecken').toBe(true);
       expect(lage.imBild, 'der Reiter passt ins Bild').toBe(true);
     });
 
@@ -92,31 +93,87 @@ test.describe('Kennzeichnung im Timetable', () => {
     await expect(page.locator('.klLicht')).toHaveCount(0);
   });
 
-  test('der Block fuellt die Zeile seines Acts aus', async ({ page, bar }) => {
-    bar.konfig(programm());
-    await zeitStellen(page, FREITAG_20_UHR);
-    await page.goto(bar.adresse + '/');
+  test('der Block sitzt versetzt - dort, wo die Phase wirklich anfaengt',
+    async ({ page, bar }) => {
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
 
-    // Der Block sass frueher zeitanteilig in der Zeile. Zu sehen war das nie:
-    // eine Zeile ist keine drei Zeilenhoehen hoch, und eine Mindesthoehe im
-    // CSS zog jeden Block auf dasselbe Mass - dafuer aber aus seiner Zeile
-    // heraus, neben den falschen Act. Jetzt fuellt er seine Zeile, und wann
-    // genau es blitzt, steht als Uhrzeit darin.
-    const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
-      const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
-      const balken = zeile.querySelector('.lichtBalken').getBoundingClientRect();
-      return {
-        von: (balken.top - spur.top) / spur.height,
-        bis: (balken.bottom - spur.top) / spur.height,
-        breite: balken.width
-      };
+      // Nachtflug 23:00-01:30, Licht 23:30-01:00: der Block muss auf einem
+      // Fuenftel der Spielzeit anfangen und bei vier Fuenfteln aufhoeren.
+      // Genau das war der Punkt an der eigenen Spalte - eine eigene Zeile
+      // konnte nicht zeigen, dass das Licht mitten im Set beginnt.
+      const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+        const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
+        const balken = zeile.querySelector('.lichtBalken').getBoundingClientRect();
+        return {
+          von: (balken.top - spur.top) / spur.height,
+          bis: (balken.bottom - spur.top) / spur.height,
+          breite: balken.width
+        };
+      });
+
+      expect(lage.von).toBeGreaterThan(0.12);
+      expect(lage.von).toBeLessThan(0.28);
+      expect(lage.bis).toBeGreaterThan(0.72);
+      expect(lage.bis).toBeLessThan(0.88);
+      // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
+      expect(lage.breite).toBeGreaterThan(30);
     });
 
-    expect(lage.von).toBeLessThan(0.02);
-    expect(lage.bis).toBeGreaterThan(0.98);
-    // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
-    expect(lage.breite).toBeGreaterThan(30);
-  });
+  test('die Bahn dahinter zeigt die ganze Spielzeit des Acts',
+    async ({ page, bar }) => {
+      // Ohne Bezugsgroesse ist ein Drittel nur ein duenner Streifen. Erst die
+      // Bahn macht sichtbar, dass es ein Drittel dieses Sets ist.
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+
+      const mit = await page.locator('.ttRow.hatLicht .lichtSpur')
+        .evaluate(el => el.classList.contains('mitBalken'));
+      expect(mit, 'wo Licht ist, liegt eine Bahn').toBe(true);
+
+      const ohne = await page.locator('.ttRow:not(.hatLicht) .lichtSpur')
+        .evaluate(el => el.classList.contains('mitBalken'));
+      expect(ohne, 'wo keins ist, bleibt die Spalte leer').toBe(false);
+    });
+
+  test('ein Untertitel aendert den Massstab der Spalte nicht',
+    async ({ page, bar }) => {
+      // Die Spur war ein Rasterkind und deckte nur die erste Rasterzeile ab.
+      // Eine Zeile mit Zusatz ("DJ-Set") bekam dadurch eine kuerzere Spur als
+      // ihre Nachbarn - derselbe Zeitanteil ergab je nach Zeile eine andere
+      // Hoehe, und die Spalte log.
+      bar.konfig(programm({
+        timetable: [
+          { date: '2026-08-28', start: '21:00', end: '23:00', act: 'Vorband' },
+          { date: '2026-08-28', start: '23:00', end: '01:00', act: 'Nachtflug', info: 'DJ-Set' }
+        ],
+        lichteffekte: [
+          { id: 'l1', date: '2026-08-28', start: '21:00', end: '23:00', note: '' },
+          { id: 'l2', date: '2026-08-28', start: '23:00', end: '01:00', note: '' }
+        ]
+      }));
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+
+      const zeilen = await page.evaluate(() =>
+        [...document.querySelectorAll('.ttRow')].map((tr) => {
+          const r = tr.getBoundingClientRect();
+          const s = tr.querySelector('.lichtSpur').getBoundingClientRect();
+          return { zusatz: !!tr.querySelector('.info'),
+                   fehlt: Math.round(r.height - s.height) };
+        }));
+
+      // Die Spur deckt ihre Zeile ab - bis auf die Einrueckung von zweimal
+      // 0.3em, damit die Bahnen benachbarter Zeilen sich nicht beruehren.
+      // Vorher fehlten in der Zeile mit Zusatz vierzig Prozent.
+      expect(zeilen.length).toBe(2);
+      expect(zeilen.some(z => z.zusatz), 'eine Zeile hat einen Zusatz').toBe(true);
+      for (const z of zeilen) {
+        expect(z.fehlt, 'Zeile mit Zusatz: ' + z.zusatz).toBeLessThan(16);
+      }
+    });
 
   test('kein Block ragt in die Nachbarzeile', async ({ page, bar }) => {
     // Der eigentliche Fehler: eine Mindesthoehe im CSS schob den Block ueber

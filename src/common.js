@@ -693,14 +693,54 @@ function lichtSpuren(se, fenster) {
 }
 
 /**
+ * Der sichtbare Ausschnitt einer Lichtphase in ihrer Zeile, als Anteil 0..1.
+ *
+ * Zwei Aufgaben. Erstens: eine sehr kurze Phase in einem langen Set waere
+ * rechnerisch ein Streifen von zwei Pixeln - es gibt also einen Mindestanteil.
+ * Zweitens, und wichtiger: der Ausschnitt bleibt in der Zeile. Eine
+ * Mindesthoehe in CSS verschaffte dem Block zwar Hoehe, schob ihn dabei aber
+ * unten heraus - er stand dann neben dem naechsten Act.
+ */
+function lichtAusschnitt(von, bis, mindestens) {
+  const min = Math.max(0, Math.min(mindestens == null ? 0.14 : mindestens, 1));
+  let a = Math.max(0, Math.min(1, von));
+  let b = Math.max(a, Math.min(1, bis));
+  if (b - a < min) {
+    const mitte = (a + b) / 2;
+    a = Math.max(0, Math.min(1 - min, mitte - min / 2));
+    b = a + min;
+  }
+  return { von: a, bis: b };
+}
+
+/**
+ * Wo die Beschriftung eines Blocks sitzt, als Anteil 0..1.
+ *
+ * Auf der Mitte des Blocks - aber so weit hereingeholt, dass sie nicht oben
+ * oder unten aus der Zeile ragt und beim Nachbaracte landet. `hoehe` ist die
+ * Hoehe der Beschriftung, gemessen in Zeilenhoehen.
+ */
+function lichtMarkeLage(von, bis, hoehe) {
+  const halb = Math.min(0.5, Math.max(0, (hoehe == null ? 0.5 : hoehe) / 2));
+  const mitte = (von + bis) / 2;
+  return Math.min(1 - halb, Math.max(halb, mitte));
+}
+
+/**
  * Lichtphasen, die zu keiner der gezeigten Zeilen gehoeren - etwa, weil sie in
  * einer Pause liegen oder nach dem letzten gezeigten Act kommen. Sie duerfen
  * nicht unter den Tisch fallen, nur weil kein Act danebensteht.
+ *
+ * `bis` begrenzt das nach hinten, und zwar zwingend: ohne Grenze standen unter
+ * dem Timetable von heute Nacht auch die Zeiten von morgen und uebermorgen -
+ * eine Aufzaehlung, die niemandem etwas sagt. Was weiter weg ist, steht auf der
+ * Wochenenduebersicht.
  */
-function lichtOhneZeile(zeilen, fenster, now) {
+function lichtOhneZeile(zeilen, fenster, now, bis) {
   const offen = [];
   for (const f of (fenster || [])) {
     if (f.se.end <= now) continue;
+    if (bis && f.se.start >= bis) continue;
     let getroffen = false;
     for (const z of (zeilen || [])) {
       if (lichtSpuren(z.se, [f]).length) { getroffen = true; break; }
@@ -725,6 +765,12 @@ function nachtVon(zeitpunkt) {
   const d = new Date(zeitpunkt.getTime());
   if (d.getHours() < NACHT_ENDET_UM) d.setDate(d.getDate() - 1);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Das Ende der Nacht, zu der ein Zeitpunkt gehoert. */
+function nachtEnde(zeitpunkt) {
+  const d = nachtVon(zeitpunkt);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, NACHT_ENDET_UM, 0, 0);
 }
 
 /** "HEUTE NACHT", sonst "NACHT AUF SAMSTAG". */
