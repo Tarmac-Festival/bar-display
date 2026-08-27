@@ -971,27 +971,31 @@ function renderTimetable() {
 // Licht mitten im Set an, faengt auch der Block mittendrin an. Genau dafuer ist
 // die Spalte da - eine eigene Zeile konnte das nie zeigen.
 //
-// Damit das nicht auf Kosten der Lesbarkeit geht, steht die Uhrzeit nicht im
-// Block, sondern links daneben. Im Block hatte sie nur Platz, wenn der Block
-// hoch genug war - und das ist er bei einer halben Stunde in einem
-// neunzigminuetigen Set eben nicht. Links ist Platz: die Act-Spalte ist zu zwei
-// Dritteln leer. So bleibt der Block zeitgenau und die Zeit lesbar.
+// Die Uhrzeit steht im Block. Damit sie dort Platz hat, bekommt der Block eine
+// Mindesthoehe - MIN_BLOCK, gemessen in Zeilenhoehen. Eine sehr kurze Phase
+// wird dadurch etwas hoeher gezeichnet, als sie ist; die genaue Spanne steht ja
+// darin. Entscheidend: der Mindestblock bleibt in seiner Zeile (siehe
+// lichtAusschnitt) - eine Mindesthoehe im CSS schob ihn frueher heraus, neben
+// den falschen Act.
+//
+// Eine Bemerkung steht hier nicht. Sie musste sich in denselben Platz quetschen
+// und drueckte die Uhrzeit weg. Zu lesen ist sie auf der Wochenenduebersicht
+// und in der Warnung, solange die Phase laeuft.
 //
 // Beschriftet wird nur die Zeile, in der die Phase beginnt; laeuft sie ueber
 // mehrere Acts, bleibt der Block dort unbeschriftet und ohne runde Kante - so
 // ist zu sehen, dass sie weiterlaeuft.
 //
-// Wie hoch die Beschriftung im Verhaeltnis zur Zeile ist, muss hier bekannt
-// sein, um sie in der Zeile zu halten: rund eineinhalb Zeilenhoehen Text auf
-// gut drei Zeilenhoehen Zeile. Die Masse stehen in player.css beieinander.
-const MARKE_ANTEIL = 0.38;
+// Das Mass haengt an der Zeilenhoehe in player.css: dort sind Zeilen mit
+// Lichtspalte 4.4em hoch, die Uhrzeit misst darin gut anderthalb.
+const MIN_BLOCK = 0.38;
 
 function lichtSpurHtml(spuren) {
   if (!spuren.length) return '<div class="lichtSpur"></div>';
 
   let inhalt = '';
   for (const s of spuren) {
-    const a = lichtAusschnitt(s.von, s.bis);
+    const a = lichtAusschnitt(s.von, s.bis, MIN_BLOCK);
     inhalt += '<span class="lichtBalken' +
       (s.beginntHier ? ' beginnt' : '') + (s.endetHier ? ' endet' : '') +
       '" style="top:' + (a.von * 100).toFixed(2) + '%' +
@@ -1000,13 +1004,10 @@ function lichtSpurHtml(spuren) {
     if (s.beginntHier) {
       // Kein Zeichen an der einzelnen Phase: es steht einmal ueber der Spalte.
       // In jeder Zeile wiederholt war es Zierrat, der die Zeiten zudeckte.
-      const lage = lichtMarkeLage(a.von, a.bis, MARKE_ANTEIL);
+      const lage = lichtMarkeLage(a.von, a.bis, MIN_BLOCK);
       inhalt += '<span class="lichtMarke" style="top:' + (lage * 100).toFixed(2) + '%">' +
         '<span class="lmZeit">' + timeLabel(s.fenster.se.start) + '&ndash;' +
-        timeLabel(s.fenster.se.end) + '</span>' +
-        (s.fenster.eintrag.note
-          ? '<span class="lmNote">' + escapeHtml(s.fenster.eintrag.note) + '</span>' : '') +
-        '</span>';
+        timeLabel(s.fenster.se.end) + '</span></span>';
     }
   }
   // Die Bahn dahinter zeigt die Spielzeit des Acts. Ohne sie ist ein Drittel

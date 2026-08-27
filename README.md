@@ -380,11 +380,20 @@ farbige Block darin sitzt genau dort, wo die Lichtphase liegt — fängt das Lic
 mitten im Set an, fängt auch der Block mittendrin an. So ist auf einen Blick zu
 sehen, ob es das ganze Set über blitzt oder nur die letzte halbe Stunde.
 
-Die Uhrzeit steht **links neben dem Block**, nicht darin. Im Block hätte sie
-nur Platz, wenn der Block hoch genug wäre — und eine halbe Stunde in einem
-neunzigminütigen Set ist eben nur ein Fünftel der Zeile. Links ist Platz: die
-Act-Spalte ist zu zwei Dritteln leer. So bleibt der Block zeitgenau und die
-Zeit trotzdem lesbar.
+Die genaue Spanne steht **im Block**. Damit sie dort Platz hat, bekommt der
+Block eine Mindesthöhe: eine sehr kurze Phase wird dadurch etwas höher
+gezeichnet, als sie ist — wo sie liegt, stimmt trotzdem, und wie lange sie
+dauert, steht ja darin. Der Mindestblock bleibt dabei in seiner Zeile; eine
+Mindesthöhe im Stylesheet hatte ihn früher unten herausgeschoben, neben den
+falschen Act.
+
+Eine **Bemerkung wird hier nicht angezeigt.** Sie musste sich in denselben
+Platz quetschen und drückte die Uhrzeit weg. Zu lesen ist sie auf der
+Wochenendübersicht und in der Warnung, solange die Phase läuft.
+
+Die Trennlinie zwischen zwei Acts hört vor der Spalte auf — quer durch die
+Spalte geschnitten zerteilte sie die Bahnen. Getrennt sind die ohnehin, durch
+ihren eigenen Abstand.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 

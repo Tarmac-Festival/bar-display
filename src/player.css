@@ -971,14 +971,12 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 /* Die Lichtspalte steht ganz rechts, mit einem eigenen Kopf darueber. Zwischen
    Uhrzeit und Act hat sie die Liste auseinandergezogen; am Rand liest sie sich
    wie das, was sie ist - eine zusaetzliche Spur neben dem Programm. */
-/* Die Lichtspalte ist breit: links die Uhrzeit, rechts der Block. Der Block
-   sitzt zeitgenau in der Zeile und ist deshalb oft nur wenige Pixel hoch - eine
-   Uhrzeit haette darin keinen Platz. Die Breite kostet nichts, die Act-Spalte
-   ist zu zwei Dritteln leer. */
+/* Die Lichtspalte traegt die Bahn (Spielzeit des Acts) und darin den Block
+   (die Lichtphase). Die Uhrzeit steht im Block. */
 .ttKopf,
 .ttList.mitLicht .ttRow {
   display: grid;
-  grid-template-columns: 11em 1fr auto 17.5em;
+  grid-template-columns: 11em 1fr auto 10.5em;
   column-gap: 1.1em;
 }
 /* Ausdruecklich benannt: ein Kind mit fester Zeile (die Lichtspur) wird vom
@@ -988,7 +986,22 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
    das Verhaeltnis Beschriftung zu Zeile ist unabhaengig von der Skalierung:
    auf einer Zeile von gut drei Zeilenhoehen ist die Uhrzeit die Haelfte - sie
    koennte ihrem Block gar nicht folgen. Bei viereinhalb bleibt ihr Spielraum. */
-.ttList.mitLicht .ttRow { min-height: 4.4em; position: relative; }
+.ttList.mitLicht .ttRow {
+  min-height: 4.4em;
+  position: relative;
+  /* Die Trennlinie hoert vor der Lichtspalte auf. Quer durch die Spalte
+     geschnitten zerteilte sie die Bahnen; getrennt sind die ohnehin schon,
+     durch ihren eigenen Abstand. */
+  border-bottom: none;
+}
+.ttList.mitLicht .ttRow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 11.6em;
+  bottom: 0;
+  border-bottom: 0.075em solid var(--line);
+}
 
 .ttList.mitLicht .ttRow .when { grid-column: 1; }
 .ttList.mitLicht .ttRow .act { grid-column: 2; }
@@ -1005,7 +1018,7 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   top: 0.3em;
   bottom: 0.3em;
   right: 0.2em;
-  width: 17.5em;
+  width: 10.5em;
   margin: 0;
 }
 .ttList.mitLicht .ttRow .info { grid-column: 2 / 4; }
@@ -1051,8 +1064,8 @@ body.spar .klLicht { background: none; }
 .lichtSpur.mitBalken::before {
   content: '';
   position: absolute;
+  left: 0;
   right: 0;
-  width: 8.6em;
   top: 0;
   bottom: 0;
   border-radius: 0.3em;
@@ -1060,12 +1073,10 @@ body.spar .klLicht { background: none; }
 }
 body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
 
-/* Der Block nimmt die rechte Haelfte der Spalte ein - links davon steht die
-   Uhrzeit. Zusammen ergeben sie die 17.5em von oben. */
 .lichtBalken {
   position: absolute;
+  left: 0;
   right: 0;
-  width: 8.6em;
   /* Ein duenner Strich waere rechnerisch richtig und trotzdem aus drei Metern
      nicht zu sehen. Also eine Flaeche ueber die ganze Spaltenbreite: die Lage
      bleibt dieselbe, sie faellt nur auf. */
@@ -1088,14 +1099,11 @@ body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
 .lichtMarke {
   position: absolute;
   left: 0;
-  right: 9.2em;
+  right: 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  /* Auf die Mitte des Blocks gesetzt und von dort aus zentriert - die Zeit
-     steht damit auf gleicher Hoehe wie ihr Block. In die Zeile hereingeholt
-     wird sie in lichtMarkeLage(), sonst haenge sie beim Nachbaract. */
+  justify-content: center;
+  /* Auf die Mitte des Blocks gesetzt und von dort aus zentriert. Dass sie dort
+     Platz hat, sichert MIN_BLOCK in player.js. */
   transform: translateY(-50%);
   line-height: 1.15;
 }
@@ -1106,22 +1114,6 @@ body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
   color: #fff;
   white-space: nowrap;
 }
-.lichtMarke .lmNote {
-  /* Aus dem Fluss genommen: sonst zaehlt der Zusatz zur Hoehe der Marke, und
-     das Zentrieren schoebe die Uhrzeit von ihrem Block weg. */
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  font-size: 1.05em;
-  max-width: 100%;
-  line-height: 1.2;
-  color: color-mix(in srgb, #fff 78%, transparent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Nichts danebenstehendes: Phasen, die in eine Pause fallen */
 .lichtSonst {
   display: flex;

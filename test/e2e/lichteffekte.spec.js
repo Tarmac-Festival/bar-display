@@ -50,7 +50,12 @@ test.describe('Kennzeichnung im Timetable', () => {
       await expect(nachtflug.locator('.lichtBalken')).toHaveCount(1);
       // Beschriftet mit der eigenen Zeitspanne, nicht mit der des Acts
       await expect(nachtflug.locator('.lmZeit')).toHaveText('23:30–01:00');
-      await expect(nachtflug.locator('.lmNote')).toHaveText('Hauptbühne');
+
+      // Die Bemerkung steht hier nicht: sie musste sich in denselben Platz
+      // quetschen und drueckte die Uhrzeit weg. Zu lesen ist sie in der
+      // Wochenenduebersicht und in der Warnung, solange die Phase laeuft.
+      await expect(nachtflug.locator('.lmNote')).toHaveCount(0);
+      await expect(nachtflug).not.toContainText('Hauptbühne');
     });
 
   test('die Spalte steht rechts und traegt oben das Zeichen als Reiter',
@@ -120,6 +125,62 @@ test.describe('Kennzeichnung im Timetable', () => {
       // Und breit genug, um aus der Entfernung ueberhaupt aufzufallen
       expect(lage.breite).toBeGreaterThan(30);
     });
+
+  test('die Uhrzeit steht im Block', async ({ page, bar }) => {
+    bar.konfig(programm());
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+      const m = zeile.querySelector('.lichtMarke').getBoundingClientRect();
+      const b = zeile.querySelector('.lichtBalken').getBoundingClientRect();
+      return { obenDrin: m.top >= b.top - 2, untenDrin: m.bottom <= b.bottom + 2,
+               linksDrin: m.left >= b.left - 2, rechtsDrin: m.right <= b.right + 2 };
+    });
+    expect(lage).toEqual({ obenDrin: true, untenDrin: true,
+                           linksDrin: true, rechtsDrin: true });
+  });
+
+  test('auch eine kurze Phase traegt ihre Uhrzeit', async ({ page, bar }) => {
+    // Zwanzig Minuten in einem zweistuendigen Set sind rechnerisch ein
+    // Sechstel der Zeile - darin steht keine Uhrzeit. Der Block bekommt
+    // deshalb eine Mindesthoehe, die den Text traegt und in der Zeile bleibt.
+    bar.konfig(programm({
+      lichteffekte: [{ id: 'l1', date: '2026-08-28', start: '22:30', end: '22:50', note: '' }]
+    }));
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+      const r = zeile.getBoundingClientRect();
+      const m = zeile.querySelector('.lichtMarke').getBoundingClientRect();
+      const b = zeile.querySelector('.lichtBalken').getBoundingClientRect();
+      return { imBlock: m.top >= b.top - 2 && m.bottom <= b.bottom + 2,
+               inDerZeile: b.top >= r.top - 1 && b.bottom <= r.bottom + 1 };
+    });
+    expect(lage.imBlock, 'die Uhrzeit passt in den Block').toBe(true);
+    expect(lage.inDerZeile, 'und der Block bleibt in seiner Zeile').toBe(true);
+  });
+
+  test('die Trennlinie hoert vor der Lichtspalte auf', async ({ page, bar }) => {
+    // Quer durch die Spalte geschnitten zerteilte sie die Bahnen.
+    bar.konfig(programm());
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const frei = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
+      const linie = getComputedStyle(zeile, '::after');
+      const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
+      const r = zeile.getBoundingClientRect();
+      // right ist der Abstand vom rechten Zeilenrand
+      const rechts = parseFloat(linie.right) || 0;
+      return { linieEndet: r.right - rechts, spurBeginnt: spur.left,
+               keinRahmen: getComputedStyle(zeile).borderBottomStyle };
+    });
+    expect(frei.keinRahmen, 'kein Rahmen quer ueber die Zeile').toBe('none');
+    expect(frei.linieEndet, 'die Linie endet vor der Spalte')
+      .toBeLessThanOrEqual(frei.spurBeginnt);
+  });
 
   test('die Bahn dahinter zeigt die ganze Spielzeit des Acts',
     async ({ page, bar }) => {
