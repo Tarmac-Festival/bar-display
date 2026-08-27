@@ -1013,10 +1013,12 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
    ihre Breite trotzdem: das Raster gibt sie fest vor. */
 .ttList.mitLicht .ttRow .lichtSpur {
   position: absolute;
-  /* Etwas eingerueckt, damit die Bahnen benachbarter Zeilen sich nicht
-     beruehren - sonst stehen dort nicht fuenf Spielzeiten, sondern ein Balken. */
-  top: 0.3em;
-  bottom: 0.3em;
+  /* Bis in die Mitte des Abstands zur Nachbarzeile (.ttList hat 0.5em Abstand).
+     Damit stossen die Stuecke einer Phase, die ueber mehrere Acts laeuft, genau
+     aneinander - und ergeben einen durchgehenden Kasten statt einer Reihe
+     einzelner. */
+  top: -0.25em;
+  bottom: -0.25em;
   right: 0.2em;
   width: 10.5em;
   margin: 0;
@@ -1056,30 +1058,15 @@ body.spar .klLicht { background: none; }
   min-height: 2.6em;
 }
 
-/* Die Bahn: die Spielzeit des Acts, in der der Block seinen Anteil einnimmt.
-   Sie ist genau so breit wie der Block und viel blasser - damit ein Drittel
-   sichtbar ein Drittel ist und nicht bloss ein duenner Streifen. Nur dort, wo
-   es Licht gibt: ueber die ganze Spalte gelegt sah sonst jede lichtfreie Zeile
-   aus, als waere dort etwas. */
-.lichtSpur.mitBalken::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  border-radius: 0.3em;
-  /* Dunkel, nicht hell: als heller Streifen war die Bahn ein zweites Lila neben
-     dem Hintergrund und stand mit dem Kasten in Konkurrenz. Als Vertiefung
-     bleibt sie im Ton der Anzeige, und das Orange tritt hervor. */
-  background: color-mix(in srgb, #000 18%, transparent);
-}
-body.spar .lichtSpur.mitBalken::before { background: rgba(0, 0, 0, 0.18); }
+/* Keine Bahn im Hintergrund. Sie sollte die Spielzeit des Acts zeigen, war
+   dabei aber ein zweiter Farbton neben dem Hintergrund - hell wie dunkel.
+   Farbe bekommt nur, wo wirklich Licht ist. */
 
 .lichtBalken {
   position: absolute;
   left: 0;
   right: 0;
+  z-index: 1;
   /* Ein duenner Strich waere rechnerisch richtig und trotzdem aus drei Metern
      nicht zu sehen. Also eine Flaeche ueber die ganze Spaltenbreite: die Lage
      bleibt dieselbe, sie faellt nur auf. */
@@ -1109,8 +1096,11 @@ body.spar .lichtSpur.mitBalken::before { background: rgba(0, 0, 0, 0.18); }
   right: 0;
   display: flex;
   justify-content: center;
-  /* Auf die Mitte des Blocks gesetzt und von dort aus zentriert. Dass sie dort
-     Platz hat, sichert MIN_BLOCK in player.js. */
+  /* Auf die Mitte des Kastens gesetzt und von dort aus zentriert; dass sie dort
+     Platz hat, sichert MIN_BLOCK in player.js.
+     Ueber allen Kaesten, auch denen der Nachbarzeile: bei einem durchgehenden
+     Kasten liegt die Mitte oft jenseits der Zeilengrenze. */
+  z-index: 2;
   transform: translateY(-50%);
   line-height: 1.15;
 }

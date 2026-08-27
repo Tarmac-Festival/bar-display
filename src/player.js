@@ -917,11 +917,16 @@ function renderTimetable() {
         '<span>Lichteffekte</span></span></div>';
     }
 
+    // Die ganze Spalte auf einmal: eine Phase ueber mehrere Acts muss als ein
+    // Kasten erscheinen, und wo darin die Uhrzeit steht, laesst sich erst
+    // entscheiden, wenn alle Stuecke bekannt sind.
+    const spalte = mitLicht ? lichtSpalte(zeilen, fenster) : [];
+
     body += '<div class="ttList' + (mitLicht ? ' mitLicht' : '') + '">';
-    for (const x of zeilen) {
+    zeilen.forEach((x, zi) => {
       const e = x.eintrag;
       const when = timeLabel(x.se.start) + (x.se.end ? '&ndash;' + timeLabel(x.se.end) : '');
-      const spuren = mitLicht ? lichtSpuren(x.se, fenster) : [];
+      const spuren = mitLicht ? spalte[zi] : [];
 
       body += '<div class="ttRow' + (spuren.length ? ' hatLicht' : '') + '">' +
         '<div class="when">' + when + '</div>' +
@@ -934,7 +939,7 @@ function renderTimetable() {
         (mitLicht ? lichtSpurHtml(spuren) : '') +
         (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') +
         '</div>';
-    }
+    });
     body += '</div>';
 
     // Phasen, zu denen kein Act danebensteht - in einer Pause etwa. Sie
@@ -990,31 +995,34 @@ function renderTimetable() {
 // Lichtspalte 4.4em hoch, die Uhrzeit misst darin gut anderthalb.
 const MIN_BLOCK = 0.46;
 
-function lichtSpurHtml(spuren) {
-  if (!spuren.length) return '<div class="lichtSpur"></div>';
+function lichtSpurHtml(stuecke) {
+  if (!stuecke.length) return '<div class="lichtSpur"></div>';
 
   let inhalt = '';
-  for (const s of spuren) {
-    const a = lichtAusschnitt(s.von, s.bis, MIN_BLOCK);
+  for (const s of stuecke) {
+    // Nur ein Kasten, der ganz in diese Zeile faellt, bekommt ein Mindestmass -
+    // er muss die Uhrzeit tragen. Ein Stueck, das oben oder unten weiterlaeuft,
+    // gehoert zu einem groesseren Kasten und bleibt so schmal, wie es ist.
+    const a = lichtAusschnitt(s.von, s.bis, s.einzeln ? MIN_BLOCK : 0.05);
     inhalt += '<span class="lichtBalken' +
       (s.beginntHier ? ' beginnt' : '') + (s.endetHier ? ' endet' : '') +
       '" style="top:' + (a.von * 100).toFixed(2) + '%' +
       ';height:' + ((a.bis - a.von) * 100).toFixed(2) + '%"></span>';
 
-    if (s.beginntHier) {
+    if (s.marke !== null && s.marke !== undefined) {
       // Kein Zeichen an der einzelnen Phase: es steht einmal ueber der Spalte.
       // In jeder Zeile wiederholt war es Zierrat, der die Zeiten zudeckte.
-      const lage = lichtMarkeLage(a.von, a.bis, MIN_BLOCK);
+      //
+      // In einem Kasten, der nur diese Zeile fuellt, wird die Uhrzeit in die
+      // Zeile hereingeholt. Bei einem durchgehenden Kasten darf sie ueber die
+      // Zeilengrenze ragen - dort ist ja noch Kasten.
+      const lage = s.einzeln ? lichtMarkeLage(a.von, a.bis, MIN_BLOCK) : s.marke;
       inhalt += '<span class="lichtMarke" style="top:' + (lage * 100).toFixed(2) + '%">' +
         '<span class="lmZeit">' + timeLabel(s.fenster.se.start) + '&ndash;' +
         timeLabel(s.fenster.se.end) + '</span></span>';
     }
   }
-  // Die Bahn dahinter zeigt die Spielzeit des Acts. Ohne sie ist ein Drittel
-  // nur ein duenner Streifen; mit ihr ist zu sehen, dass es ein Drittel dieses
-  // Sets ist. Nur in Zeilen mit Licht - sonst saehe jede leere Zeile aus, als
-  // waere dort etwas.
-  return '<div class="lichtSpur mitBalken">' + inhalt + '</div>';
+  return '<div class="lichtSpur">' + inhalt + '</div>';
 }
 
 // Das Warnzeichen sitzt auf einer hellen Plakette. Die gelieferte Grafik ist

@@ -727,6 +727,64 @@ function lichtMarkeLage(von, bis, hoehe) {
 }
 
 /**
+ * Die Lichtspalte fuer alle gezeigten Zeilen auf einmal.
+ *
+ * Eine Phase, die ueber mehrere Acts laeuft, ergibt in jeder betroffenen Zeile
+ * ein Stueck. Zusammen sind sie ein durchgehender Kasten - deshalb wird hier
+ * auch gleich entschieden, wo die Uhrzeit steht: in der Zeile, in der die Mitte
+ * der sichtbaren Phase liegt. Zeilenweise gerechnet stuende sie sonst in der
+ * Mitte des ersten Stuecks, also am oberen Ende des Kastens.
+ *
+ * Zurueck kommt ein Feld je Zeile mit den Stuecken darin.
+ */
+function lichtSpalte(zeilen, fenster) {
+  const spalten = (zeilen || []).map(() => []);
+
+  for (const f of (fenster || [])) {
+    const stuecke = [];
+    (zeilen || []).forEach((z, i) => {
+      const teil = lichtSpuren(z.se, [f])[0];
+      if (teil) stuecke.push({ i, teil });
+    });
+    if (!stuecke.length) continue;
+
+    // Die Mitte des sichtbaren Kastens, gemessen in Zeilenanteilen. Rechnet
+    // damit, dass die Zeilen gleich hoch sind - sind sie, bis auf eine
+    // Zusatzzeile, und dafuer ist die Abweichung eine halbe Zeilenhoehe.
+    const gesamt = stuecke.reduce((n, x) => n + (x.teil.bis - x.teil.von), 0);
+    let lauf = 0;
+    let markeIn = stuecke[0];
+    let markeBei = (stuecke[0].teil.von + stuecke[0].teil.bis) / 2;
+    for (const x of stuecke) {
+      const anteil = x.teil.bis - x.teil.von;
+      if (lauf + anteil >= gesamt / 2) {
+        markeIn = x;
+        markeBei = x.teil.von + (gesamt / 2 - lauf);
+        break;
+      }
+      lauf += anteil;
+    }
+
+    const einzeln = stuecke.length === 1;
+    for (const x of stuecke) {
+      spalten[x.i].push({
+        von: x.teil.von,
+        bis: x.teil.bis,
+        beginntHier: x.teil.beginntHier,
+        endetHier: x.teil.endetHier,
+        // Ein Kasten in nur einer Zeile braucht eine Mindesthoehe, damit die
+        // Uhrzeit hineinpasst. Ueber mehrere Zeilen ist der Kasten ohnehin
+        // hoch genug - dort waere ein Mindestmass je Stueck eine Luege.
+        einzeln: einzeln,
+        fenster: f,
+        marke: x === markeIn ? markeBei : null
+      });
+    }
+  }
+  return spalten;
+}
+
+/**
  * Lichtphasen, die zu keiner der gezeigten Zeilen gehoeren - etwa, weil sie in
  * einer Pause liegen oder nach dem letzten gezeigten Act kommen. Sie duerfen
  * nicht unter den Tisch fallen, nur weil kein Act danebensteht.

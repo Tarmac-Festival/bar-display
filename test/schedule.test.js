@@ -19,7 +19,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         istUebergang, uebergangsAuswahl, uebergangBeutel, uebergangsFolge,
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
-        lichtAusschnitt, lichtMarkeLage, nachtEnde,
+        lichtAusschnitt, lichtMarkeLage, nachtEnde, lichtSpalte,
         preisStil, gruppeHatInhalt, preisGruppen,
         infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite,
         zeitVersatz, probezeitLaeuft, versatzFuer } = ctx;
@@ -911,6 +911,60 @@ console.log('-- Lichtphasen ohne Zeile --');
   check('Vergangenes faellt weiter heraus',
         lichtOhneZeile([], echt, new Date(2026, 8, 12, 2, 30),
                        nachtEnde(new Date(2026, 8, 12, 2, 30))).length, 1);
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Durchgehender Kasten ueber mehrere Acts --');
+(function () {
+  const zeile = (vonStd, bisStd) => ({
+    se: { start: new Date(2026, 8, 11, vonStd, 0),
+          end: new Date(2026, 8, 11 + (bisStd <= vonStd ? 1 : 0), bisStd, 0) }
+  });
+  const phase = (vonStd, bisStd, tagVersatz) => ({
+    eintrag: { note: '' },
+    se: { start: new Date(2026, 8, 11, vonStd, 0),
+          end: new Date(2026, 8, 11 + (tagVersatz || 0), bisStd, 0) }
+  });
+
+  // Zwei Acts von je zwei Stunden, eine Phase mitten ueber die Grenze
+  const zeilen = [zeile(20, 22), zeile(22, 24)];
+  const spalte = lichtSpalte(zeilen, [phase(21, 23)]);
+
+  check('beide Zeilen bekommen ein Stueck',
+        spalte[0].length + '/' + spalte[1].length, '1/1');
+  check('das erste Stueck reicht bis zum Zeilenende', spalte[0][0].bis, 1);
+  check('das zweite faengt am Zeilenanfang an', spalte[1][0].von, 0);
+  check('nur das erste beginnt wirklich', spalte[0][0].beginntHier, true);
+  check('das zweite nicht', spalte[1][0].beginntHier, false);
+  check('nur das zweite endet wirklich', spalte[1][0].endetHier, true);
+
+  // Kein Mindestmass fuer Stuecke eines durchgehenden Kastens - der ist ohnehin
+  // hoch genug, und je Stueck angewandt waere es eine Luege.
+  check('durchgehend heisst nicht einzeln', spalte[0][0].einzeln, false);
+
+  // Die Uhrzeit steht einmal, und zwar in der Mitte des ganzen Kastens.
+  // 21-22 ist die zweite Haelfte der ersten Zeile, 22-23 die erste Haelfte der
+  // zweiten - die Mitte liegt genau auf der Naht.
+  const marken = spalte.map(z => z.filter(x => x.marke !== null).length);
+  check('genau eine Uhrzeit', marken[0] + marken[1], 1);
+  check('und sie sitzt auf der Naht', spalte[0][0].marke, 1);
+
+  // Eine Phase in nur einer Zeile bekommt ihr Mindestmass
+  const eine = lichtSpalte(zeilen, [phase(20, 21)]);
+  check('eine Phase in einer Zeile ist einzeln', eine[0][0].einzeln, true);
+  check('und traegt dort die Uhrzeit', eine[0][0].marke, 0.25);
+
+  // Drei Zeilen, Phase ueber alle drei: die Mitte liegt in der mittleren
+  const drei = [zeile(20, 22), zeile(22, 24), { se: {
+    start: new Date(2026, 8, 12, 0, 0), end: new Date(2026, 8, 12, 2, 0) } }];
+  const lang = lichtSpalte(drei, [phase(21, 1, 1)]);
+  check('drei Stuecke', lang.map(z => z.length).join(''), '111');
+  check('die Uhrzeit steht in der mittleren Zeile',
+        lang.map(z => z[0].marke === null ? '-' : 'x').join(''), '-x-');
+
+  check('ohne Fenster bleibt jede Zeile leer',
+        lichtSpalte(zeilen, []).map(z => z.length).join(''), '00');
+  check('ohne Zeilen kommt nichts zurueck', lichtSpalte([], [phase(21, 23)]).length, 0);
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

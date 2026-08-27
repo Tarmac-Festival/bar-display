@@ -152,14 +152,39 @@ test.describe('Kennzeichnung im Timetable', () => {
     await page.goto(bar.adresse + '/');
 
     const lage = await page.locator('.ttRow.hatLicht').evaluate((zeile) => {
-      const r = zeile.getBoundingClientRect();
+      const spur = zeile.querySelector('.lichtSpur').getBoundingClientRect();
       const m = zeile.querySelector('.lichtMarke').getBoundingClientRect();
       const b = zeile.querySelector('.lichtBalken').getBoundingClientRect();
-      return { imBlock: m.top >= b.top - 2 && m.bottom <= b.bottom + 2,
-               inDerZeile: b.top >= r.top - 1 && b.bottom <= r.bottom + 1 };
+      return { imKasten: m.top >= b.top - 2 && m.bottom <= b.bottom + 2,
+               inDerSpur: b.top >= spur.top - 1 && b.bottom <= spur.bottom + 1 };
     });
-    expect(lage.imBlock, 'die Uhrzeit passt in den Block').toBe(true);
-    expect(lage.inDerZeile, 'und der Block bleibt in seiner Zeile').toBe(true);
+    expect(lage.imKasten, 'die Uhrzeit passt in den Kasten').toBe(true);
+    expect(lage.inDerSpur, 'und der Kasten bleibt in seiner Spur').toBe(true);
+  });
+
+  test('die Spur greift nicht in die Nachbarzeile', async ({ page, bar }) => {
+    // Sie reicht bis in die Mitte des Abstands, damit die Stuecke einer Phase
+    // ueber mehrere Acts aneinanderstossen - aber keinen Millimeter weiter.
+    bar.konfig(programm());
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const ueberlappt = await page.evaluate(() => {
+      const zeilen = [...document.querySelectorAll('.ttRow')];
+      const raus = [];
+      zeilen.forEach((z, i) => {
+        const spur = z.querySelector('.lichtSpur');
+        if (!spur) return;
+        const s = spur.getBoundingClientRect();
+        zeilen.forEach((andere, j) => {
+          if (i === j) return;
+          const r = andere.getBoundingClientRect();
+          if (s.top < r.bottom - 1 && s.bottom > r.top + 1) raus.push(i + '/' + j);
+        });
+      });
+      return raus;
+    });
+    expect(ueberlappt).toEqual([]);
   });
 
   test('der Kasten ist rundum umrandet - offen nur da, wo es weitergeht',
@@ -216,22 +241,56 @@ test.describe('Kennzeichnung im Timetable', () => {
       .toBeLessThanOrEqual(frei.spurBeginnt);
   });
 
-  test('die Bahn dahinter zeigt die ganze Spielzeit des Acts',
+  test('ueber zwei Acts ergeben die Stuecke einen durchgehenden Kasten',
     async ({ page, bar }) => {
-      // Ohne Bezugsgroesse ist ein Drittel nur ein duenner Streifen. Erst die
-      // Bahn macht sichtbar, dass es ein Drittel dieses Sets ist.
-      bar.konfig(programm());
+      // Zwei Kaesten mit einer Luecke dazwischen sehen aus wie zwei Phasen.
+      bar.konfig(programm({
+        lichteffekte: [{ id: 'l1', date: '2026-08-28', start: '22:30',
+                         end: '23:45', note: '' }]
+      }));
       await zeitStellen(page, FREITAG_20_UHR);
       await page.goto(bar.adresse + '/');
+      await expect(page.locator('.lichtBalken')).toHaveCount(2);
 
-      const mit = await page.locator('.ttRow.hatLicht .lichtSpur')
-        .evaluate(el => el.classList.contains('mitBalken'));
-      expect(mit, 'wo Licht ist, liegt eine Bahn').toBe(true);
+      const naht = await page.evaluate(() => {
+        const b = [...document.querySelectorAll('.lichtBalken')]
+          .map(el => el.getBoundingClientRect())
+          .sort((x, y) => x.top - y.top);
+        return Math.round(b[1].top - b[0].bottom);
+      });
+      expect(naht, 'die Stuecke stossen ohne Luecke aneinander').toBe(0);
 
-      const ohne = await page.locator('.ttRow:not(.hatLicht) .lichtSpur')
-        .evaluate(el => el.classList.contains('mitBalken'));
-      expect(ohne, 'wo keins ist, bleibt die Spalte leer').toBe(false);
+      // Und die Uhrzeit steht einmal, in der Mitte des ganzen Kastens
+      await expect(page.locator('.lmZeit')).toHaveCount(1);
+      const mittig = await page.evaluate(() => {
+        const b = [...document.querySelectorAll('.lichtBalken')]
+          .map(el => el.getBoundingClientRect())
+          .sort((x, y) => x.top - y.top);
+        const m = document.querySelector('.lichtMarke').getBoundingClientRect();
+        const mitteKasten = (b[0].top + b[1].bottom) / 2;
+        const mitteMarke = (m.top + m.bottom) / 2;
+        return Math.abs(mitteKasten - mitteMarke);
+      });
+      expect(mittig, 'die Uhrzeit sitzt in der Mitte des ganzen Kastens')
+        .toBeLessThan(12);
     });
+
+  test('die Spalte hat keinen eigenen Hintergrund', async ({ page, bar }) => {
+    // Eine Bahn hinter dem Kasten war ein zweiter Farbton neben dem
+    // Hintergrund - hell wie dunkel. Farbe bekommt nur, wo Licht ist.
+    bar.konfig(programm());
+    await zeitStellen(page, FREITAG_20_UHR);
+    await page.goto(bar.adresse + '/');
+
+    const grund = await page.locator('.ttRow.hatLicht .lichtSpur').evaluate((el) => {
+      const durchsichtig = (f) => f === 'transparent' || f === 'rgba(0, 0, 0, 0)';
+      return { eigen: getComputedStyle(el).backgroundColor,
+               davor: getComputedStyle(el, '::before').content,
+               ok: durchsichtig(getComputedStyle(el).backgroundColor) };
+    });
+    expect(grund.ok, 'die Spur selbst bleibt durchsichtig: ' + grund.eigen).toBe(true);
+    expect(grund.davor, 'und legt auch nichts davor').toBe('none');
+  });
 
   test('ein Untertitel aendert den Massstab der Spalte nicht',
     async ({ page, bar }) => {

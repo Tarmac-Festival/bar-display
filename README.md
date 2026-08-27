@@ -375,35 +375,34 @@ spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 Auf dem Timetable bekommt das eine **eigene Spalte am rechten Rand**, mit dem
 Warnzeichen als Reiter darüber — einmal über der Spalte, nicht an jedem Block.
 
-Hinter jedem betroffenen Act liegt eine **Bahn: seine Spielzeit**, als dunkle
-Vertiefung. Der orange umrandete Kasten darin sitzt genau dort, wo die
-Lichtphase liegt — fängt das Licht mitten im Set an, fängt auch der Kasten
-mittendrin an. So ist auf einen Blick zu sehen, ob es das ganze Set über blitzt
-oder nur die letzte halbe Stunde.
+Neben jedem betroffenen Act steht ein orange umrandeter Kasten, genau dort, wo
+die Lichtphase in der Spielzeit liegt — fängt das Licht mitten im Set an, fängt
+auch der Kasten mittendrin an. Sonst ist die Spalte leer: sie hat keinen
+eigenen Hintergrund, der mit dem Kasten um Aufmerksamkeit konkurriert.
 
-Läuft eine Phase über mehrere Acts, bleibt der Kasten dort **offen**: keine
-Kante, keine Rundung an der Naht. Nur wo die Phase wirklich anfängt und
-aufhört, ist er geschlossen.
+Läuft eine Phase über mehrere Acts, ist sie **ein durchgehender Kasten** über
+alle betroffenen Zeilen hinweg — ohne Kante an der Naht, damit sie nicht wie
+zwei Phasen aussieht. Die Uhrzeit steht einmal, in der Mitte des ganzen
+Kastens.
 
-Die genaue Spanne steht **im Block**. Damit sie dort Platz hat, bekommt der
-Block eine Mindesthöhe: eine sehr kurze Phase wird dadurch etwas höher
+Passt eine Phase ganz in einen Act, bekommt ihr Kasten eine **Mindesthöhe**,
+damit die Uhrzeit hineinpasst: eine sehr kurze Phase wird dadurch etwas höher
 gezeichnet, als sie ist — wo sie liegt, stimmt trotzdem, und wie lange sie
-dauert, steht ja darin. Der Mindestblock bleibt dabei in seiner Zeile; eine
+dauert, steht ja darin. Der Mindestkasten bleibt dabei in seiner Zeile; eine
 Mindesthöhe im Stylesheet hatte ihn früher unten herausgeschoben, neben den
-falschen Act.
+falschen Act. Bei einem durchgehenden Kasten entfällt sie — der ist ohnehin
+hoch genug, und je Teilstück angewandt wäre sie eine Lüge.
 
 Eine **Bemerkung wird hier nicht angezeigt.** Sie musste sich in denselben
 Platz quetschen und drückte die Uhrzeit weg. Zu lesen ist sie auf der
 Wochenendübersicht und in der Warnung, solange die Phase läuft.
 
-Die Trennlinie zwischen zwei Acts hört vor der Spalte auf — quer durch die
-Spalte geschnitten zerteilte sie die Bahnen. Getrennt sind die ohnehin, durch
-ihren eigenen Abstand.
+Die Trennlinie zwischen zwei Acts hört vor der Spalte auf — quer durch
+geschnitten zerteilte sie die Kästen.
 
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 
-Läuft eine Phase über zwei Acts hinweg, steht sie neben beiden — beschriftet
-nur dort, wo sie anfängt. Und eine Phase, zu der gar kein Act danebensteht (in einer
+Und eine Phase, zu der gar kein Act danebensteht (in einer
 Pause etwa), erscheint als Zeile **Außerdem starke Lichteffekte** unter der
 Liste; sie fällt nicht unter den Tisch, nur weil die Spalte sie nicht aufnehmen
 kann.
