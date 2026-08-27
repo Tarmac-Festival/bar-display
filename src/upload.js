@@ -13,9 +13,32 @@
   const ARTEN = {
     media: { accept: 'video/*,image/*', mehrere: true },
     photo: { accept: 'image/*', mehrere: false },
-    logo:  { accept: '.png,.svg,.jpg,.jpeg,.webp', mehrere: false },
-    font:  { accept: '.ttf,.otf,.woff,.woff2', mehrere: false }
+    // Neben den Endungen auch die Medientypen: manche Dateianbieter koennen mit
+    // einer blossen Endung nichts anfangen und zeigen dann gar nichts an.
+    logo:  { accept: 'image/png,image/svg+xml,image/jpeg,image/webp,' +
+                     '.png,.svg,.jpg,.jpeg,.webp', mehrere: false },
+    font:  { accept: 'font/ttf,font/otf,font/woff,font/woff2,' +
+                     '.ttf,.otf,.woff,.woff2', mehrere: false }
   };
+
+  // Auf dem iPhone keinen Filter setzen.
+  //
+  // iOS reicht den Filter an den Dateianbieter weiter, den jemand in der
+  // Dateien-App auswaehlt. Google Drive kommt damit nicht zurecht und meldet
+  // "Inhalt nicht verfuegbar - unbekannter Fehler"; der Ordner bleibt leer, und
+  // es sieht aus, als waere das Programm kaputt. Ohne Filter listet der Anbieter
+  // seinen Ordner normal auf.
+  //
+  // Verloren geht dabei nichts: welche Dateien wirklich taugen, entscheidet
+  // ohnehin der Dienst beim Hochladen (lib/hochladen.js), und der sagt im
+  // Klartext, was erlaubt ist. Ein Filter, der die Auswahl bequemer macht, ist
+  // das eine - einer, der die halbe Cloud unsichtbar macht, das andere.
+  function istIOS() {
+    const ua = (navigator.userAgent || '');
+    // iPadOS meldet sich seit Fassung 13 als Mac; der Zeigertest trennt beide.
+    return /iPad|iPhone|iPod/.test(ua) ||
+           (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  }
 
   // ------------------------------------------------------------------ Auswahl
   function dateienWaehlen(art) {
@@ -23,7 +46,7 @@
     return new Promise((fertig) => {
       const feld = document.createElement('input');
       feld.type = 'file';
-      feld.accept = regeln.accept;
+      if (!istIOS()) feld.accept = regeln.accept;
       feld.multiple = regeln.mehrere;
       feld.style.cssText = 'position:fixed;left:-9999px;opacity:0';
       document.body.appendChild(feld);
