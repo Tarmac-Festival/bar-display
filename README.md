@@ -846,6 +846,48 @@ Adressen sehen brauchbar aus, führen vom Handy aus aber ins Leere:
 
 ![Bedienung vom Handy im Reiter System](docs/screenshots/einstellungen-system.png)
 
+Die Karte **frischt sich von selbst auf**: wechselt der Rechner das Netz, steht
+kurz darauf die neue Adresse da und der QR-Code stimmt wieder. Beim Aufbau ist
+das der Normalfall — siehe gleich.
+
+### Wenn es gar kein WLAN gibt
+
+Auf einem Acker steht selten ein Router. Dafür gibt es drei Wege, und einer ist
+deutlich besser als die anderen.
+
+**Der einfache Weg: das Handy macht das Netz.** *Persönlicher Hotspot* am iPhone
+(bzw. *Hotspot* am Android) einschalten, der Bar-Rechner verbindet sich damit —
+fertig. Beide sind im selben Netz, und **Internet braucht es dafür nicht**: die
+Bedienseite läuft ja auf dem Rechner selbst. Das funktioniert mit jedem Handy,
+kostet nichts und muss nirgends installiert werden. Der Rechner bekommt dabei
+eine neue Adresse; die Karte unter *System* zeigt sie von selbst an.
+
+**Für mehrere Bars: ein kleiner Reise-Router.** Ein Gerät für zwanzig bis
+dreißig Euro, an eine Powerbank oder eine Steckdose, ohne
+Internetanschluss. Alle Bar-Rechner hängen sich daran, und ein Handy erreicht
+damit **alle Bars auf einmal**. Ein Handy-Hotspot tut es auch, hält aber nur so
+lange, wie das Handy dabei ist.
+
+**Der Rechner als Hotspot ist der unzuverlässigste Weg.** Windows kann das im
+Prinzip (*Einstellungen → Netzwerk → Mobiler Hotspot*), verlangt dafür aber
+üblicherweise eine bestehende Verbindung, die es freigeben kann — also genau
+das, was in diesem Fall fehlt. Je nach WLAN-Treiber und Windows-Fassung klappt
+es, oder es kommt „Der mobile Hotspot kann nicht eingerichtet werden". Das
+Programm kann daran nichts ändern und bietet deshalb auch keinen Knopf dafür an:
+ein Schalter, der bei jedem zweiten Laptop nicht tut, ist schlechter als keiner.
+Wer es trotzdem versuchen will, probiert es vor dem Festival aus, nicht davor
+an der Bar.
+
+Ein **Raspberry Pi** ist der Ausnahmefall: der kann verlässlich sein eigenes
+WLAN aufspannen. Das ist aber Einrichtung am Betriebssystem und nicht Sache
+dieses Programms.
+
+> **Nach dem Wechsel ins neue Netz fragt Windows, ob es ein privates oder ein
+> öffentliches Netzwerk ist.** Auf *öffentlich* blockt die Firewall eingehende
+> Verbindungen, und das Handy kommt nicht auf die Bedienseite. Hier gehört
+> **privat** gewählt. Ist es schon passiert: *Windows-Einstellungen → Netzwerk →
+> Eigenschaften der Verbindung → Privates Netzwerk*.
+
 Beim Start blendet die Anzeige sie außerdem eine Minute lang ein, damit niemand
 die Adresse des Rechners heraussuchen muss:
 
@@ -1290,6 +1332,8 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Frisch aufgenommenes Foto kommt nicht an | Sollte nicht mehr vorkommen: die Seite wartet jetzt bis zu 30 Sekunden auf das Bild |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
 | Bedienseite vom Handy nicht erreichbar | *System → Bedienung vom Handy*: eingeschaltet? Adresse und Port stimmen? Firewall des Rechners? |
+| Kein WLAN am Veranstaltungsort | Hotspot am Handy an, Rechner verbindet sich – Internet braucht es dafür nicht. Siehe [Wenn es gar kein WLAN gibt](#wenn-es-gar-kein-wlan-gibt) |
+| Handy im selben WLAN, kommt trotzdem nicht drauf | Windows hat das Netz als „öffentlich" eingestuft und blockt. Auf *privat* umstellen |
 | „Port 8080 ist schon belegt" | Anderen Port eintragen – oder läuft das Programm zweimal? |
 | Hochladen bricht ab | Zu groß, zu wenig Platz oder WLAN weg – die Meldung nennt den Grund |
 | iPhone: „Inhalt nicht verfügbar" in Google Drive o. ä. | Auf iOS wird kein Typfilter mehr gesetzt, und die Auswahl darf beliebig lange offen bleiben. Hilft das nicht, ist es die Cloud-App selbst: Datei dort erst „In Dateien sichern", dann von „Auf meinem iPhone" wählen |

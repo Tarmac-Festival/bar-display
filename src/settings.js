@@ -264,6 +264,12 @@ function durchsageStatus() {
 // ---------------------------------------------------------------------------
 // Die Adresse muss man sehen koennen, sonst sucht jemand die IP des Bar-
 // Rechners von Hand heraus. Der QR-Code daneben spart auch noch das Abtippen.
+// Was zuletzt dastand. Die Karte wird regelmaessig nachgefragt, aber nur neu
+// gezeichnet, wenn sich wirklich etwas geaendert hat - sonst blinkt der
+// QR-Code alle paar Sekunden auf.
+let fernZuletzt = null;
+let fernUhr = null;
+
 async function fillFern() {
   const karte = $('fernKarte');
   const feld = $('fernAdresse');
@@ -308,6 +314,29 @@ async function fillFern() {
   feld.textContent = urls.join('   ');
   feld.className = 'anStatus aktiv';
   if (qr) qr.innerHTML = qrBild(urls[0]);
+}
+
+/**
+ * Die Adresse im Auge behalten.
+ *
+ * Sie aendert sich, sobald der Rechner das Netz wechselt - und genau das
+ * passiert beim Aufbau staendig: Hotspot am Handy an, Rechner verbindet sich,
+ * neue Adresse. Stand hier noch die alte, fuehrte der QR-Code ins Leere.
+ *
+ * Neu gezeichnet wird nur, wenn sich wirklich etwas geaendert hat.
+ */
+function fernBeobachten() {
+  // fillSettingsFields() laeuft bei jedem Speichern - ohne die Sperre kaeme
+  // jedes Mal eine weitere Uhr dazu.
+  if (fernUhr || !window.api.fernInfo) return;
+  fernUhr = setInterval(async () => {
+    let f = null;
+    try { f = await window.api.fernInfo(); } catch (e) { return; }
+    const stand = JSON.stringify(f);
+    if (stand === fernZuletzt) return;
+    fernZuletzt = stand;
+    fillFern();
+  }, 8000);
 }
 
 // Kleiner QR-Code zur ersten Adresse. Dieselbe Bibliothek wie auf der Anzeige.
@@ -993,6 +1022,7 @@ function fillSettingsFields() {
   $('s_fernHinweis').checked = s.fernHinweis !== false;
   $('s_fernPort').value = Number(s.fernPort) || 8080;
   fillFern();
+  fernBeobachten();
   qrFelderAnpassen();
   renderLogoAuswahl();
   renderLogoPreview();
