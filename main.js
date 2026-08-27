@@ -31,6 +31,7 @@ let settingsWin = null;
 const { zeitStatus } = require('./lib/zeitstatus');
 const { sicherName } = require('./lib/dateiname');
 const { fotosAufraeumen } = require('./lib/fotos');
+const ttDatei = require('./lib/timetabledatei');
 const webserver = require('./lib/webserver');
 
 const CONFIG_VERSION = 3;
@@ -707,25 +708,17 @@ ipcMain.handle('font:remove', (_e, f) => removeFrom(FONT_DIR, f));
 
 // --- Timetable weitergeben (eine Datei inklusive Act-Fotos) ----------------
 ipcMain.handle('timetable:export', async () => {
-  const cfg = loadConfig();
-  const entries = cfg.timetable || [];
-  const photos = {};
-  for (const e of entries) {
-    if (!e.photo || photos[e.photo]) continue;
-    const p = path.join(PHOTO_DIR, e.photo);
-    try { photos[e.photo] = fs.readFileSync(p).toString('base64'); }
-    catch (err) { /* Foto fehlt - Eintrag bleibt trotzdem drin */ }
-  }
+  // Wie die Datei aussieht, steht in lib/timetabledatei.js - dieselbe Stelle,
+  // die auch der Dienst fuers Handy benutzt.
+  const inhalt = ttDatei.bauen(loadConfig(), fs, path, PHOTO_DIR);
   const res = await dialog.showSaveDialog(settingsWin, {
     title: 'Timetable weitergeben',
-    defaultPath: 'timetable.bardisplay.json',
+    defaultPath: ttDatei.DATEINAME,
     filters: [{ name: 'Bar Display Timetable', extensions: ['json'] }]
   });
   if (res.canceled) return 0;
-  fs.writeFileSync(res.filePath, JSON.stringify({
-    kind: 'bar-display-timetable', version: 1, entries, photos
-  }, null, 2), 'utf8');
-  return entries.length;
+  fs.writeFileSync(res.filePath, JSON.stringify(inhalt, null, 2), 'utf8');
+  return inhalt.entries.length;
 });
 
 ipcMain.handle('timetable:import', async () => {
@@ -737,17 +730,12 @@ ipcMain.handle('timetable:import', async () => {
   if (res.canceled) return null;
   try {
     const data = readJson(res.filePaths[0]);
-    if (data.kind !== 'bar-display-timetable' || !Array.isArray(data.entries)) {
+    if (!ttDatei.istTimetableDatei(data)) {
       dialog.showErrorBox('Falsche Datei', 'Das ist keine weitergegebene Timetable-Datei.');
       return null;
     }
     ensureDirs();
-    for (const [name, b64] of Object.entries(data.photos || {})) {
-      const target = path.join(PHOTO_DIR, path.basename(name));
-      if (!target.startsWith(PHOTO_DIR)) continue;
-      try { fs.writeFileSync(target, Buffer.from(b64, 'base64')); } catch (err) { /* egal */ }
-    }
-    return data.entries;
+    return ttDatei.uebernehmen(data, fs, path, PHOTO_DIR);
   } catch (err) {
     dialog.showErrorBox('Import fehlgeschlagen', err.message);
     return null;

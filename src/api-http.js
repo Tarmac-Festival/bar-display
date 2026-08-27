@@ -112,8 +112,41 @@ if (!window.api) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin })
     }).then(r => r.json().catch(() => ({ ok: false, fehler: 'Keine Antwort.' }))),
-    exportTimetable: async () => 0,
-    importTimetable: async () => null,
+    // Weitergeben heisst am Handy: die Datei herunterladen. Den Inhalt baut der
+    // Dienst (lib/timetabledatei.js), damit sie genauso aussieht wie die vom
+    // Rechner - eine Bar muss die Datei der anderen lesen koennen.
+    exportTimetable: async () => {
+      const a = document.createElement('a');
+      a.href = '/api/timetable';
+      a.download = 'timetable.bardisplay.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Wie viele Acts es waren, weiss hier niemand - die Meldung faellt aus.
+      return 0;
+    },
+
+    importTimetable: async () => {
+      const gewaehlt = await window.barDisplayUpload.textDateiLesen();
+      if (!gewaehlt) return null;
+
+      let antwort = null;
+      try {
+        antwort = await fetch('/api/timetable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: gewaehlt.text
+        }).then(r => r.json());
+      } catch (err) {
+        alert('Die Datei konnte nicht übertragen werden.');
+        return null;
+      }
+      if (!antwort || !antwort.ok) {
+        alert((antwort && antwort.fehler) || 'Die Datei konnte nicht gelesen werden.');
+        return null;
+      }
+      return antwort.entries;
+    },
     exportConfig: async () => false,
     importConfig: async () => null
   };

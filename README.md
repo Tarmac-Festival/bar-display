@@ -89,6 +89,8 @@ Getränkepreise im Festival-Design.
 - **Bedienung vom Handy auf jedem System** — Windows, Linux, macOS und
   Raspberry Pi bieten dieselbe Bedienseite im Netzwerk an. Die Adresse steht
   unter *System* und erscheint beim Start eine Minute lang auf der Anzeige.
+- **Timetable weitergeben, samt Fotos** — eine Datei für alle Bars, am Rechner
+  wie am Handy.
 - **Dateien vom Handy** — Clips, Fotos, Logo und Schrift lassen sich direkt über
   die Bedienseite hochladen, ohne Rechner.
 - **PIN für die Bedienseite** — im Netzwerk darf nur ändern, wer sie kennt.
@@ -886,6 +888,16 @@ gibt es nichts zu wählen, dort verschwindet die Karte.
 **samt Fotos** eingebettet sind. An den anderen Bars *Timetable übernehmen* – Preise und
 Videos der jeweiligen Bar bleiben unangetastet. Damit lassen sich Programmänderungen
 durchreichen, ohne dass an den einzelnen Bars etwas kaputtgeht.
+
+**Beides geht auch vom Handy.** Am Rechner öffnet sich der gewohnte Dateidialog;
+auf der Bedienseite lädt der Browser die Datei herunter beziehungsweise fragt nach
+einer. Die Datei ist in beiden Fällen dieselbe — eine Bar kann also die Datei der
+anderen lesen, egal wo sie entstanden ist. Wer sie übernimmt, sieht den neuen
+Timetable erst einmal nur auf der Bedienseite: **gespeichert wird er erst mit
+Speichern**, bis dahin läuft an der Bar das Alte weiter.
+
+Fehlt ein Foto auf der Platte, bleibt der Act trotzdem in der Datei — lieber ein
+Act ohne Bild als ein Timetable ohne Act.
 
 Videodateien wandern nicht mit; die kommen per USB-Stick in den Medien-Ordner oder werden
 an jeder Bar über *Videos & Bilder hinzufügen* eingelesen.

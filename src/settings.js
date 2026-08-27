@@ -65,7 +65,6 @@ function fillAll() {
 // einen Dateimanager oder ein Fenster braucht.
 const NUR_AM_RECHNER = [
   'openMedia', 'checkMedia',                      // Ordner öffnen, umwandeln
-  'ttExport', 'ttImport',                         // Timetable als Datei weitergeben
   'openPhotos', 'exportCfg', 'importCfg',         // Ordner und Sicherungen
   'backToPlayer', 'quitApp'                       // Fensterschaltflächen
 ];
@@ -151,8 +150,8 @@ function fuerBrowserAnpassen() {
     'background:rgba(255,138,31,0.12);border:1px solid #4a3a28;max-width:none';
   hinweis.textContent = 'Fernbedienung über das Netzwerk. Timetable, Preise, Durchsagen ' +
     'und alle Texte lassen sich hier ändern, und Clips, Fotos, Logo und Schrift könnt ihr ' +
-    'direkt vom Handy hochladen. Nur Umwandeln und das Weitergeben von Dateien bleiben ' +
-    'dem Rechner vorbehalten.';
+    'direkt vom Handy hochladen. Auch den Timetable weitergeben und übernehmen geht ' +
+    'hier. Nur das Umwandeln von Clips und die Ordner bleiben dem Rechner vorbehalten.';
   const haupt = document.querySelector('main');
   haupt.insertBefore(hinweis, haupt.firstChild);
 }
@@ -900,6 +899,8 @@ function wireButtons() {
   $('ttExport').addEventListener('click', async () => {
     if (dirty) { toast('Bitte zuerst speichern', true); return; }
     const n = await window.api.exportTimetable();
+    // Am Handy laedt der Browser die Datei herunter; wie viele Acts drinstehen,
+    // weiss die Seite dann nicht - dort bleibt die Meldung aus.
     if (n) toast(n + ' Acts gesichert - inklusive Fotos');
   });
 

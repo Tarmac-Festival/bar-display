@@ -18,7 +18,8 @@
     logo:  { accept: 'image/png,image/svg+xml,image/jpeg,image/webp,' +
                      '.png,.svg,.jpg,.jpeg,.webp', mehrere: false },
     font:  { accept: 'font/ttf,font/otf,font/woff,font/woff2,' +
-                     '.ttf,.otf,.woff,.woff2', mehrere: false }
+                     '.ttf,.otf,.woff,.woff2', mehrere: false },
+    json:  { accept: 'application/json,.json', mehrere: false }
   };
 
   // Auf dem iPhone keinen Filter setzen.
@@ -234,5 +235,17 @@
     return fertige;
   }
 
-  window.barDisplayUpload = { ablauf, dateienWaehlen, hochladen, verkleinern };
+  /**
+   * Eine Datei auswaehlen und ihren Text zurueckgeben - ohne sie hochzuladen.
+   * Fuer die weitergegebene Timetable-Datei: die wird gelesen und an den Dienst
+   * geschickt, sie landet nicht im Medienordner.
+   */
+  async function textDateiLesen() {
+    const dateien = await dateienWaehlen('json');
+    if (!dateien.length) return null;
+    return { name: dateien[0].name, text: await dateien[0].text() };
+  }
+
+  window.barDisplayUpload = { ablauf, dateienWaehlen, hochladen, verkleinern,
+                              textDateiLesen };
 })();

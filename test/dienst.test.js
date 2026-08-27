@@ -11,6 +11,7 @@ const webserver = require('../lib/webserver');
 const konfigablage = require('../lib/konfigablage');
 const { formatHinweis } = require('../lib/hochladen');
 const { benutzteFotos, fotosAufraeumen } = require('../lib/fotos');
+const ttDatei = require('../lib/timetabledatei');
 
 let pass = 0, fail = 0;
 function check(name, got, want) {
@@ -210,8 +211,62 @@ function fotosPruefen() {
   fs.rmSync(ordner, { recursive: true, force: true });
 }
 
+function timetableDateiPruefen() {
+  console.log('');
+  console.log('-- Timetable weitergeben --');
+
+  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-display-tt-'));
+  fs.writeFileSync(path.join(ordner, 'elyxtra.png'), 'BILDDATEN');
+
+  const cfg = { timetable: [
+    { act: 'Elyxtra', photo: 'elyxtra.png' },
+    { act: 'Doubkore', photo: 'elyxtra.png' },   // dasselbe Bild
+    { act: 'Omikron', photo: 'fehlt.png' },      // Datei gibt es nicht
+    { act: 'Falicia', photo: '' }
+  ] };
+
+  const inhalt = ttDatei.bauen(cfg, fs, path, ordner);
+  check('alle Acts sind drin', inhalt.entries.length, 4);
+  check('das Bild liegt bei', Buffer.from(inhalt.photos['elyxtra.png'], 'base64').toString(),
+        'BILDDATEN');
+  check('jedes Bild nur einmal', Object.keys(inhalt.photos), ['elyxtra.png']);
+  // Lieber ein Act ohne Bild als ein Timetable ohne Act
+  check('ein fehlendes Bild wirft den Act nicht raus',
+        inhalt.entries.map(e => e.act).join(','), 'Elyxtra,Doubkore,Omikron,Falicia');
+
+  // ---- und wieder herein, in einen leeren Ordner ----
+  const ziel = fs.mkdtempSync(path.join(os.tmpdir(), 'bar-display-tt2-'));
+  const zurueck = ttDatei.uebernehmen(inhalt, fs, path, ziel);
+  check('die Acts kommen zurueck', zurueck.length, 4);
+  check('das Bild ist wieder da',
+        fs.readFileSync(path.join(ziel, 'elyxtra.png'), 'utf8'), 'BILDDATEN');
+
+  check('eine fremde Datei wird abgelehnt', ttDatei.istTimetableDatei({ kind: 'was' }), false);
+  check('und eine ohne Eintraege auch',
+        ttDatei.istTimetableDatei({ kind: 'bar-display-timetable' }), false);
+  check('eine echte nicht', ttDatei.istTimetableDatei(inhalt), true);
+
+  let gemeckert = false;
+  try { ttDatei.uebernehmen({ kind: 'quatsch' }, fs, path, ziel); }
+  catch (e) { gemeckert = true; }
+  check('Unfug gibt einen Fehler', gemeckert, true);
+
+  // Ein Dateiname darf nicht aus dem Fotoordner herausschreiben
+  const daneben = path.join(ziel, '..', 'entwischt.png');
+  ttDatei.uebernehmen({
+    kind: 'bar-display-timetable', version: 1, entries: [],
+    photos: { '../entwischt.png': Buffer.from('X').toString('base64') }
+  }, fs, path, ziel);
+  check('nichts ausserhalb des Fotoordners', fs.existsSync(daneben), false);
+  check('sondern hoechstens darin', fs.existsSync(path.join(ziel, 'entwischt.png')), true);
+
+  fs.rmSync(ordner, { recursive: true, force: true });
+  fs.rmSync(ziel, { recursive: true, force: true });
+}
+
 (async () => {
   await standPruefen();
+  timetableDateiPruefen();
   fotosPruefen();
   formatPruefen();
   standardPruefen();
