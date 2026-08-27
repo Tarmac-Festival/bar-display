@@ -1069,9 +1069,12 @@ body.spar .klLicht { background: none; }
   top: 0;
   bottom: 0;
   border-radius: 0.3em;
-  background: color-mix(in srgb, #fff 6%, transparent);
+  /* Dunkel, nicht hell: als heller Streifen war die Bahn ein zweites Lila neben
+     dem Hintergrund und stand mit dem Kasten in Konkurrenz. Als Vertiefung
+     bleibt sie im Ton der Anzeige, und das Orange tritt hervor. */
+  background: color-mix(in srgb, #000 18%, transparent);
 }
-body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
+body.spar .lichtSpur.mitBalken::before { background: rgba(0, 0, 0, 0.18); }
 
 .lichtBalken {
   position: absolute;
@@ -1081,20 +1084,24 @@ body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
      nicht zu sehen. Also eine Flaeche ueber die ganze Spaltenbreite: die Lage
      bleibt dieselbe, sie faellt nur auf. */
   background: color-mix(in srgb, var(--accent2) 34%, transparent);
-  /* Kein min-height: eine Mindesthoehe schob den Block aus seiner Zeile heraus,
-     neben den falschen Act. Die Hoehe kommt jetzt aus der Zeile selbst. */
-  /* Laeuft die Phase ueber mehrere Acts, laeuft die Flaeche durch - rund wird
-     sie nur da, wo die Phase wirklich anfaengt und aufhoert. */
-  border-radius: 0;
+  /* Rundum umrandet - ein Kasten, kein Streifen mit einem Strich obendrauf.
+     Kein min-height: eine Mindesthoehe schob den Block aus seiner Zeile heraus,
+     neben den falschen Act. Die Hoehe kommt aus der Zeile selbst. */
+  border: 0.14em solid var(--accent2);
+  border-radius: 0.32em;
 }
-/* Nur der Anfang bekommt eine kraeftige Kante. Sie sagt: hier geht es los -
-   und steht nicht mehr an jedem Durchlaufstueck. */
-.lichtBalken.beginnt {
-  border-top-left-radius: 0.3em;
-  border-top-right-radius: 0.3em;
-  box-shadow: inset 0 0.22em 0 0 var(--accent2);
+/* Laeuft die Phase ueber mehrere Acts, bleibt der Kasten dort offen: keine
+   Kante, keine Rundung. So ist zu sehen, dass es oben oder unten weitergeht. */
+.lichtBalken:not(.beginnt) {
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
-.lichtBalken.endet { border-bottom-left-radius: 0.3em; border-bottom-right-radius: 0.3em; }
+.lichtBalken:not(.endet) {
+  border-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
 
 .lichtMarke {
   position: absolute;
@@ -1108,7 +1115,7 @@ body.spar .lichtSpur.mitBalken::before { background: rgba(255, 255, 255, 0.1); }
   line-height: 1.15;
 }
 .lichtMarke .lmZeit {
-  font-size: 1.35em;
+  font-size: 1.2em;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #fff;

@@ -375,10 +375,15 @@ spielt. **Ein Eintrag ohne Endzeit wird nicht angezeigt.**
 Auf dem Timetable bekommt das eine **eigene Spalte am rechten Rand**, mit dem
 Warnzeichen als Reiter darüber — einmal über der Spalte, nicht an jedem Block.
 
-Hinter jedem betroffenen Act liegt eine blasse **Bahn: seine Spielzeit**. Der
-farbige Block darin sitzt genau dort, wo die Lichtphase liegt — fängt das Licht
-mitten im Set an, fängt auch der Block mittendrin an. So ist auf einen Blick zu
-sehen, ob es das ganze Set über blitzt oder nur die letzte halbe Stunde.
+Hinter jedem betroffenen Act liegt eine **Bahn: seine Spielzeit**, als dunkle
+Vertiefung. Der orange umrandete Kasten darin sitzt genau dort, wo die
+Lichtphase liegt — fängt das Licht mitten im Set an, fängt auch der Kasten
+mittendrin an. So ist auf einen Blick zu sehen, ob es das ganze Set über blitzt
+oder nur die letzte halbe Stunde.
+
+Läuft eine Phase über mehrere Acts, bleibt der Kasten dort **offen**: keine
+Kante, keine Rundung an der Naht. Nur wo die Phase wirklich anfängt und
+aufhört, ist er geschlossen.
 
 Die genaue Spanne steht **im Block**. Damit sie dort Platz hat, bekommt der
 Block eine Mindesthöhe: eine sehr kurze Phase wird dadurch etwas höher
@@ -398,8 +403,7 @@ ihren eigenen Abstand.
 ![Lichteffekte im Timetable](docs/screenshots/anzeige-lichteffekte-timetable.png)
 
 Läuft eine Phase über zwei Acts hinweg, steht sie neben beiden — beschriftet
-nur dort, wo sie anfängt, und rund abgeschlossen nur da, wo sie wirklich
-anfängt und aufhört. Und eine Phase, zu der gar kein Act danebensteht (in einer
+nur dort, wo sie anfängt. Und eine Phase, zu der gar kein Act danebensteht (in einer
 Pause etwa), erscheint als Zeile **Außerdem starke Lichteffekte** unter der
 Liste; sie fällt nicht unter den Tisch, nur weil die Spalte sie nicht aufnehmen
 kann.

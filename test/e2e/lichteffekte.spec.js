@@ -162,6 +162,40 @@ test.describe('Kennzeichnung im Timetable', () => {
     expect(lage.inDerZeile, 'und der Block bleibt in seiner Zeile').toBe(true);
   });
 
+  test('der Kasten ist rundum umrandet - offen nur da, wo es weitergeht',
+    async ({ page, bar }) => {
+      // Eine Phase ueber zwei Acts: oben schliesst der Kasten ab, unten laeuft
+      // er weiter - dort darf keine Kante stehen, sonst sieht es aus wie zwei
+      // getrennte Phasen.
+      bar.konfig(programm({
+        lichteffekte: [{ id: 'l1', date: '2026-08-28', start: '22:30',
+                         end: '23:45', note: '' }]
+      }));
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+      await expect(page.locator('.ttRow.hatLicht')).toHaveCount(2);
+
+      const kanten = await page.evaluate(() =>
+        [...document.querySelectorAll('.lichtBalken')].map((b) => {
+          const st = getComputedStyle(b);
+          const da = (w) => parseFloat(st['border' + w + 'Width']) > 0;
+          return { beginnt: b.classList.contains('beginnt'),
+                   endet: b.classList.contains('endet'),
+                   oben: da('Top'), unten: da('Bottom'),
+                   links: da('Left'), rechts: da('Right') };
+        }));
+
+      for (const k of kanten) {
+        expect(k.links, 'seitlich immer umrandet').toBe(true);
+        expect(k.rechts, 'seitlich immer umrandet').toBe(true);
+        expect(k.oben, 'oben zu, wenn die Phase hier anfaengt').toBe(k.beginnt);
+        expect(k.unten, 'unten zu, wenn sie hier aufhoert').toBe(k.endet);
+      }
+      // Genau einmal offen oben und einmal offen unten - die Naht dazwischen
+      expect(kanten.filter(k => !k.oben).length).toBe(1);
+      expect(kanten.filter(k => !k.unten).length).toBe(1);
+    });
+
   test('die Trennlinie hoert vor der Lichtspalte auf', async ({ page, bar }) => {
     // Quer durch die Spalte geschnitten zerteilte sie die Bahnen.
     bar.konfig(programm());

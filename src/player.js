@@ -988,7 +988,7 @@ function renderTimetable() {
 //
 // Das Mass haengt an der Zeilenhoehe in player.css: dort sind Zeilen mit
 // Lichtspalte 4.4em hoch, die Uhrzeit misst darin gut anderthalb.
-const MIN_BLOCK = 0.38;
+const MIN_BLOCK = 0.46;
 
 function lichtSpurHtml(spuren) {
   if (!spuren.length) return '<div class="lichtSpur"></div>';
