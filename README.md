@@ -80,6 +80,8 @@ Getränkepreise im Festival-Design.
 - **Probezeit für den Aufbau** — die Anzeige tut so, als wäre es 23 Uhr, damit
   sich der Abend am Nachmittag prüfen lässt. Die Uhr des Rechners bleibt
   unangetastet.
+- **„nur noch 28 min"** — in der letzten halben Stunde steht beim laufenden Act,
+  wie lange er noch spielt.
 - **Karte auf mehrere Seiten** — eine lange Getränke- oder Speisekarte läuft
   optional als mehrere Seiten nacheinander, statt so klein zu werden, dass sie
   niemand mehr liest.
@@ -216,6 +218,13 @@ der Angabe HEUTE / MORGEN / Wochentag. Die Anzeige aktualisiert sich im laufende
 ohne dass jemand etwas anfassen muss.
 
 ![Timetable-Anzeige](docs/screenshots/anzeige-timetable.png)
+
+**In der letzten halben Stunde** steht unter der Zeitspanne, wie lange noch:
+*nur noch 28 min*. Wer den Floor wechseln will, müsste sonst selbst rechnen —
+im Dunkeln, aus drei Metern. Aufgerundet, damit dort nie „0 min" steht, und nur
+beim laufenden Act; hat er keine Endzeit, bleibt die Zeile weg.
+
+![Restzeit des laufenden Acts](docs/screenshots/anzeige-restzeit.png)
 
 ### Getränke und Speisen
 
@@ -652,7 +661,10 @@ Bauch statt des Gesichts:
 |---|---|
 | ![Foto mittig beschnitten](docs/screenshots/foto-mittig.png) | ![Foto mit gewähltem Ausschnitt](docs/screenshots/foto-ausschnitt.png) |
 
-Der Knopf unten rechts auf der Miniatur öffnet dafür ein Fenster:
+**Nach dem Hochladen geht das Fenster von selbst auf.** Fast jedes Handyfoto ist
+hochkant, die Anzeige beschneidet aber quadratisch — der erste Blick gilt also
+ohnehin dem Ausschnitt. Wer nichts ändern will, tippt *Abbrechen*; das Foto
+bleibt. Später öffnet der Knopf unten rechts auf der Miniatur dasselbe Fenster:
 
 ![Ausschnitt wählen](docs/screenshots/einstellungen-ausschnitt.png)
 

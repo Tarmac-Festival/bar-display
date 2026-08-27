@@ -1927,8 +1927,15 @@ async function pickPhoto(td, e) {
   const file = await window.api.addPhoto(toast);
   if (!file) return;
   e.photo = file;
+  // Der Ausschnitt gehoerte zum alten Bild und passt zum neuen nicht.
+  delete e.crop;
   markDirty();
   renderPhotoCell(td, e);
+
+  // Gleich zuschneiden. Fast jedes Handyfoto ist hochkant, die Anzeige
+  // beschneidet aber quadratisch - der erste Blick gilt also ohnehin dem
+  // Ausschnitt. Wer nichts aendern will, tippt Abbrechen; das Foto bleibt.
+  ausschnittWaehlen(td, e);
 }
 
 function markTimetableRows() {
@@ -2105,6 +2112,11 @@ async function essFotoWaehlen(zelle, eintrag, neuZeichnen) {
   delete eintrag.crop;
   markDirty();
   neuZeichnen();
+
+  // Gleich zuschneiden - siehe pickPhoto(). `neuZeichnen` baut die Liste neu
+  // auf; die Zelle von eben haengt danach nicht mehr im Dokument, deshalb wird
+  // hinterher ueber sie und nicht ueber `zelle` neu gezeichnet.
+  ausschnittWaehlen(zelle, eintrag, neuZeichnen, 'karte');
 }
 
 // Ein Timetable wird der Reihe nach eingetippt: ein Act faengt da an, wo der

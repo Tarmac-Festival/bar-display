@@ -896,10 +896,15 @@ function renderTimetable() {
     const se = view.current.se;
     const e = view.current.entry;
     const times = timeLabel(se.start) + (se.end ? ' &ndash; ' + timeLabel(se.end) : '');
+    const rest = restzeitText(se, now);
     body += '<div class="ttNow">' +
       (e.photo ? '<div class="ttPhoto"><img src="' + photoUrl(e.photo) +
                  '" alt="" style="' + fotoStil(e) + '"></div>' : '') +
-      '<div class="ttWhen"><div class="tag">JETZT</div><div class="time">' + times + '</div></div>' +
+      '<div class="ttWhen"><div class="tag">JETZT</div><div class="time">' + times + '</div>' +
+        // Gegen Ende sagt die Anzeige, wie lange noch. Wer den Floor wechseln
+        // will, rechnet sonst selbst - im Dunkeln, aus drei Metern.
+        (rest ? '<div class="ttRest">' + escapeHtml(rest) + '</div>' : '') +
+        '</div>' +
       '<div class="ttWho"><div class="act">' + escapeHtml(e.act) +
         (lichtTrifft(se, fenster) ? lichtZeichen() : '') + '</div>' +
       (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') + '</div>' +

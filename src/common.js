@@ -784,6 +784,27 @@ function lichtSpalte(zeilen, fenster) {
   return spalten;
 }
 
+// Ab wann steht beim laufenden Act, wie lange er noch spielt. Frueher waere es
+// eine Angabe, die niemanden draengt; spaeter kaeme sie zu spaet fuer den, der
+// den Floor wechseln will.
+const RESTZEIT_AB_MIN = 30;
+
+/**
+ * "nur noch 28 min" fuer den laufenden Act - oder nichts.
+ *
+ * Aufgerundet: solange noch eine angefangene Minute laeuft, steht dort auch
+ * eine. "0 min" waere die einzige Angabe, die sicher falsch ist.
+ */
+function restzeitText(se, jetzt, abMinuten) {
+  if (!se || !se.end || !jetzt) return '';
+  const ab = (abMinuten == null ? RESTZEIT_AB_MIN : abMinuten) * 60000;
+  const bleibt = se.end.getTime() - jetzt.getTime();
+  if (bleibt <= 0 || bleibt > ab) return '';
+
+  const min = Math.ceil(bleibt / 60000);
+  return 'nur noch ' + min + ' min';
+}
+
 /**
  * Die Karte auf mehrere Seiten verteilen.
  *

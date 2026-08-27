@@ -302,6 +302,18 @@ body[data-pattern="confetti"] .slide {
   border-radius: 50%;
   background: var(--accent2);
 }
+/* Kurz vor Schluss: wie lange der laufende Act noch spielt. In der
+   Signalfarbe, aber kleiner als die Uhrzeit darueber - es ist ein Zusatz,
+   keine zweite Ueberschrift. */
+.ttRest {
+  margin-top: 0.15em;
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent2);
+  white-space: nowrap;
+}
+
 .ttNow .time {
   margin-top: 0.15em;
   font-size: 1.95em;

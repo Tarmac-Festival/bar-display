@@ -20,7 +20,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
         lichtAusschnitt, lichtMarkeLage, nachtEnde, lichtSpalte,
-        preisStil, gruppeHatInhalt, preisGruppen, preisSeiten,
+        preisStil, gruppeHatInhalt, preisGruppen, preisSeiten, restzeitText,
         infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite,
         zeitVersatz, probezeitLaeuft, versatzFuer } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
@@ -991,6 +991,35 @@ console.log('-- Karte auf mehrere Seiten --');
   check('und ohne alles auch', preisSeiten(null, 2).length, 1);
   check('Unfug zaehlt wie 0', preisSeiten(g(6), 'viele').length, 1);
   check('negative Angabe ebenso', preisSeiten(g(6), -2).length, 1);
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Restzeit des laufenden Acts --');
+(function () {
+  const jetzt = new Date(2026, 8, 11, 22, 0, 0);
+  const bis = (min) => ({ end: new Date(jetzt.getTime() + min * 60000) });
+
+  check('eine Stunde vorher steht nichts da', restzeitText(bis(60), jetzt), '');
+  check('auch bei einunddreissig Minuten nicht', restzeitText(bis(31), jetzt), '');
+  check('ab dreissig Minuten schon', restzeitText(bis(30), jetzt), 'nur noch 30 min');
+  check('mittendrin', restzeitText(bis(12), jetzt), 'nur noch 12 min');
+
+  // Aufgerundet: solange eine angefangene Minute laeuft, steht auch eine da.
+  // "0 min" waere die einzige Angabe, die sicher falsch ist.
+  check('halbe Minuten werden aufgerundet',
+        restzeitText({ end: new Date(jetzt.getTime() + 90000) }, jetzt), 'nur noch 2 min');
+  check('die letzte halbe Minute ist noch eine',
+        restzeitText({ end: new Date(jetzt.getTime() + 30000) }, jetzt), 'nur noch 1 min');
+
+  check('vorbei ist vorbei', restzeitText(bis(0), jetzt), '');
+  check('und darueber hinaus auch', restzeitText(bis(-5), jetzt), '');
+  check('ohne Endzeit gibt es nichts zu sagen', restzeitText({ end: null }, jetzt), '');
+  check('ohne Zeiten erst recht', restzeitText(null, jetzt), '');
+  check('ohne Jetzt auch nicht', restzeitText(bis(10), null), '');
+
+  // Die Schwelle laesst sich verschieben - dafuer ist sie ein Parameter
+  check('mit eigener Schwelle frueher', restzeitText(bis(45), jetzt, 60), 'nur noch 45 min');
+  check('und damit auch spaeter', restzeitText(bis(20), jetzt, 10), '');
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');
