@@ -785,6 +785,26 @@ function lichtSpalte(zeilen, fenster) {
 }
 
 /**
+ * Die Karte auf mehrere Seiten verteilen.
+ *
+ * Eine lange Karte passt zwar immer auf den Bildschirm - fitToBox() verkleinert
+ * sie, bis sie passt -, aber irgendwann liest sie aus drei Metern niemand mehr.
+ * Dann lieber nacheinander zeigen.
+ *
+ * Geteilt wird nach Gruppen, nie mitten in einer: "Bier" gehoert zusammen. Wer
+ * 0 einstellt (oder nichts), bekommt wie bisher alles auf einer Seite.
+ */
+function preisSeiten(gruppen, proSeite) {
+  const alle = gruppen || [];
+  const n = Math.floor(Number(proSeite) || 0);
+  if (n <= 0 || alle.length <= n) return [alle];
+
+  const raus = [];
+  for (let i = 0; i < alle.length; i += n) raus.push(alle.slice(i, i + n));
+  return raus;
+}
+
+/**
  * Lichtphasen, die zu keiner der gezeigten Zeilen gehoeren - etwa, weil sie in
  * einer Pause liegen oder nach dem letzten gezeigten Act kommen. Sie duerfen
  * nicht unter den Tisch fallen, nur weil kein Act danebensteht.

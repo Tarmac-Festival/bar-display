@@ -546,6 +546,10 @@ tr.ohneEnde td:last-child::before {
   touch-action: none;
   user-select: none;
 }
+/* Auf der Karte steht das Foto als abgerundetes Quadrat, nicht als Blase.
+   Die Vorschau muss dieselbe Gestalt haben - sonst verspricht sie etwas
+   anderes, als nachher auf der Anzeige steht. */
+.cropBuehne.karte { border-radius: 0.7rem; }
 .cropBuehne:active { cursor: grabbing; }
 .cropBuehne img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .cropKasten input[type=range] { width: 100%; accent-color: var(--accent); }

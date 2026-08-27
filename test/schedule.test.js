@@ -20,7 +20,7 @@ const { isVideoActive, describeWindows, timetableView, entryStartEnd, dayLabel, 
         lichtFenster, lichtTrifft, lichtJetzt, timetableZeilen, lichtUebersicht,
         lichtSpuren, lichtOhneZeile, lichtOffen, timeLabel, nachtVon, todayISO,
         lichtAusschnitt, lichtMarkeLage, nachtEnde, lichtSpalte,
-        preisStil, gruppeHatInhalt, preisGruppen,
+        preisStil, gruppeHatInhalt, preisGruppen, preisSeiten,
         infoEinheit, infoTakt, nachDerUhr, faelligeInfoSeite,
         zeitVersatz, probezeitLaeuft, versatzFuer } = ctx;
 // Ein top-level const landet in einem vm-Kontext nicht auf dem globalen
@@ -965,6 +965,32 @@ console.log('-- Durchgehender Kasten ueber mehrere Acts --');
   check('ohne Fenster bleibt jede Zeile leer',
         lichtSpalte(zeilen, []).map(z => z.length).join(''), '00');
   check('ohne Zeilen kommt nichts zurueck', lichtSpalte([], [phase(21, 23)]).length, 0);
+})();
+
+// ---------------------------------------------------------------------------
+console.log('-- Karte auf mehrere Seiten --');
+(function () {
+  const g = (n) => Array.from({ length: n }, (_, i) => ({ category: 'G' + i }));
+  const namen = (seiten) => seiten.map(s => s.map(x => x.category).join(',')).join(' | ');
+
+  check('ohne Angabe alles auf eine Seite', namen(preisSeiten(g(6), 0)),
+        'G0,G1,G2,G3,G4,G5');
+  check('auch bei leerer Angabe', preisSeiten(g(3)).length, 1);
+  check('zwei je Seite ergeben drei Seiten', namen(preisSeiten(g(6), 2)),
+        'G0,G1 | G2,G3 | G4,G5');
+  check('der Rest kommt auf die letzte Seite', namen(preisSeiten(g(5), 2)),
+        'G0,G1 | G2,G3 | G4');
+  check('eine je Seite', preisSeiten(g(4), 1).length, 4);
+
+  // Passt ohnehin alles, gibt es keine zweite Seite - und damit auch keine
+  // Seitenzahl auf der Anzeige.
+  check('weniger Gruppen als erlaubt bleibt einseitig', preisSeiten(g(2), 4).length, 1);
+  check('genau so viele wie erlaubt auch', preisSeiten(g(4), 4).length, 1);
+
+  check('ohne Gruppen bleibt eine leere Seite', namen(preisSeiten([], 2)), '');
+  check('und ohne alles auch', preisSeiten(null, 2).length, 1);
+  check('Unfug zaehlt wie 0', preisSeiten(g(6), 'viele').length, 1);
+  check('negative Angabe ebenso', preisSeiten(g(6), -2).length, 1);
 })();
 
 console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen');

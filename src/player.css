@@ -444,6 +444,17 @@ body[data-pattern="confetti"] .slide {
   white-space: nowrap;
 }
 
+/* Bei einer mehrseitigen Karte: welche Seite gerade laeuft. Klein und am
+   Rand - wer die Preise sucht, soll die Preise zuerst sehen. */
+.seitenMarke {
+  margin-top: 0.8em;
+  text-align: right;
+  font-size: 1.2em;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .priceNote { margin-top: 1.3em; font-size: 1.1em; color: var(--muted); }
 
 /* --------------------- Spezialshot ---------------------------------- */

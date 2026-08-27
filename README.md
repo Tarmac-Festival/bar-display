@@ -80,6 +80,9 @@ Getränkepreise im Festival-Design.
 - **Probezeit für den Aufbau** — die Anzeige tut so, als wäre es 23 Uhr, damit
   sich der Abend am Nachmittag prüfen lässt. Die Uhr des Rechners bleibt
   unangetastet.
+- **Karte auf mehrere Seiten** — eine lange Getränke- oder Speisekarte läuft
+  optional als mehrere Seiten nacheinander, statt so klein zu werden, dass sie
+  niemand mehr liest.
 - **Sparmodus** für schwache Geräte — ein Schalter statt drei Einstellungen.
 - **Bedienung vom Handy auf jedem System** — Windows, Linux, macOS und
   Raspberry Pi bieten dieselbe Bedienseite im Netzwerk an. Die Adresse steht
@@ -670,6 +673,25 @@ zur Bilddatei: dasselbe Foto kann bei zwei Acts unterschiedlich sitzen, und beim
 Gruppen wie *Bier*, *Longdrinks* oder *Vom Grill*, darin je eine Position pro Zeile.
 Die Größe darf leer bleiben, die Reihenfolge der Gruppen lässt sich mit den Pfeilen
 ändern.
+
+**Gruppen pro Seite** verteilt eine lange Karte auf mehrere Seiten, die direkt
+nacheinander laufen. `0` lässt alles auf einer Seite — so war es bisher, und
+so bleibt es ohne Zutun. Der Sinn: eine lange Karte passt zwar immer auf den
+Bildschirm, weil die Anzeige sie verkleinert, bis sie passt — aber irgendwann
+liest sie aus drei Metern niemand mehr.
+
+Geteilt wird **nur zwischen Gruppen**, nie mittendrin: *Bier* gehört zusammen.
+Passt ohnehin alles auf eine Seite, bleibt es dabei. Die Standzeit gilt je
+Seite, und die Karte kommt **gleich oft** wie vorher — sie dauert nur länger.
+Unten rechts steht klein, welche Seite gerade läuft.
+
+| Seite 1 | Seite 2 |
+|---|---|
+| ![Karte Seite 1](docs/screenshots/anzeige-karte-seite1.png) | ![Karte Seite 2](docs/screenshots/anzeige-karte-seite2.png) |
+
+Der **Spezialshot für die ganze Seite** und der Hinweistext stehen unter allem —
+also nur unter der letzten Seite. Auf jeder zu wiederholen wäre dreimal
+dasselbe.
 
 **Jede Gruppe entscheidet selbst, wie sie aussieht** — der Umschalter steht neben
 dem Gruppennamen:

@@ -970,6 +970,7 @@ function wireButtons() {
 // Anzeige-/System-Felder
 // ---------------------------------------------------------------------------
 const NUM_FIELDS = ['timetableEvery', 'timetableDuration', 'pricesEvery', 'pricesDuration',
+  'pricesProSeite',
                     'timetableMaxNext', 'fadeMs', 'logoHeight', 'transitionMs', 'imageDuration',
                     'lichtEvery', 'lichtDuration'];
 const TEXT_FIELDS = ['barName', 'subtitle', 'bgColor', 'accent', 'accent2', 'priceNote', 'pin',
@@ -1830,7 +1831,12 @@ function renderPhotoCell(td, e) {
 // Stil wie später auf dem Bildschirm.
 // `nachher` bestimmt, was nach dem Zuschneiden neu gezeichnet wird. Ohne
 // Angabe die Fotozelle eines Acts - der urspruengliche Fall.
-function ausschnittWaehlen(td, e, nachher) {
+// `form` sagt, welche Gestalt das Foto auf der Anzeige spaeter hat: die
+// organische Form neben einem Act oder das abgerundete Quadrat auf der Karte.
+// Ohne das zeigte die Vorschau fuer ein Gericht eine Blase, waehrend auf der
+// Anzeige ein Quadrat stand - und der Satz "So sieht es spaeter aus" stimmte
+// nicht.
+function ausschnittWaehlen(td, e, nachher, form) {
   const stand = fotoAusschnitt(e);
   let x = stand.x, y = stand.y, z = stand.z;
 
@@ -1841,7 +1847,8 @@ function ausschnittWaehlen(td, e, nachher) {
       '<h2>Ausschnitt für „' + escapeHtml(e.act || e.name || 'dieses Foto') + '"</h2>' +
       '<p class="hint">Bild verschieben, bis der richtige Teil im Fenster steht. ' +
          'So sieht es später auf der Anzeige aus.</p>' +
-      '<div class="cropBuehne"><img alt=""></div>' +
+      '<div class="cropBuehne' + (form === 'karte' ? ' karte' : '') +
+        '"><img alt=""></div>' +
       '<label class="field"><span>Vergrößern</span>' +
         '<input type="range" id="cropZoom" min="100" max="400" step="5"></label>' +
       '<div class="btnRow">' +
@@ -2083,7 +2090,8 @@ function renderEssFoto(zelle, eintrag, neuZeichnen) {
       neuZeichnen();
     });
     zelle.querySelector('.photoCrop').addEventListener('click',
-      () => ausschnittWaehlen(zelle, eintrag, () => renderEssFoto(zelle, eintrag, neuZeichnen)));
+      () => ausschnittWaehlen(zelle, eintrag,
+        () => renderEssFoto(zelle, eintrag, neuZeichnen), 'karte'));
   } else {
     zelle.innerHTML = '<button class="photoAdd">+ Foto</button>';
     zelle.querySelector('.photoAdd').addEventListener('click', () => essFotoWaehlen(zelle, eintrag, neuZeichnen));

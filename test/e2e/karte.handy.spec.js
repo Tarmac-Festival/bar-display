@@ -97,3 +97,39 @@ test('die Knoepfe am Foto sind gross genug fuer einen Daumen',
     expect(masse.loeschen).toBeGreaterThanOrEqual(26);
     expect(masse.ausschnitt).toBeGreaterThanOrEqual(24);
   });
+
+test('die Ausschnitt-Vorschau hat die Form der Karte', async ({ page, bar }) => {
+  // Auf der Karte steht das Foto als abgerundetes Quadrat. Die Vorschau zeigte
+  // die organische Form der Act-Fotos - und behauptete dabei, so sehe es
+  // spaeter auf der Anzeige aus.
+  await karteOeffnen(page, bar);
+  await page.locator('.itemRow .photoCrop').first().click();
+  await expect(page.locator('.cropBuehne')).toBeVisible();
+
+  const form = await page.locator('.cropBuehne').evaluate(el => ({
+    karte: el.classList.contains('karte'),
+    ecken: getComputedStyle(el).borderRadius
+  }));
+  expect(form.karte).toBe(true);
+  expect(form.ecken, 'kein Blasenrand mit vier verschiedenen Prozentwerten')
+    .not.toContain('%');
+});
+
+test('beim Act bleibt die Vorschau die organische Form', async ({ page, bar }) => {
+  // Gegenprobe: dort steht auf der Anzeige tatsaechlich eine Blase.
+  bar.datei('photo', 'act.png');
+  bar.konfig(beispiel({
+    timetable: [{ id: 'a1', date: '2026-09-11', start: '21:00', end: '22:30',
+                  act: 'Elyxtra', photo: 'act.png' }]
+  }));
+  await page.goto(bar.adresse + '/einstellungen');
+  await page.getByRole('button', { name: 'Timetable', exact: true }).click();
+  await page.locator('.photoCrop').first().click();
+
+  const form = await page.locator('.cropBuehne').evaluate(el => ({
+    karte: el.classList.contains('karte'),
+    ecken: getComputedStyle(el).borderRadius
+  }));
+  expect(form.karte).toBe(false);
+  expect(form.ecken).toContain('%');
+});

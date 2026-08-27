@@ -44,6 +44,10 @@ let letzterUebergang = '';
 // laufen - siehe faelligeInfoSeite() in common.js.
 let letzteInfo = {};
 
+// Weitere Seiten einer mehrseitigen Karte, die direkt hinterherkommen.
+// Siehe playItem(): die Karte wird am Stueck gezeigt, nicht verstreut.
+let nachschlag = [];
+
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
@@ -134,6 +138,7 @@ function applyFont(file) {
 
 function restart() {
   clearTimers();
+  nachschlag = [];
   sonderzustaende();
   if (imRuhemodus) return;      // waehrend der Ruhezeit laeuft nichts
   // Sonst waeren beim Start sofort alle zeitgesteuerten Seiten faellig
@@ -175,6 +180,9 @@ function konfigUebernehmen(next) {
   const kennung = itemKennung(lief);
 
   cfg = next;
+  // Angefangene Kartenseiten verwerfen: sie gehoeren zur alten Fassung, und
+  // mit einer geaenderten Karte kann sich auch die Seitenzahl verschoben haben.
+  nachschlag = [];
   applyTheme();
   sonderzustaende();
   if (imRuhemodus) return;        // Ruhezeit haelt die Schleife ohnehin an
@@ -391,6 +399,9 @@ function advance(delay) {
     return;
   }
 
+  // Angefangene Karte zu Ende zeigen, bevor irgendetwas anderes drankommt
+  if (nachschlag.length) { playItem(nachschlag.shift()); return; }
+
   // Zeitgesteuerte Info-Seiten schieben sich zwischen zwei Beitraege, ohne die
   // Runde weiterzuruecken - der naechste Beitrag kommt danach ganz normal.
   const faellig = faelligeInfoSeite(cfg.settings, {
@@ -441,6 +452,15 @@ function playItem(item) {
   // Auch eine gezaehlte Seite stellt die Uhr zurueck - sonst kaeme sie kurz
   // darauf noch einmal, nur weil die Zeit abgelaufen war.
   if (INFO_SEITEN.indexOf(item.type) >= 0) letzteInfo[item.type] = Date.now();
+
+  // Eine mehrseitige Karte kommt am Stueck: die weiteren Seiten stellen sich
+  // hinten an und werden vor allem anderen abgearbeitet. So bleibt die
+  // Haeufigkeit unberuehrt - die Karte kommt gleich oft, nur laenger.
+  if (item.type === 'prices' && !item.seite) {
+    const anzahl = preisSeitenJetzt().length;
+    nachschlag = [];
+    for (let i = 1; i < anzahl; i++) nachschlag.push({ type: 'prices', seite: i });
+  }
   if (item.type !== 'video') return playSlide(item);
   if (isImageFile(item.video.file)) return playImage(item);
   playVideo(item);
@@ -536,8 +556,9 @@ function playSlide(item) {
   const el = pickLayer('slide');
   const s = cfg.settings;
 
-  el.innerHTML = renderSlide(item.type);
+  el.innerHTML = renderSlide(item.type, item.seite);
   el.dataset.kind = item.type;
+  el.dataset.seite = item.seite || 0;
   // Einpassen vor dem Ueberblenden: das Einpassen erzwingt Layout, und das
   // mitten in einer laufenden Blende zu tun ist genau der sichtbare Ruckler.
   fitToBox(el);
@@ -771,9 +792,9 @@ function photoUrl(file) { return fileUrl(photoDir, file); }
 // ---------------------------------------------------------------------------
 // Slides rendern
 // ---------------------------------------------------------------------------
-function renderSlide(kind) {
+function renderSlide(kind, seite) {
   if (kind === 'timetable') return renderTimetable();
-  if (kind === 'prices') return renderPrices();
+  if (kind === 'prices') return renderPrices(seite);
   if (kind === 'licht') return renderLicht();
   return renderIdle();
 }
@@ -1071,9 +1092,17 @@ function renderLicht() {
     '<div class="slideBody">' + body + '</div>' + footHtml(true) + '</div>';
 }
 
-function renderPrices() {
+/** Die Karte, in Seiten zerlegt. Ohne Einstellung ist es genau eine. */
+function preisSeitenJetzt() {
+  return preisSeiten(preisGruppen(cfg.prices), cfg.settings.pricesProSeite);
+}
+
+function renderPrices(seite) {
   const s = cfg.settings;
-  const cats = preisGruppen(cfg.prices);
+  const seiten = preisSeitenJetzt();
+  const nr = Math.min(Math.max(Number(seite) || 0, 0), seiten.length - 1);
+  const letzte = nr === seiten.length - 1;
+  const cats = seiten[nr] || [];
   // Eine einzelne Gruppe hat den ganzen Bildschirm fuer sich. Sie ist ohnehin
   // schon ueber die volle Breite - aber in der Groesse, die fuer drei Spalten
   // nebeneinander gedacht ist, und steht dann verloren in der Mitte.
@@ -1092,9 +1121,18 @@ function renderPrices() {
   body += '</div>';
   if (!cats.length) body = '';
 
-  body += renderSpecial();
+  // Das Hervorgehobene fuer die ganze Seite und der Hinweis stehen unter
+  // allem - also nur unter der letzten Seite. Auf jeder zu wiederholen waere
+  // dreimal dasselbe.
+  if (letzte) body += renderSpecial();
 
-  if (s.priceNote) body += '<div class="priceNote">' + escapeHtml(s.priceNote) + '</div>';
+  if (seiten.length > 1) {
+    body += '<div class="seitenMarke">' + (nr + 1) + ' / ' + seiten.length + '</div>';
+  }
+
+  if (letzte && s.priceNote) {
+    body += '<div class="priceNote">' + escapeHtml(s.priceNote) + '</div>';
+  }
   if (!cats.length && !body.trim()) {
     body = '<div class="emptyNote">Preisliste noch nicht eingepflegt.</div>';
   }
@@ -1314,7 +1352,7 @@ function refreshVisibleSlide(auchPreise) {
   if (kind !== 'timetable' && kind !== 'licht' &&
       !(auchPreise && kind === 'prices')) return;
 
-  const frisch = renderSlide(kind);
+  const frisch = renderSlide(kind, Number(currentLayer.dataset.seite) || 0);
   const stand = ohneUhrzeit(frisch);
   if (stand === letzterSlideStand) return;
 

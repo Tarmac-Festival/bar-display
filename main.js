@@ -78,6 +78,8 @@ const DEFAULT_CONFIG = {
     pricesEvery: 5,           // nach wie vielen Videos ein Preis-Slide
     pricesEinheit: 'beitraege',
     pricesDuration: 25,       // Sekunden
+    // 0 = alles auf eine Seite; sonst Gruppen je Seite
+    pricesProSeite: 0,
     // Eigene Seite mit den Zeiten fuer starke Lichteffekte. 0 = aus; sie kommt
     // also nur, wenn die Bar sie ausdruecklich einschaltet.
     lichtEvery: 0,
