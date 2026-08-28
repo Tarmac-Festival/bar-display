@@ -225,7 +225,7 @@ function fillDurchsage() {
         modus: $('an_modus').value,
         tempo: $('an_tempo').value,
         text,
-        until: minuten ? new Date(Date.now() + minuten * 60000).toISOString() : ''
+        until: minuten ? new Date(jetztMs() + minuten * 60000).toISOString() : ''
       });
       // Wurde nicht gespeichert - etwa weil woanders geaendert wurde -, waere
       // die Meldung "Durchsage laeuft" schlicht falsch.
@@ -243,6 +243,23 @@ function fillDurchsage() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Dieselbe Uhr wie die Anzeige
+// ---------------------------------------------------------------------------
+// Laeuft eine Probezeit, rechnet die Anzeige mit einer verschobenen Zeit. Die
+// Bedienseite muss dasselbe tun, sonst reden beide von verschiedenen Momenten:
+// "Jetzt anzeigen" legte das Ende der Durchsage nach der echten Uhr fest, die
+// Anzeige verglich es mit der Probezeit - und fand es laengst abgelaufen. Auf
+// der Bedienseite stand "laeuft gerade", auf dem Bildschirm stand nichts.
+//
+// Ausgenommen bleibt, was die Probezeit selbst einstellt (fillProbezeit) - die
+// muss wissen, wie spaet es wirklich ist.
+function jetztMs() {
+  return Date.now() + zeitVersatz(state && state.settings);
+}
+
+function jetztDatum() { return new Date(jetztMs()); }
+
 function durchsageStatus() {
   const a = state.announcement || {};
   const el = $('an_status');
@@ -251,7 +268,7 @@ function durchsageStatus() {
   if (laeuft && a.until) {
     const ende = new Date(a.until);
     if (!isNaN(ende)) {
-      if (Date.now() >= ende.getTime()) laeuft = false;
+      if (jetztMs() >= ende.getTime()) laeuft = false;
       else bis = ' bis ' + pad2(ende.getHours()) + ':' + pad2(ende.getMinutes());
     }
   }
@@ -590,7 +607,7 @@ function planSchieben(i, richtung) {
 // Klartext statt Raetselraten: laeuft der Plan gerade, und wie lange noch?
 function planStatusSetzen(wrap, pl) {
   const el = wrap.querySelector('.planStatus');
-  const jetzt = new Date();
+  const jetzt = jetztDatum();
 
   if (pl.enabled === false) { el.textContent = 'abgeschaltet'; el.className = 'planStatus aus'; return; }
   if (!pl.text) { el.textContent = 'ohne Text erscheint nichts'; el.className = 'planStatus warn'; return; }
@@ -627,7 +644,7 @@ function inRuhezeit(pl) {
   if (!q.enabled) return false;
   const m = String(pl.from || '').match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return false;
-  const start = new Date();
+  const start = jetztDatum();
   start.setHours(Number(m[1]), Number(m[2]), 0, 0);
   return zeitImFenster(q.from, q.to, start);
 }
@@ -843,6 +860,14 @@ function wireButtons() {
   });
 
   $('cleanLicht').addEventListener('click', () => {
+    // Nach einer erfundenen Uhr zu loeschen ist keine gute Idee: bei acht
+    // Stunden Vorlauf waeren Zeiten "vergangen", die noch bevorstehen. Und
+    // stillschweigend nach einer anderen Uhr zu loeschen als der, die auf dem
+    // Bildschirm steht, waere noch schlechter.
+    if (probezeitLaeuft(state.settings)) {
+      toast('Solange eine Probezeit läuft, wird nichts gelöscht', true);
+      return;
+    }
     const jetzt = new Date();
     const vorher = (state.lichteffekte || []).length;
     state.lichteffekte = (state.lichteffekte || []).filter(e => {
@@ -865,6 +890,11 @@ function wireButtons() {
   });
 
   $('cleanActs').addEventListener('click', () => {
+    // Siehe cleanLicht: geloescht wird nur nach der echten Uhr.
+    if (probezeitLaeuft(state.settings)) {
+      toast('Solange eine Probezeit läuft, wird nichts gelöscht', true);
+      return;
+    }
     const now = new Date();
     const before = (state.timetable || []).length;
     state.timetable = (state.timetable || []).filter(e => {
@@ -1393,7 +1423,7 @@ function moveVideo(i, dir) {
 }
 
 function updateBadges() {
-  const now = new Date();
+  const now = jetztDatum();
   document.querySelectorAll('.vCard').forEach(card => {
     const v = (state.videos || []).find(x => x.id === card.dataset.vid);
     if (!v) return;
@@ -1970,7 +2000,7 @@ async function pickPhoto(td, e) {
 }
 
 function markTimetableRows() {
-  const now = new Date();
+  const now = jetztDatum();
   document.querySelectorAll('#ttBody tr').forEach(tr => {
     const e = (state.timetable || []).find(x => x.id === tr.dataset.eid);
     tr.classList.remove('past', 'now');

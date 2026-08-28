@@ -375,6 +375,17 @@ vergisst:
 
 ![Anzeige mit laufender Probezeit](docs/screenshots/anzeige-probezeit.png)
 
+**Die Bedienseite rechnet mit derselben Zeit.** Was dort als „läuft gerade"
+steht – die Durchsage, ein Plan, ein Clip, der hervorgehobene Act im Timetable –,
+meint dieselbe Zeit wie der Bildschirm. Löst man während einer Probezeit eine
+Durchsage mit Ausblendzeit aus, endet sie fünf Minuten nach der *Probezeit*,
+nicht fünf Minuten nach der echten Uhr.
+
+**Gelöscht wird trotzdem nur nach der echten Uhr.** *Vergangene löschen* — beim
+Timetable wie bei den Lichteffekten — verweigert die Arbeit, solange eine
+Probezeit läuft. Bei acht Stunden Vorlauf gelten sonst Einträge als vergangen,
+die noch bevorstehen, und weg sind sie dann wirklich.
+
 > Der Versatz steht in der Konfiguration und wird mitgesichert. Wer eine
 > gesicherte Konfiguration auf einen anderen Rechner spielt, nimmt eine
 > vergessene Probezeit also mit – der Hinweis auf der Anzeige fällt dort
@@ -1331,6 +1342,7 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Uhrzeit orange mit Warndreieck | Zeitabgleich fehlt – *System → Uhrzeit*, am Pi `timedatectl status` |
 | Timetable zeigt den falschen Act | Erst die Uhrzeit prüfen, danach die Einträge |
 | Uhr auf der Anzeige geht falsch, „PROBEZEIT“ steht daneben | Eine Probezeit läuft noch – *System → Uhrzeit → Auf jetzt* |
+| „Vergangene löschen" tut nichts | Eine Probezeit läuft – nach einer erfundenen Uhr wird nichts gelöscht. Erst *Auf jetzt* |
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Datum oder Uhrzeit färbt sich rot | Die Eingabe war nicht deutbar – Esc stellt den alten Wert wieder her |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
