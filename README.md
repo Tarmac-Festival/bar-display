@@ -470,6 +470,10 @@ darunter.
 
 ![Übersicht der Lichteffekte](docs/screenshots/anzeige-lichteffekte.png)
 
+Der Einleitungstext steht dort **groß und fett**, mit dem Warnzeichen daneben:
+er ist der Grund, warum es die Seite gibt. Wer photosensibel ist, soll ihn aus
+drei Metern lesen können und nicht erst bei den Uhrzeiten anfangen.
+
 Das Warnzeichen sitzt überall auf einer weißen Plakette. Die gelieferte Grafik
 ist für hellen Grund gezeichnet — schwarzes Dreieck, schwarzer Scheinwerfer —
 und wäre auf dem dunklen Hintergrund der Anzeige kaum zu sehen. Eine Warnung,

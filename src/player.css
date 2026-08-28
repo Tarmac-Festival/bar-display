@@ -1195,15 +1195,22 @@ body.spar .lichtBalken { background: rgba(255, 255, 255, 0.16); }
 .lichtJetzt .lichtZeit { font-size: 0.85em; opacity: 0.92; }
 
 /* Die eigene Uebersichtsseite */
+/* Der Einleitungstext dieser Seite. Er ist der Grund, warum es sie gibt - wer
+   photosensibel ist, soll ihn aus drei Metern lesen koennen, nicht die
+   Uhrzeiten darunter entziffern und den Text ueberspringen. Deshalb gross und
+   fett, und das Warnzeichen daneben entsprechend. */
 .lichtKopf {
   display: flex;
   align-items: center;
-  gap: 1em;
-  margin-bottom: 1.4em;
-  font-size: 1.6em;
+  gap: 1.2em;
+  margin-bottom: 1.6em;
+  font-size: 2.1em;
 }
-.lichtKopf p { line-height: 1.45; max-width: 44ch; }
+.lichtKopf p { line-height: 1.35; max-width: 40ch; font-weight: 700; }
 .lichtKopf b { color: var(--accent); }
+/* Das Zeichen wird nicht mit dem Text mitgezogen: es sitzt in einem Kasten mit
+   fester Groesse, und der richtet sich nach der Schrift daneben. */
+.lichtKopf .lichtZeichen.gross img { height: 2.6em; }
 
 .lichtTage { display: flex; flex-wrap: wrap; gap: 1.6em; align-items: flex-start; }
 .lichtTag { flex: 1 1 18em; min-width: 14em; }

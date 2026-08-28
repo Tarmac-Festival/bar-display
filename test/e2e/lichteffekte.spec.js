@@ -754,6 +754,34 @@ test.describe('Eigene Seite fuers Wochenende', () => {
     expect(lauf).not.toContain('licht');
   });
 
+  test('der Einleitungstext ist gross und fett, das Zeichen entsprechend',
+    async ({ page, bar }) => {
+      // Er ist der Grund, warum es die Seite gibt: wer photosensibel ist, soll
+      // ihn aus drei Metern lesen koennen und nicht bei den Uhrzeiten anfangen.
+      bar.konfig(programm({ settings: { lichtEvery: 1, lichtDuration: 600,
+                                        timetableEvery: 0, pricesEvery: 0 } }));
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+      await page.waitForSelector('.lichtKopf');
+
+      const m = await page.evaluate(() => {
+        const p = document.querySelector('.lichtKopf p');
+        const zeit = document.querySelector('.lichtSpanne .lz');
+        const bild = document.querySelector('.lichtKopf img');
+        return {
+          fett: getComputedStyle(p).fontWeight,
+          text: parseFloat(getComputedStyle(p).fontSize),
+          zeit: zeit ? parseFloat(getComputedStyle(zeit).fontSize) : 0,
+          bild: Math.round(bild.getBoundingClientRect().height)
+        };
+      });
+      expect(Number(m.fett), 'fett').toBeGreaterThanOrEqual(700);
+      expect(m.text, 'groesser als die Uhrzeiten darunter')
+        .toBeGreaterThan(m.zeit);
+      expect(m.bild, 'und das Zeichen daneben entsprechend gross')
+        .toBeGreaterThan(m.text * 2);
+    });
+
   test('ohne Zeiten sagt die Seite das auch', async ({ page, bar }) => {
     bar.konfig(programm({
       settings: { lichtEvery: 1, lichtDuration: 30, timetableEvery: 0, pricesEvery: 0 },
