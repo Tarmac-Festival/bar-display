@@ -445,7 +445,15 @@ Timetable von heute Nacht niemandem etwas sagt. Was weiter weg ist, steht auf
 der Wochenendübersicht.
 
 Läuft gerade eine, steht sie als Balken über der Liste — nicht in einer
-Tabellenzeile, aus der man sie erst heraussuchen müsste.
+Tabellenzeile, aus der man sie erst heraussuchen müsste. **Solange der Balken
+steht, fällt das Warnzeichen am laufenden Act weg**: er sagt dasselbe, nur
+genauer. Kommt im Set Licht vor, läuft aber gerade keins, bleibt das Zeichen an
+der Karte.
+
+Der Balken nennt einen **Zeitpunkt** („endet um 23:00"), die Restzeit des Acts
+darüber eine **Dauer** („nur noch 28 min"). Das ist Absicht: zwei Angaben mit
+demselben „noch" direkt übereinander liest niemand auseinander. Die eine gehört
+zum Act, die andere zum Licht — und nur eine von beiden trägt das Warnzeichen.
 
 ![Laufende Lichtphase](docs/screenshots/anzeige-lichteffekte-jetzt.png)
 

@@ -928,6 +928,11 @@ function renderTimetable() {
   const fenster = lichtFenster(cfg.lichteffekte);
   let body = '';
 
+  // Laeuft gerade eine Lichtphase? Muss vor der JETZT-Karte feststehen: das
+  // Zeichen an der Karte faellt weg, solange der Balken darunter dasselbe schon
+  // sagt - und zwar genauer.
+  const jetztLicht = lichtJetzt(fenster, now);
+
   if (view.current) {
     const se = view.current.se;
     const e = view.current.entry;
@@ -942,7 +947,10 @@ function renderTimetable() {
         (rest ? '<div class="ttRest">' + escapeHtml(rest) + '</div>' : '') +
         '</div>' +
       '<div class="ttWho"><div class="act">' + escapeHtml(e.act) +
-        (lichtTrifft(se, fenster) ? lichtZeichen() : '') + '</div>' +
+        // Nur wenn im Set Licht vorkommt, aber gerade keins laeuft. Sonst
+        // staende das Zeichen zweimal untereinander: einmal hier und einmal auf
+        // dem Balken, der ohnehin gleich darunter steht.
+        (lichtTrifft(se, fenster) && !jetztLicht ? lichtZeichen() : '') + '</div>' +
       (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') + '</div>' +
       '</div>';
   }
@@ -950,11 +958,16 @@ function renderTimetable() {
   // Laeuft gerade eine Lichtphase, steht das ueber allem anderen - wer den
   // Raum deswegen verlassen will, soll es nicht aus einer Tabellenzeile
   // heraussuchen muessen.
-  const jetztLicht = lichtJetzt(fenster, now);
+  //
+  // "endet um 23:00", nicht "noch bis 23:00": ueber der Karte steht beim Act
+  // "nur noch 28 min", und zwei Angaben mit demselben "noch" direkt
+  // uebereinander liest niemand auseinander. Die eine ist eine Dauer und
+  // gehoert zum Act, die andere ein Zeitpunkt und gehoert zum Licht - das muss
+  // man ihnen ansehen.
   if (jetztLicht) {
     body += '<div class="lichtJetzt">' + lichtZeichen('gross') +
       '<div><div class="lichtTitel">Starke Lichteffekte</div>' +
-      '<div class="lichtZeit">noch bis ' + timeLabel(jetztLicht.se.end) +
+      '<div class="lichtZeit">endet um ' + timeLabel(jetztLicht.se.end) +
       (jetztLicht.eintrag.note ? ' &middot; ' + escapeHtml(jetztLicht.eintrag.note) : '') +
       '</div></div></div>';
   }

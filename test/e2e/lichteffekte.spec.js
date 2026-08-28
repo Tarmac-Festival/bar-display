@@ -434,18 +434,69 @@ test.describe('Kennzeichnung im Timetable', () => {
     const warnung = page.locator('.lichtJetzt');
     await expect(warnung).toBeVisible();
     await expect(warnung).toContainText('Starke Lichteffekte');
-    await expect(warnung).toContainText('noch bis 01:00');
+    // Ein Zeitpunkt, keine Dauer - und ohne "noch". Beim Act darueber steht
+    // "nur noch X min"; zwei Angaben mit demselben Wort direkt uebereinander
+    // liest niemand auseinander.
+    await expect(warnung).toContainText('endet um 01:00');
+    await expect(warnung).not.toContainText('noch');
     await expect(warnung.locator('.lichtZeichen')).toHaveCount(1);
 
     // Und sie steht nicht noch einmal darunter - dieselbe Angabe zweimal auf
     // dem Schirm verwirrt mehr, als sie hilft.
     await expect(page.locator('.lichtBalken')).toHaveCount(0);
     await expect(page.locator('.lichtSonst')).toHaveCount(0);
+    // Auch nicht als Zeichen an der JETZT-Karte: der Balken sagt dasselbe,
+    // nur genauer.
+    await expect(page.locator('.ttNow .lichtZeichen')).toHaveCount(0);
   });
+
+  test('ohne laufende Phase bleibt das Zeichen an der JETZT-Karte',
+    async ({ page, bar }) => {
+      // Gegenprobe: es sagt "in diesem Set kommt Licht vor" - das faellt nur
+      // weg, solange der Balken es ohnehin lauter sagt.
+      bar.konfig(programm({
+        timetable: [{ id: 'a1', date: '2026-08-28', start: '23:00', end: '01:30',
+                      act: 'Nachtflug' }],
+        lichteffekte: [{ id: 'l1', date: '2026-08-29', start: '01:00',
+                         end: '01:20', note: '' }]
+      }));
+      // 23:30 - das Licht kommt erst spaeter im Set
+      await zeitStellen(page, new Date(2026, 7, 28, 23, 30, 0).getTime());
+      await page.goto(bar.adresse + '/');
+
+      await expect(page.locator('.lichtJetzt')).toHaveCount(0);
+      await expect(page.locator('.ttNow .lichtZeichen')).toHaveCount(1);
+    });
+
+  test('Restzeit und Lichtwarnung sind auseinanderzuhalten',
+    async ({ page, bar }) => {
+      // Beide sagen "wie lange noch" - die eine ueber den Act, die andere ueber
+      // das Licht. Sie duerfen sich nicht gleichen.
+      bar.konfig(programm({
+        timetable: [{ id: 'a1', date: '2026-08-28', start: '22:00', end: '23:00',
+                      act: 'Nachtflug' }],
+        lichteffekte: [{ id: 'l1', date: '2026-08-28', start: '22:30',
+                         end: '22:50', note: '' }]
+      }));
+      // 22:40 - Act noch 20 Minuten, Licht laeuft und endet 22:50
+      await zeitStellen(page, new Date(2026, 7, 28, 22, 40, 0).getTime());
+      await page.goto(bar.adresse + '/');
+
+      await expect(page.locator('.ttRest')).toHaveText('nur noch 20 min');
+      await expect(page.locator('.lichtZeit')).toHaveText('endet um 22:50');
+
+      // Die eine ist eine Dauer beim Act, die andere ein Zeitpunkt auf dem
+      // Balken - und nur eine von beiden traegt das Warnzeichen.
+      await expect(page.locator('.ttNow .lichtZeichen')).toHaveCount(0);
+      await expect(page.locator('.lichtJetzt .lichtZeichen')).toHaveCount(1);
+    });
 
   test('das Zeichen ueberdeckt den Act-Namen nicht', async ({ page, bar }) => {
     bar.konfig(programm());
-    await zeitStellen(page, new Date(2026, 7, 29, 0, 15, 0).getTime());
+    // 23:10 - Nachtflug laeuft, das Licht kommt erst um 23:30. Nur dann steht
+    // das Zeichen an der Karte; waehrend einer laufenden Phase sagt es der
+    // Balken darunter.
+    await zeitStellen(page, new Date(2026, 7, 28, 23, 10, 0).getTime());
     await page.goto(bar.adresse + '/');
 
     // Der laufende Act ist betroffen und traegt das Zeichen
