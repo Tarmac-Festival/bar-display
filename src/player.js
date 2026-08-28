@@ -947,10 +947,12 @@ function renderTimetable() {
         (rest ? '<div class="ttRest">' + escapeHtml(rest) + '</div>' : '') +
         '</div>' +
       '<div class="ttWho"><div class="act">' + escapeHtml(e.act) +
-        // Nur wenn im Set Licht vorkommt, aber gerade keins laeuft. Sonst
-        // staende das Zeichen zweimal untereinander: einmal hier und einmal auf
-        // dem Balken, der ohnehin gleich darunter steht.
-        (lichtTrifft(se, fenster) && !jetztLicht ? lichtZeichen() : '') + '</div>' +
+        // Nur wenn im Rest des Sets noch Licht kommt, aber gerade keins laeuft.
+        // Mit `now`, sonst zaehlte auch eine Phase mit, die schon vorbei ist -
+        // das Zeichen stand dann noch am Act, als das Licht laengst aus war.
+        // Und ohne laufende Phase, sonst staende es zweimal untereinander:
+        // einmal hier und einmal auf dem Balken gleich darunter.
+        (lichtTrifft(se, fenster, now) && !jetztLicht ? lichtZeichen() : '') + '</div>' +
       (e.info ? '<div class="info">' + escapeHtml(e.info) + '</div>' : '') + '</div>' +
       '</div>';
   }

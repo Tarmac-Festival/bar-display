@@ -613,14 +613,27 @@ function lichtFenster(liste) {
     .sort((a, b) => a.se.start - b.se.start);
 }
 
-/** Ueberschneidet sich ein Zeitraum mit mindestens einer Lichtphase? */
-function lichtTrifft(se, fenster) {
+/**
+ * Ueberschneidet sich ein Zeitraum mit mindestens einer Lichtphase?
+ *
+ * Mit `jetzt` zaehlt nur, was noch bevorsteht - vom Act sein Rest, von den
+ * Phasen die, die noch nicht vorbei sind. Beim laufenden Act ist das der
+ * Unterschied zwischen einer Warnung und einer Behauptung: eine Phase, die um
+ * 23:00 zu Ende war, sagt um 23:30 nichts mehr ueber den Rest des Sets. Ohne
+ * `jetzt` gilt der ganze Zeitraum, so wie es die Liste der kommenden Acts
+ * braucht.
+ */
+function lichtTrifft(se, fenster, jetzt) {
   if (!se || !se.start) return false;
   // Ein Act ohne Ende wird mit einer Stunde angesetzt - dieselbe Annahme wie
   // in timetableView().
   const ende = se.end || new Date(se.start.getTime() + 60 * 60 * 1000);
+  const von = (jetzt && jetzt > se.start) ? jetzt : se.start;
+  if (von >= ende) return false;
+
   for (const f of (fenster || [])) {
-    if (f.se.start < ende && se.start < f.se.end) return true;
+    if (jetzt && f.se.end <= jetzt) continue;
+    if (f.se.start < ende && von < f.se.end) return true;
   }
   return false;
 }

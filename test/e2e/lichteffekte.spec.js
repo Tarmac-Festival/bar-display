@@ -18,6 +18,11 @@ async function zeitStellen(page, wann) {
 
 function programm(zusatz) {
   return beispiel(Object.assign({
+    // Lange Standzeit. Sonst blaettert die Schleife waehrend des Messens weiter,
+    // und eine Erwartung, die auf "nichts da" wartet, geht auch dann auf, wenn
+    // die Seite nur weitergeschaltet hat. Tests, die die Schleife selbst
+    // beobachten wollen, geben eigene settings mit - die ersetzen diese hier.
+    settings: { timetableDuration: 600, pricesDuration: 600 },
     timetable: [
       { date: '2026-08-28', start: '21:00', end: '23:00', act: 'Vorband', info: 'Live', photo: '' },
       { date: '2026-08-28', start: '23:00', end: '01:30', act: 'Nachtflug', info: 'DJ-Set', photo: '' }
@@ -503,6 +508,67 @@ test.describe('Kennzeichnung im Timetable', () => {
 
       await expect(page.locator('.lichtJetzt')).toHaveCount(0);
       await expect(page.locator('.ttNow .lichtZeichen')).toHaveCount(1);
+    });
+
+  test('eine vorbei Lichtphase laesst kein Zeichen zurueck',
+    async ({ page, bar }) => {
+      // Gemeldet: 23:30, der Act laeuft bis 00:00, die Phase war um 23:00 zu
+      // Ende - und das Zeichen stand trotzdem noch am Act. Es hiess damit "in
+      // diesem Set blitzt es", obwohl im Rest des Sets nichts mehr kommt.
+      bar.konfig(programm({
+        // Lange Standzeit: sonst wechselt die Schleife die Seite, waehrend
+        // gemessen wird - und "nichts da" waere dann nur "nichts mehr da".
+        settings: { timetableDuration: 600 },
+        timetable: [
+          { id: 'a1', date: '2026-08-28', start: '22:30', end: '00:00', act: 'Doubkore' },
+          { id: 'a2', date: '2026-08-29', start: '00:00', end: '01:30', act: 'Omikron' }
+        ],
+        lichteffekte: [
+          { id: 'l1', date: '2026-08-28', start: '22:00', end: '23:00', note: '' },
+          { id: 'l2', date: '2026-08-29', start: '01:00', end: '02:00', note: '' }
+        ]
+      }));
+      await zeitStellen(page, new Date(2026, 7, 28, 23, 30, 0).getTime());
+      await page.goto(bar.adresse + '/');
+      await expect(page.locator('.ttNow')).toContainText('Doubkore');
+
+      // Einmal messen, nicht wiederholt pruefen: eine Erwartung, die auf Null
+      // wartet, geht auch dann auf, wenn die Seite inzwischen weitergeblaettert
+      // hat. Genau daran ist dieser Test beim Gegenpruefen erst vorbeigelaufen.
+      const stand = await page.evaluate(() => ({
+        balken: document.querySelectorAll('.lichtJetzt').length,
+        zeichen: document.querySelectorAll('.layer.show .ttNow .lichtZeichen').length,
+        spalte: document.querySelectorAll('.layer.show .ttList .lichtBalken').length
+      }));
+      expect(stand.balken, 'es laeuft gerade keine Phase').toBe(0);
+      expect(stand.zeichen, 'und im Rest des Sets kommt auch keine mehr').toBe(0);
+      // Die Spalte bei den kommenden Acts bleibt davon unberuehrt
+      expect(stand.spalte, 'die kommende Phase steht weiter in der Spalte').toBe(1);
+    });
+
+  test('kommt im Rest des Sets noch Licht, bleibt das Zeichen',
+    async ({ page, bar }) => {
+      // Gegenprobe zum Test darueber: dieselbe Lage, nur liegt die Phase noch
+      // vor uns.
+      bar.konfig(programm({
+        settings: { timetableDuration: 600 },
+        timetable: [
+          { id: 'a1', date: '2026-08-28', start: '22:30', end: '00:00', act: 'Doubkore' }
+        ],
+        lichteffekte: [
+          { id: 'l1', date: '2026-08-28', start: '23:40', end: '23:55', note: '' }
+        ]
+      }));
+      await zeitStellen(page, new Date(2026, 7, 28, 23, 30, 0).getTime());
+      await page.goto(bar.adresse + '/');
+      await expect(page.locator('.ttNow')).toContainText('Doubkore');
+
+      const stand = await page.evaluate(() => ({
+        balken: document.querySelectorAll('.lichtJetzt').length,
+        zeichen: document.querySelectorAll('.layer.show .ttNow .lichtZeichen').length
+      }));
+      expect(stand.balken, 'noch laeuft nichts').toBe(0);
+      expect(stand.zeichen, 'aber es kommt noch etwas').toBe(1);
     });
 
   test('Restzeit und Lichtwarnung sind auseinanderzuhalten',

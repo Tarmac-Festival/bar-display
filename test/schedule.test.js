@@ -511,6 +511,23 @@ check('Act ohne Ende wird mit einer Stunde gerechnet',
       lichtTrifft(entryStartEnd({ date: '2026-08-28', start: '23:00' }), lichtNacht), true);
 check('ohne Fenster nichts betroffen', lichtTrifft(actSE('23:00', '01:00'), []), false);
 
+// Mit einer Uhrzeit zaehlt nur, was noch bevorsteht. Beim laufenden Act ist das
+// der Unterschied zwischen einer Warnung und einer Behauptung: eine Phase, die
+// um 01:00 zu Ende war, sagt um 01:30 nichts mehr ueber den Rest des Sets.
+const umUhr = (std, min) => new Date(2026, 7, std < 6 ? 29 : 28, std, min || 0);
+check('vor der Phase: trifft',
+      lichtTrifft(actSE('23:00', '01:30'), lichtNacht, umUhr(23, 10)), true);
+check('mitten in der Phase: trifft auch',
+      lichtTrifft(actSE('23:00', '01:30'), lichtNacht, umUhr(0, 30)), true);
+check('nach der Phase: trifft nicht mehr',
+      lichtTrifft(actSE('23:00', '01:30'), lichtNacht, umUhr(1, 20)), false);
+check('genau zum Ende der Phase schon nicht mehr',
+      lichtTrifft(actSE('23:00', '01:30'), lichtNacht, umUhr(1, 0)), false);
+check('ein Act, der schon vorbei ist, trifft nicht',
+      lichtTrifft(actSE('23:00', '00:30'), lichtNacht, umUhr(2, 0)), false);
+check('ohne Uhrzeit gilt weiterhin der ganze Act',
+      lichtTrifft(actSE('23:00', '01:30'), lichtNacht), true);
+
 // Was steht noch bevor? Danach entscheidet sich, ob die eigene Seite ueberhaupt
 // mitlaeuft - mit lauter vergangenen Zeiten lief sie endlos mit dem Hinweis,
 // dass nichts angemeldet ist.
