@@ -989,7 +989,7 @@ function renderTimetable() {
     // ohne ihn waere der Balken nur ein Streifen neben dem Act.
     if (mitLicht) {
       body += '<div class="ttKopf"><span class="klLicht">' + lichtZeichen('kopf') +
-        '<span>Lichteffekte</span></span></div>';
+        '<span class="klWort">Lichteffekte</span></span></div>';
     }
 
     // Die ganze Spalte auf einmal: eine Phase ueber mehrere Acts muss als ein

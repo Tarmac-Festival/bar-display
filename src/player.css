@@ -27,6 +27,10 @@
   --blob: #35084f;
   --line: rgba(255, 255, 255, 0.16);
   --blobShape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M10,54 C4,28 26,9 58,6 C86,3 103,17 133,10 C168,2 197,17 195,45 C193,71 178,86 149,92 C119,98 95,86 62,95 C33,103 16,79 10,54 Z' fill='%23000'/%3E%3C/svg%3E");
+  /* Breite der Lichtspalte im Timetable. Steht hier, weil vier Stellen sie
+     brauchen: das Raster, die Spur, der Reiter darueber und das Ende der
+     Trennlinie. Drifteten die auseinander, sass der Reiter neben der Spalte. */
+  --lichtSpalte: 11.5em;
   --fade: 700ms;
   --scale: 1;
 
@@ -1012,7 +1016,7 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 .ttKopf,
 .ttList.mitLicht .ttRow {
   display: grid;
-  grid-template-columns: 11em 1fr auto 10.5em;
+  grid-template-columns: 11em 1fr auto var(--lichtSpalte);
   column-gap: 1.1em;
 }
 /* Ausdruecklich benannt: ein Kind mit fester Zeile (die Lichtspur) wird vom
@@ -1034,7 +1038,8 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   content: '';
   position: absolute;
   left: 0;
-  right: 11.6em;
+  /* Spaltenbreite plus der Abstand des Rasters */
+  right: calc(var(--lichtSpalte) + 1.1em);
   bottom: 0;
   border-bottom: 0.075em solid var(--line);
 }
@@ -1056,7 +1061,7 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   top: -0.25em;
   bottom: -0.25em;
   right: 0.2em;
-  width: 10.5em;
+  width: var(--lichtSpalte);
   margin: 0;
 }
 .ttList.mitLicht .ttRow .info { grid-column: 2 / 4; }
@@ -1068,12 +1073,20 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
 .ttKopf { margin-bottom: 0.1em; }
 .klLicht {
   grid-column: 4;
-  /* Ueber dem Block, nicht ueber der Beschriftung daneben */
+  /* Genau so breit wie die Spalte darunter und buendig mit ihr - der Reiter
+     gehoert zu den Kaesten, nicht zur Beschriftung links davon. Vorher richtete
+     er sich nach seinem Text und stand deshalb links ueber die Spalte hinaus,
+     bis fast an die Tagesangabe. Breite und Randabstand sind dieselben wie bei
+     .lichtSpur - beide kommen aus --lichtSpalte. */
   justify-self: end;
+  width: var(--lichtSpalte);
+  margin-right: 0.2em;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4em;
   white-space: nowrap;
+  overflow: hidden;
   font-size: 1em;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -1084,6 +1097,10 @@ body.uhrUnsicher .fussUhr b { color: var(--accent2); }
   border-radius: 0.4em 0.4em 0 0;
   padding: 0.18em 0.5em 0.14em;
 }
+/* Das Wort etwas kleiner als das Zeichen: zusammen muessen beide in die
+   Spaltenbreite passen. Eigene Klasse, denn ein Nachfahrenwahl auf span traefe
+   auch die Huelle des Zeichens - das waere dann zweimal verkleinert. */
+.klLicht .klWort { font-size: 0.8em; }
 body.spar .klLicht { background: none; }
 
 .lichtSpur {

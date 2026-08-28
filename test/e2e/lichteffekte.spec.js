@@ -77,9 +77,11 @@ test.describe('Kennzeichnung im Timetable', () => {
         return {
           rechtsVomAct: block.left >= s('.act').right,
           rechtsVomTag: block.left >= s('.day').right,
-          // Der Reiter sitzt ueber den Bloecken, nicht ueber der Beschriftung
-          // links daneben - sonst zeigt er auf die falsche Stelle.
-          kopfUeberBlock: Math.abs(k.right - block.right) < 4 && k.bottom <= block.top,
+          // Der Reiter sitzt ueber den Bloecken und ist genau so breit wie sie.
+          // Nach seinem Text bemessen stand er links ueber die Spalte hinaus,
+          // bis fast an die Tagesangabe.
+          kopfUeberBlock: Math.abs(k.right - block.right) < 2 &&
+                          Math.abs(k.left - block.left) < 2 && k.bottom <= block.top,
           // und laeuft nicht ueber den Bildrand hinaus
           imBild: k.right <= window.innerWidth
         };
@@ -89,6 +91,41 @@ test.describe('Kennzeichnung im Timetable', () => {
       expect(lage.rechtsVomTag, 'und rechts vom Tag').toBe(true);
       expect(lage.kopfUeberBlock, 'der Reiter sitzt ueber den Bloecken').toBe(true);
       expect(lage.imBild, 'der Reiter passt ins Bild').toBe(true);
+    });
+
+  test('der Reiter passt in die Spalte und deckt nichts zu',
+    async ({ page, bar }) => {
+      // Nach seinem Text bemessen war er breiter als die Spalte und ragte nach
+      // links darueber hinaus - bis fast an die Tagesangabe daneben.
+      bar.konfig(programm());
+      await zeitStellen(page, FREITAG_20_UHR);
+      await page.goto(bar.adresse + '/');
+      await page.waitForSelector('.ttRow.hatLicht');
+
+      const lage = await page.evaluate(() => {
+        const el = document.querySelector('.klLicht');
+        const k = el.getBoundingClientRect();
+        const b = document.querySelector('.lichtBalken').getBoundingClientRect();
+        const tag = document.querySelector('.ttRow .day').getBoundingClientRect();
+        const zeichen = el.querySelector('.lichtZeichen').getBoundingClientRect();
+        const wort = el.querySelector('.klWort').getBoundingClientRect();
+        return {
+          breiter: Math.round(k.width - b.width),
+          ueberDenTag: k.left < tag.right,
+          sichtbar: el.querySelector('.klWort').textContent,
+          // Der Kasten hat eine feste Breite und schneidet ab, was nicht
+          // hineinpasst - lautlos. Also nachsehen, ob der Inhalt wirklich
+          // hineinpasst, statt nur die Breite des Kastens zu pruefen.
+          luftLinks: Math.round(zeichen.left - k.left),
+          luftRechts: Math.round(k.right - wort.right)
+        };
+      });
+      expect(lage.breiter, 'nicht breiter als ein Block').toBeLessThanOrEqual(1);
+      expect(lage.ueberDenTag, 'und nicht ueber die Tagesangabe').toBe(false);
+      expect(lage.sichtbar, 'die Beschriftung steht noch da').toBe('Lichteffekte');
+      expect(lage.luftLinks, 'Zeichen und Wort werden nicht abgeschnitten')
+        .toBeGreaterThan(3);
+      expect(lage.luftRechts, 'auch rechts nicht').toBeGreaterThan(3);
     });
 
   test('ohne Lichtzeiten gibt es auch keinen Reiter', async ({ page, bar }) => {
