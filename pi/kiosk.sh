@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 #
-# Startet die Vollbildanzeige: wartet auf den Webdienst und uebergibt dann an
-# cage mit Chromium.
+# Startet die Vollbildanzeige. Zwei Wege, je nachdem, was auf dem Geraet laeuft:
 #
-# Warum ein eigenes Skript und kein ExecStartPre in der Unit:
+#   KIOSK_ART=konsole  cage uebernimmt tty1, kein Desktop noetig. Der Weg fuer
+#                      einen Raspberry Pi, der ohne Arbeitsflaeche startet.
+#   KIOSK_ART=desktop  Chromium laeuft in der schon vorhandenen Sitzung, etwa
+#                      unter GNOME. Dort gehoert der Bildschirm dem
+#                      Anmeldedienst - cage bekaeme ihn gar nicht.
+#
+# Warum ein eigenes Skript und keine Optionen in der Unit:
 # Die Unit setzt TTYVHangup=yes, damit tty1 sauber uebernommen wird. systemd
 # haengt dabei vor dem Start alle Prozesse von tty1 ab - und ein ExecStartPre
 # haengt wegen StandardInput=tty selbst an tty1. Es bekam also SIGHUP und der
@@ -17,6 +22,7 @@ set -u
 
 PORT="${PORT:-8080}"
 CACHE="${CACHE:-/run/bar-display-cache}"
+KIOSK_ART="${KIOSK_ART:-konsole}"
 
 # Chromium heisst je nach Fassung anders
 CHROMIUM="${CHROMIUM:-}"
@@ -27,12 +33,6 @@ if [ -z "$CHROMIUM" ]; then
 fi
 if [ -z "$CHROMIUM" ]; then
   echo "Chromium nicht gefunden - bitte nachinstallieren." >&2
-  exit 1
-fi
-
-CAGE="${CAGE:-$(command -v cage || true)}"
-if [ -z "$CAGE" ]; then
-  echo "cage nicht gefunden - bitte nachinstallieren." >&2
   exit 1
 fi
 
@@ -50,6 +50,53 @@ if ! curl -sf "http://localhost:$PORT/api/config" >/dev/null 2>&1; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Die Optionen, die auf beiden Wegen gelten
+OPT=(
+  --kiosk "http://localhost:$PORT/"
+  --autoplay-policy=no-user-gesture-required
+  --noerrdialogs --disable-infobars --disable-session-crashed-bubble
+  --disable-pinch --overscroll-history-navigation=0
+  --force-device-scale-factor=1 --disable-smooth-scrolling
+  --disable-features=Translate,TranslateUI,MediaRouter
+  --check-for-update-interval=31536000 --disable-component-update
+  --disable-breakpad --disable-crash-reporter --disable-sync
+  --no-first-run --no-default-browser-check --disable-background-networking
+)
+
+if [ "$KIOSK_ART" = "desktop" ]; then
+  # ------------------------------------------------------------------ Desktop
+  # Der Bildschirm darf nicht dunkel werden. Auf einer Arbeitsflaeche ist das
+  # die Voreinstellung - fuer einen Bildschirm an der Bar waere sie fatal.
+  # Gesetzt wird es hier und nicht bei der Einrichtung: gsettings schreibt in
+  # die Sitzung des Benutzers, und die gibt es erst hier.
+  if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null || true
+    gsettings set org.gnome.desktop.screensaver lock-enabled false 2>/dev/null || true
+    gsettings set org.gnome.desktop.screensaver idle-activation-enabled false 2>/dev/null || true
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type nothing 2>/dev/null || true
+  fi
+
+  echo "Starte Anzeige in der Sitzung: chromium=$CHROMIUM port=$PORT"
+
+  # Kein eigener Zwischenspeicher unter /run: unter Ubuntu ist Chromium ein
+  # Snap und darf dorthin nicht schreiben. Der Standardort in der Sitzung
+  # funktioniert in beiden Faellen.
+  #
+  # ozone-platform-hint statt fester Vorgabe: die Sitzung kann Wayland oder X11
+  # sein, und mit der falschen Vorgabe startet Chromium gar nicht.
+  exec "$CHROMIUM" --ozone-platform-hint=auto "${OPT[@]}"
+fi
+
+# ------------------------------------------------------------------- Konsole
+# cage ist ein winziger Wayland-Aufsatz: kein Desktop, kein Panel, nichts das
+# Speicher frisst - auf einem Pi 3B mit 1 GB ein spuerbarer Unterschied.
+CAGE="${CAGE:-$(command -v cage || true)}"
+if [ -z "$CAGE" ]; then
+  echo "cage nicht gefunden - bitte nachinstallieren." >&2
+  exit 1
+fi
+
 mkdir -p "$CACHE" 2>/dev/null || true
 
 # Was hier oft klemmt, steht sonst nirgends. Einmal ins Protokoll, damit man bei
@@ -63,8 +110,8 @@ if ! ls -d /sys/class/drm/card*-* >/dev/null 2>&1; then
   if [ ! -d /dev/dri ]; then
     echo "  /dev/dri gibt es gar nicht - der Grafiktreiber ist nicht geladen." >&2
   fi
-  echo "  Haeufigste Ursache: eine Zeile gpu_mem= in der config.txt. Die stammt" >&2
-  echo "  vom alten Grafiktreiber und blockiert den heutigen. Entfernen mit:" >&2
+  echo "  Haeufigste Ursache auf einem Pi: eine Zeile gpu_mem= in der config.txt." >&2
+  echo "  Die stammt vom alten Grafiktreiber und blockiert den heutigen:" >&2
   echo "      sudo sed -i '/^gpu_mem=/d' /boot/firmware/config.txt && sudo reboot" >&2
   echo "  Pruefen laesst es sich danach mit: ls /dev/dri/" >&2
   exit 1
@@ -76,16 +123,8 @@ fi
 # exec, damit cage der Hauptprozess des Dienstes wird - sonst haelt systemd
 # dieses Skript fuer die Anzeige und merkt ihr Ende nicht.
 exec "$CAGE" -d -- "$CHROMIUM" \
-  --kiosk "http://localhost:$PORT/" \
   --ozone-platform=wayland \
-  --autoplay-policy=no-user-gesture-required \
-  --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
-  --disable-pinch --overscroll-history-navigation=0 \
-  --force-device-scale-factor=1 --disable-smooth-scrolling \
   --enable-low-end-device-mode \
   --renderer-process-limit=1 --process-per-site \
   --disk-cache-dir="$CACHE" --disk-cache-size=33554432 --media-cache-size=16777216 \
-  --disable-features=Translate,TranslateUI,MediaRouter \
-  --check-for-update-interval=31536000 --disable-component-update \
-  --disable-breakpad --disable-crash-reporter --disable-sync \
-  --no-first-run --no-default-browser-check --disable-background-networking
+  "${OPT[@]}"

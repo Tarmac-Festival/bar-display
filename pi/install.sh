@@ -49,13 +49,42 @@ case "$BRETT" in
   *"Raspberry Pi"*) IST_PI=1 ;;
   *) IST_PI=0 ;;
 esac
-[ -n "${NUR_ERKENNEN:-}" ] && { printf '%s|%s\n' "$BRETT" "$IST_PI"; exit 0; }
+# Konsole oder Arbeitsflaeche? Zwei ganz verschiedene Wege:
+#
+#   konsole  cage uebernimmt tty1. Braucht den Bildschirm fuer sich - und
+#            bekommt ihn nur, wenn keine Arbeitsflaeche laeuft.
+#   desktop  Chromium startet in der vorhandenen Sitzung, etwa unter GNOME.
+#
+# Frueher gab es nur den ersten Weg, und bei einer vorhandenen Arbeitsflaeche
+# den Rat, sie abzuschalten. Auf einem Geraet, das jemand bewusst mit
+# Arbeitsflaeche aufgesetzt hat, ist das die falsche Antwort.
+STANDARDZIEL="${STANDARDZIEL:-$(systemctl get-default 2>/dev/null || echo unbekannt)}"
+#
+# Auf einem Pi bleibt es beim schlanken Aufsatz, auch wenn eine Arbeitsflaeche
+# da ist: ein Pi 3B hat 1 GB, und Raspberry Pi OS wird meistens mit
+# Arbeitsflaeche installiert, ohne dass jemand sie hier braucht. Dort kommt
+# weiter der Rat, auf Konsolenstart umzustellen - mit KIOSK=desktop laesst er
+# sich uebergehen.
+if [ -n "${KIOSK:-}" ]; then
+  KIOSK_ART="$KIOSK"
+elif [ "$IST_PI" -eq 0 ] && [ "$STANDARDZIEL" = "graphical.target" ]; then
+  KIOSK_ART="desktop"
+else
+  KIOSK_ART="konsole"
+fi
+
+[ -n "${NUR_ERKENNEN:-}" ] && { printf '%s|%s|%s\n' "$BRETT" "$IST_PI" "$KIOSK_ART"; exit 0; }
 sage "Geraet: $BRETT"
+sage "Anzeige: $([ "$KIOSK_ART" = desktop ] && echo 'in der Arbeitsflaeche' || echo 'eigener Vollbildaufsatz')"
 
 # ---------------------------------------------------------------------------
 sage "Pakete installieren"
 sudo apt-get update -qq
-sudo apt-get install -y --no-install-recommends git nodejs cage
+PAKETE="git nodejs"
+# cage nur, wo es gebraucht wird: in einer Arbeitsflaeche waere es nutzlos.
+[ "$KIOSK_ART" = "konsole" ] && PAKETE="$PAKETE cage"
+# shellcheck disable=SC2086
+sudo apt-get install -y --no-install-recommends $PAKETE
 
 # Chromium heisst je nach Fassung anders
 CHROMIUM=""
@@ -190,6 +219,15 @@ RestartSec=5
 WantedBy=multi-user.target
 KIOSK
 
+# Womit die Anzeige laeuft, muessen auch die Helferbefehle wissen: im
+# Desktop-Weg gibt es den Dienst bar-display-kiosk gar nicht.
+sudo tee /etc/default/bar-display >/dev/null <<EINST
+# Von der Einrichtung geschrieben. Wird von bar-display-konsole,
+# bar-display-anzeige und bar-display-update gelesen.
+KIOSK_ART=$KIOSK_ART
+PORT=$PORT
+EINST
+
 sudo systemctl daemon-reload
 
 # Bewusst ohne Abbruch: startet die Anzeige nicht, sollen die restlichen
@@ -198,26 +236,55 @@ sudo systemctl daemon-reload
 DIENST_OK=ja
 KIOSK_OK=ja
 sudo systemctl enable --now bar-display.service || DIENST_OK=nein
-sudo systemctl enable --now bar-display-kiosk.service || KIOSK_OK=nein
+
+if [ "$KIOSK_ART" = "desktop" ]; then
+  # In einer Arbeitsflaeche startet die Anzeige mit der Sitzung, nicht als
+  # Systemdienst: der Bildschirm gehoert dort dem Anmeldedienst, und ein
+  # Dienst auf tty1 kaeme nie zum Zug. Ausserdem laeuft Chromium unter Ubuntu
+  # als Snap - der braucht die Sitzung des Benutzers.
+  sudo systemctl disable --now bar-display-kiosk.service >/dev/null 2>&1 || true
+
+  AUTOSTART="/home/$BENUTZER/.config/autostart"
+  sudo -u "$BENUTZER" mkdir -p "$AUTOSTART"
+  sudo -u "$BENUTZER" tee "$AUTOSTART/bar-display-kiosk.desktop" >/dev/null <<AUTO
+[Desktop Entry]
+Type=Application
+Name=Bar Display
+Comment=Vollbildanzeige in der laufenden Sitzung
+Exec=env KIOSK_ART=desktop PORT=$PORT /usr/local/bin/bar-display-kiosk
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+AUTO
+  KIOSK_OK=ja
+else
+  sudo systemctl enable --now bar-display-kiosk.service || KIOSK_OK=nein
+fi
 
 # ---------------------------------------------------------------------------
 # Die Vollbildanzeige braucht tty1 fuer sich. Startet der Pi mit Arbeitsflaeche,
 # sitzt die dort schon - dann kommen sich beide in die Quere.
-ZIEL_JETZT="$(systemctl get-default 2>/dev/null || echo unbekannt)"
-if [ "$ZIEL_JETZT" = "graphical.target" ]; then
+KONSOLE_HINWEIS=""
+if [ "$KIOSK_ART" = "desktop" ]; then
+  KONSOLE_HINWEIS="Die Anzeige startet mit der Arbeitsflaeche. Damit sie ohne
+  Tastatur hochkommt, muss der Benutzer automatisch angemeldet werden -
+  unter GNOME in /etc/gdm3/custom.conf:
+      AutomaticLoginEnable = true
+      AutomaticLogin = $BENUTZER
+  Der Bildschirmschoner wird beim Start abgeschaltet, darum ist nichts zu tun.
+  (Ohne Arbeitsflaeche geht es auch: KIOSK=konsole erneut einrichten und
+  sudo systemctl set-default multi-user.target)"
+elif [ "$STANDARDZIEL" = "graphical.target" ]; then
   if [ "${KONSOLENSTART:-}" = "ja" ]; then
     sage "Auf Start ohne Arbeitsflaeche umstellen"
     sudo systemctl set-default multi-user.target >/dev/null
     KONSOLE_HINWEIS="Umgestellt auf Start ohne Arbeitsflaeche - wirkt nach dem Neustart."
   else
-    KONSOLE_HINWEIS="ACHTUNG: Der Pi startet mit Arbeitsflaeche. Die Vollbildanzeige
-  braucht tty1 fuer sich und kommt so nicht hoch. Umstellen mit:
+    KONSOLE_HINWEIS="ACHTUNG: Das Geraet startet mit Arbeitsflaeche, die Anzeige
+  wurde aber als eigener Vollbildaufsatz eingerichtet. Der braucht tty1 fuer
+  sich und kommt so nicht hoch. Umstellen mit:
       sudo systemctl set-default multi-user.target && sudo reboot
-  Danach laeuft die Anzeige von allein; bedient wird ohnehin vom Handy.
-  (Zurueck geht es mit: sudo systemctl set-default graphical.target)"
+  (Oder mit KIOSK=desktop erneut einrichten - dann bleibt die Arbeitsflaeche.)"
   fi
-else
-  KONSOLE_HINWEIS=""
 fi
 
 # ---------------------------------------------------------------------------
@@ -364,7 +431,14 @@ sudo git -C /opt/bar-display fetch --depth 1 origin main
 sudo git -C /opt/bar-display reset --hard origin/main
 # Das Startskript der Anzeige liegt ausserhalb des Repos und muss mit
 sudo install -m 0755 /opt/bar-display/pi/kiosk.sh /usr/local/bin/bar-display-kiosk
-sudo systemctl restart bar-display.service bar-display-kiosk.service
+. /etc/default/bar-display 2>/dev/null || KIOSK_ART=konsole
+sudo systemctl restart bar-display.service
+if [ "${KIOSK_ART:-konsole}" = "desktop" ]; then
+  echo "Die Anzeige laeuft in der Sitzung - fuer die neue Fassung:"
+  echo "    bar-display-konsole && bar-display-anzeige"
+else
+  sudo systemctl restart bar-display-kiosk.service
+fi
 echo "Bar Display aktualisiert."
 echo "Hinweis: Aendert sich einmal etwas an den Diensten selbst, hilft nur ein"
 echo "erneuter Lauf des Einrichtungsskripts - das steht dann in den Hinweisen."
@@ -378,9 +452,18 @@ sudo chmod +x /usr/local/bin/bar-display-update
 sudo tee /usr/local/bin/bar-display-konsole >/dev/null <<'KONSOLE'
 #!/usr/bin/env bash
 set -euo pipefail
-sudo systemctl stop bar-display-kiosk.service
-sudo systemctl start getty@tty1.service
-echo "Anzeige angehalten, Eingabeaufforderung ist zurueck."
+. /etc/default/bar-display 2>/dev/null || KIOSK_ART=konsole
+PORT="${PORT:-8080}"
+
+if [ "${KIOSK_ART:-konsole}" = "desktop" ]; then
+  # Kein Dienst, den man anhalten koennte - die Anzeige laeuft in der Sitzung.
+  pkill -f "kiosk http://localhost:$PORT/" || true
+  echo "Anzeige angehalten. Die Arbeitsflaeche ist wieder frei."
+else
+  sudo systemctl stop bar-display-kiosk.service
+  sudo systemctl start getty@tty1.service
+  echo "Anzeige angehalten, Eingabeaufforderung ist zurueck."
+fi
 echo "Wieder anzeigen mit: bar-display-anzeige"
 KONSOLE
 sudo chmod +x /usr/local/bin/bar-display-konsole
@@ -388,7 +471,21 @@ sudo chmod +x /usr/local/bin/bar-display-konsole
 sudo tee /usr/local/bin/bar-display-anzeige >/dev/null <<'ANZEIGE'
 #!/usr/bin/env bash
 set -euo pipefail
-sudo systemctl start bar-display-kiosk.service
+. /etc/default/bar-display 2>/dev/null || KIOSK_ART=konsole
+
+if [ "${KIOSK_ART:-konsole}" = "desktop" ]; then
+  # Muss aus der Sitzung heraus starten - von einer Textkonsole aus fehlt der
+  # Bildschirm. Deshalb hier kein sudo und kein systemd.
+  if [ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+    echo "Bitte in einem Fenster der Arbeitsflaeche ausfuehren, nicht ueber SSH." >&2
+    echo "Oder einfach ab- und wieder anmelden - die Anzeige startet mit." >&2
+    exit 1
+  fi
+  setsid env KIOSK_ART=desktop PORT="${PORT:-8080}" \
+    /usr/local/bin/bar-display-kiosk >/dev/null 2>&1 &
+else
+  sudo systemctl start bar-display-kiosk.service
+fi
 echo "Anzeige laeuft wieder."
 ANZEIGE
 sudo chmod +x /usr/local/bin/bar-display-anzeige

@@ -1011,11 +1011,48 @@ mehr. Nachsehen lässt es sich in Chromium unter `chrome://gpu`, Zeile *Video
 Decode*; ruckelt trotzdem etwas, hilft der **Sparmodus** im Reiter *Anzeige*.
 
 Danach ist die Einrichtung dieselbe wie unten — derselbe Befehl, dieselben
-Dienste. Das Skript meldet beim Start, welches Gerät es erkannt hat.
+Dienste. Das Skript meldet beim Start, welches Gerät es erkannt hat und wie die
+Anzeige laufen wird.
 
-> Nicht auf echter Hardware erprobt. Getestet ist die Geräteerkennung
-> (`test/brett.test.js`); dass Armbian, Chromium und der Bildschirm am N2+
-> zusammenspielen, kann nur ein Lauf auf dem Gerät zeigen.
+#### Mit oder ohne Arbeitsfläche
+
+Es gibt zwei Wege, und das Skript wählt selbst:
+
+| | Wie es läuft | Wann |
+|---|---|---|
+| **Ohne Arbeitsfläche** | `cage` übernimmt `tty1` — ein winziger Wayland-Aufsatz, kein Desktop, kein Panel | Voreinstellung ohne Arbeitsfläche, und auf jedem Raspberry Pi |
+| **Mit Arbeitsfläche** | Chromium startet als Autostart **in der Sitzung**, etwa unter GNOME | Voreinstellung auf anderen Brettern, die grafisch starten |
+
+Wer **Ubuntu 24.04 mit GNOME** aufsetzt, bekommt also den zweiten Weg — und das
+ist auch der richtige: der Bildschirm gehört dort dem Anmeldedienst, ein Dienst
+auf `tty1` käme gar nicht zum Zug. Zwei Dinge erledigt das Skript dabei mit:
+
+- **Der Bildschirmschoner wird abgeschaltet** (`idle-delay`, Sperre,
+  automatisches Ausschalten) — und zwar beim Start der Anzeige, weil diese
+  Einstellungen zur Sitzung des Benutzers gehören und es die erst dort gibt.
+- **Kein eigener Zwischenspeicher unter `/run`.** Chromium ist unter Ubuntu ein
+  Snap und dürfte dorthin gar nicht schreiben.
+
+Was **du** noch tun musst, damit das Gerät ohne Tastatur hochkommt: die
+automatische Anmeldung einschalten, in `/etc/gdm3/custom.conf`:
+
+```ini
+[daemon]
+AutomaticLoginEnable = true
+AutomaticLogin = DEIN-BENUTZERNAME
+```
+
+Beide Wege lassen sich erzwingen — etwa um auf dem N2+ trotz GNOME den
+schlanken Aufsatz zu nehmen:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tarmac-Festival/bar-display/main/pi/install.sh | KIOSK=konsole bash
+```
+
+> Nicht auf echter Hardware erprobt. Geprüft sind die Entscheidungen, die das
+> Skript trifft, und dass die Befehle, die es schreibt, syntaktisch heil sind
+> (`test/install.test.js`) — dass Ubuntu, GNOME, Chromium und der Bildschirm am
+> N2+ zusammenspielen, kann nur ein Lauf auf dem Gerät zeigen.
 
 ### Einrichten
 
@@ -1393,6 +1430,8 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi-und-andere-einplatinenrechner) |
 | Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
 | Anderes Brett: dasselbe, aber ohne `config.txt` | Dort repariert das Skript nichts – der Treiber kommt vom Kernel. `ls /dev/dri/` prüfen, ggf. neueren Kernel installieren |
+| Mit GNOME: Anzeige kommt nach dem Neustart nicht | Automatische Anmeldung fehlt – ohne sie startet keine Sitzung, und ohne Sitzung keine Anzeige. `/etc/gdm3/custom.conf` |
+| Mit GNOME: Bildschirm wird nach Minuten dunkel | Die Anzeige schaltet das beim Start ab. Kommt es trotzdem vor: läuft sie überhaupt? `bar-display-anzeige` in einem Fenster der Arbeitsfläche |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Frisch aufgenommenes Foto kommt nicht an | Sollte nicht mehr vorkommen: die Seite wartet jetzt bis zu 30 Sekunden auf das Bild |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |
