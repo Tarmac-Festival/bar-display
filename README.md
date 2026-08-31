@@ -17,7 +17,7 @@ Getränkepreise im Festival-Design.
 - [Die Einstellungen](#die-einstellungen)
 - [Bedienung vom Handy](#bedienung-vom-handy)
 - [Mehrere Bars ausstatten](#mehrere-bars-ausstatten)
-- [Raspberry Pi](#raspberry-pi)
+- [Raspberry Pi und andere Einplatinenrechner](#raspberry-pi-und-andere-einplatinenrechner)
 - [Unterstützte Formate](#unterstützte-formate)
 - [Wo die Daten liegen](#wo-die-daten-liegen)
 - [Wenn etwas klemmt](#wenn-etwas-klemmt)
@@ -115,7 +115,7 @@ steht unten für die Versionsnummer des Releases, also z. B. `1.3.1`.
 | macOS | `BarDisplay-VERSION-x64.dmg` | Intel-Macs |
 | alle | `SHA256SUMS-windows.txt`, `-linux.txt`, `-mac.txt` | Prüfsummen, siehe [Reproduzierbare Releases](#reproduzierbare-releases) |
 
-Raspberry Pi braucht keinen Download, siehe [Raspberry Pi](#raspberry-pi).
+Raspberry Pi braucht keinen Download, siehe [Raspberry Pi](#raspberry-pi-und-andere-einplatinenrechner).
 
 ### Windows
 
@@ -352,7 +352,7 @@ Warum das wichtig ist: **Timetable, Zeitfenster der Clips, Ruhezeit und geplante
 Durchsagen hängen alle an der Systemuhr.** Ein Raspberry Pi hat keine
 batteriegepufferte Uhr und startet ohne Netz mit der Zeit des letzten
 Herunterfahrens — das sieht völlig plausibel aus und ist trotzdem falsch. Mehr
-dazu unter [Raspberry Pi](#raspberry-pi).
+dazu unter [Raspberry Pi](#raspberry-pi-und-andere-einplatinenrechner).
 
 ### Probezeit für den Aufbau
 
@@ -844,7 +844,7 @@ Unter **System** dazugekommen:
 - **Automatisch mit Windows starten**
 - **PIN** für die Einstellungen (nur Ziffern, leer = kein Schutz). Sie schützt
   zweierlei: das Einstellungsfenster am Bildschirm und die Bedienseite im
-  Netzwerk — siehe [Raspberry Pi](#raspberry-pi).
+  Netzwerk — siehe [Raspberry Pi](#raspberry-pi-und-andere-einplatinenrechner).
 - **Bedienung vom Handy**: Adresse, QR-Code, Port und der Startbildhinweis –
   siehe [Bedienung vom Handy](#bedienung-vom-handy).
 - **Uhrzeit**: Datum, Uhrzeit und ob sie aus dem Netz abgeglichen ist. Unter
@@ -977,7 +977,7 @@ an jeder Bar über *Videos & Bilder hinzufügen* eingelesen.
 
 ---
 
-## Raspberry Pi
+## Raspberry Pi und andere Einplatinenrechner
 
 Auf einem Raspberry Pi läuft **nicht** die Electron-Fassung. Electron bringt sein
 eigenes Chromium mit, und das nutzt die Hardware-Dekodierung des Pi nicht — 1080p
@@ -985,6 +985,37 @@ wäre damit auf einem Pi 3 unbrauchbar. Stattdessen läuft dort ein kleiner Dien
 der dieselbe Anzeige ausliefert, und das Chromium von Raspberry Pi OS zeigt sie an.
 **Die Anzeige selbst ist Zeile für Zeile dieselbe** — Design, Schleife, Zeitfenster,
 Timetable, Spezialshot, alles identisch.
+
+Dasselbe Einrichtungsskript läuft auf **jedem Debian-artigen Linux mit systemd** —
+etwa Armbian oder Ubuntu auf einem **Odroid N2+**. Es erkennt das Gerät und fasst
+die Firmware-Datei `config.txt` nur auf einem Raspberry Pi an; die gibt es
+anderswo gar nicht, dort bringt der Kernel den Grafiktreiber gleich mit.
+
+### Odroid N2+ (auch „Home Assistant Blue")
+
+Der N2+ ist die deutlich stärkere Maschine: vier Kerne mit 2,4 GHz gegen die
+1,2 GHz eines Pi 3. Zwei Dinge sind vorher zu klären.
+
+**Home Assistant OS kann das nicht.** Ein Home Assistant Blue *ist* ein Odroid
+N2+, aber das darauf vorinstallierte System ist eine geschlossene Appliance —
+dort lässt sich weder Node noch Chromium installieren. Wer das Gerät dafür
+verwenden will, spielt ein normales Linux auf die eMMC: **Armbian** oder
+**Ubuntu für Odroid N2+**. Damit ist die Home-Assistant-Installation weg — wenn
+sie gebraucht wird, gehört sie vorher gesichert oder das Gerät bleibt, wie es ist.
+
+**Hardware-Dekodierung ist unwahrscheinlich.** Auf dem Pi holt Chromium sie über
+V4L2; auf dem Amlogic S922X des N2+ ist das mit gewöhnlichem Armbian-Chromium
+meist nicht der Fall, dort läuft die Dekodierung über die CPU. Das ist hier
+verkraftbar: Was auf einem Pi 3 nötig war, ist auf vier A73-Kernen keine Hürde
+mehr. Nachsehen lässt es sich in Chromium unter `chrome://gpu`, Zeile *Video
+Decode*; ruckelt trotzdem etwas, hilft der **Sparmodus** im Reiter *Anzeige*.
+
+Danach ist die Einrichtung dieselbe wie unten — derselbe Befehl, dieselben
+Dienste. Das Skript meldet beim Start, welches Gerät es erkannt hat.
+
+> Nicht auf echter Hardware erprobt. Getestet ist die Geräteerkennung
+> (`test/brett.test.js`); dass Armbian, Chromium und der Bildschirm am N2+
+> zusammenspielen, kann nur ein Lauf auf dem Gerät zeigen.
 
 ### Einrichten
 
@@ -1359,8 +1390,9 @@ Der Autostart wird unter Windows im Anmelde-Autostart eingetragen, unter Linux a
 | Act-Foto zeigt den falschen Bildteil | Knopf unten rechts auf der Miniatur, Ausschnitt zurechtziehen |
 | Datum oder Uhrzeit färbt sich rot | Die Eingabe war nicht deutbar – Esc stellt den alten Wert wieder her |
 | Anzeige ruckelt auf dem Pi | *Anzeige → Sparmodus*, danach Videos auf 720p |
-| Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi) |
+| Pi: Anzeige bleibt schwarz, Dienst startet endlos neu | Der Pi startet mit Arbeitsfläche – auf Konsolenstart umstellen, siehe [Raspberry Pi](#raspberry-pi-und-andere-einplatinenrechner) |
 | Pi: „Found 0 GPUs" bzw. „Unable to create the wlroots backend" | Kein Grafikgerät – Einrichtungsskript nochmal laufen lassen, es repariert die `config.txt`, dann neu starten |
+| Anderes Brett: dasselbe, aber ohne `config.txt` | Dort repariert das Skript nichts – der Treiber kommt vom Kernel. `ls /dev/dri/` prüfen, ggf. neueren Kernel installieren |
 | Hochgeladener Clip wird übersprungen | Meist HEVC vom iPhone – Meldung nach dem Hochladen beachten |
 | Frisch aufgenommenes Foto kommt nicht an | Sollte nicht mehr vorkommen: die Seite wartet jetzt bis zu 30 Sekunden auf das Bild |
 | Bedienseite fragt nach einer PIN | Steht unter *System → PIN*; wer sie nicht hat, darf nur zusehen |

@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 #
-# Bar Display auf einem Raspberry Pi einrichten.
+# Bar Display auf einem Einplatinenrechner einrichten.
 #
 #   curl -fsSL https://raw.githubusercontent.com/Tarmac-Festival/bar-display/main/pi/install.sh | bash
 #
-# Getestet gedacht fuer Raspberry Pi OS (Bookworm) auf einem Pi 3B.
+# Gedacht fuer Raspberry Pi OS (Bookworm) auf einem Pi 3B, laeuft aber auf jedem
+# Debian-artigen Linux mit systemd - etwa Armbian oder Ubuntu auf einem Odroid
+# N2+. Was nur den Pi betrifft (die Firmware-Datei config.txt), wird auf anderen
+# Brettern uebersprungen; alles andere ist gewoehnliches Linux.
+#
 # Richtet zwei Dienste ein:
 #   bar-display        - der kleine Webdienst (Anzeige + Bedienseite)
 #   bar-display-kiosk  - Chromium im Vollbild, zeigt die Anzeige
@@ -13,7 +17,7 @@ set -euo pipefail
 
 REPO="https://github.com/Tarmac-Festival/bar-display.git"
 ZIEL="/opt/bar-display"
-BENUTZER="${SUDO_USER:-$USER}"
+BENUTZER="${SUDO_USER:-${USER:-$(id -un)}}"
 PORT="${PORT:-8080}"
 
 sage() { printf '\n\033[1;32m==>\033[0m %s\n' "$*"; }
@@ -23,6 +27,30 @@ if [ "$(id -u)" -eq 0 ] && [ -z "${SUDO_USER:-}" ]; then
   warne "Bitte nicht direkt als root ausfuehren, sondern mit sudo als normaler Benutzer."
   exit 1
 fi
+
+# ---------------------------------------------------------------------------
+# Welches Brett ist das? Davon haengt nur eines ab: ob es eine config.txt gibt,
+# in der der Grafiktreiber steht. Das ist eine Eigenheit der Raspberry-Pi-
+# Firmware. Andere Bretter bringen ihren Treiber im Kernel mit, dort waere jedes
+# Herumschreiben am Bootbereich bestenfalls wirkungslos.
+#
+# MODELL_DATEIEN und NUR_ERKENNEN sind nur zum Pruefen da (test/brett.test.js).
+# Ein eigenes Skript waere sauberer, geht hier aber nicht: dieses hier wird per
+# "curl | bash" ausgefuehrt, da ist noch nichts zum Nachladen da. Zwei Zeilen
+# fuer die eine Entscheidung, an der alles Weitere haengt.
+BRETT="unbekannt"
+for k in ${MODELL_DATEIEN:-/proc/device-tree/model /sys/firmware/devicetree/base/model}; do
+  if [ -r "$k" ]; then
+    BRETT="$(tr -d '\0' < "$k")"
+    break
+  fi
+done
+case "$BRETT" in
+  *"Raspberry Pi"*) IST_PI=1 ;;
+  *) IST_PI=0 ;;
+esac
+[ -n "${NUR_ERKENNEN:-}" ] && { printf '%s|%s\n' "$BRETT" "$IST_PI"; exit 0; }
+sage "Geraet: $BRETT"
 
 # ---------------------------------------------------------------------------
 sage "Pakete installieren"
@@ -202,9 +230,11 @@ sage "System auf Dauerbetrieb trimmen"
 # fand kein Grafikgeraet mehr. Deshalb wird die Zeile jetzt entfernt, auch bei
 # Geraeten, auf denen ein frueherer Lauf sie hinterlassen hat.
 BOOTCFG=""
-for k in /boot/firmware/config.txt /boot/config.txt; do
-  [ -f "$k" ] && { BOOTCFG="$k"; break; }
-done
+if [ "$IST_PI" -eq 1 ]; then
+  for k in /boot/firmware/config.txt /boot/config.txt; do
+    [ -f "$k" ] && { BOOTCFG="$k"; break; }
+  done
+fi
 GPUMEM_HINWEIS=""
 if [ -n "$BOOTCFG" ] && grep -q '^gpu_mem=' "$BOOTCFG"; then
   sudo sed -i '/^gpu_mem=/d' "$BOOTCFG"
@@ -286,6 +316,17 @@ BOOTSTD
   dtoverlay=vc4-kms-v3d bleibt der Bildschirm schwarz - bitte von Hand nachsehen."
     fi
   fi
+fi
+
+# Auf anderen Brettern wird am Bootbereich nichts angefasst - dort bringt der
+# Kernel den Treiber mit. Nachsehen, ob er auch geladen ist, kostet nichts und
+# erspart die Suche nach einem schwarzen Bildschirm.
+if [ "$IST_PI" -eq 0 ] && [ ! -d /dev/dri ]; then
+  warne "Kein /dev/dri - es ist kein Grafiktreiber geladen."
+  warne "Ohne ihn bleibt der Bildschirm schwarz. Bei Armbian hilft meist ein"
+  warne "aktueller Kernel; pruefen laesst es sich mit: ls /dev/dri/"
+  BOOT_HINWEIS="ACHTUNG: /dev/dri fehlt - es ist kein Grafiktreiber geladen.
+  Die Anzeige findet dann nichts, worauf sie zeichnen kann."
 fi
 
 # WLAN-Stromsparen verzoegert die Push-Verbindung zur Bedienseite: Durchsagen
@@ -381,6 +422,11 @@ else
   LAGE="Anzeige laeuft auf dem angeschlossenen Bildschirm."
 fi
 
+# Auf dem Pi ist SSH ab Werk aus und wird ueber raspi-config eingeschaltet;
+# anderswo laeuft es meist schon.
+SSH_HINWEIS=""
+[ "$IST_PI" -eq 1 ] && SSH_HINWEIS='Auf dem Pi ist SSH ab Werk aus - einschalten mit "sudo raspi-config" unter Interface Options.'
+
 sage "Fertig"
 cat <<ENDE
 
@@ -408,15 +454,16 @@ ${KONSOLE_HINWEIS:+
       bar-display-update                       neue Fassung holen
       timedatectl status                       Uhrzeit und Abgleich pruefen
 
-  Kommt man nicht mehr an den Pi: Strg + Alt + F2 gibt eine zweite Konsole.
-  Bequemer ist SSH - einschalten mit "sudo raspi-config" unter
-  Interface Options. Dann geht auch: ssh $BENUTZER@${ADRESSE:-<IP-des-Pi>}
+  Kommt man nicht mehr an das Geraet: Strg + Alt + F2 gibt eine zweite Konsole.
+  Bequemer ist SSH: ssh $BENUTZER@${ADRESSE:-<IP>}
+${SSH_HINWEIS:+  $SSH_HINWEIS
+}
 
   Laeuft die Anzeige ruckelig, hilft im Reiter "Anzeige" der Sparmodus.
   Ob die Videodekodierung in Hardware laeuft, verraet in Chromium die
   Adresse chrome://gpu (Zeile "Video Decode").
 
-  Nach Aenderungen an der Firmware hilft ein Neustart:
+  Nach Aenderungen am Bootbereich hilft ein Neustart:
       sudo reboot
       sudo systemctl restart bar-display       Dienst neu starten
       journalctl -u bar-display -f             Protokoll ansehen
