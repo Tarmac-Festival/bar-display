@@ -39,11 +39,31 @@ jobs:
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "Release $GITHUB_REF_NAME gibt es schon."
-          else
-            gh release create "$GITHUB_REF_NAME" \
-              --title "Bar Display $GITHUB_REF_NAME" \
-              --notes "Pakete für Windows und Linux. Installationshinweise stehen in der README."
+            exit 0
           fi
+
+          # Was in dieser Fassung dazugekommen ist, steht in CHANGELOG.md. Der
+          # passende Abschnitt wird herausgeschnitten und zur Release-Notiz -
+          # sonst stuende dort nur, dass es Pakete gibt.
+          NOTIZ=""
+          if [ -f CHANGELOG.md ]; then
+            NOTIZ=$(awk -v marke="## $GITHUB_REF_NAME" '
+              $0 == marke { drin = 1; next }
+              drin && /^## / { exit }
+              drin { print }
+            ' CHANGELOG.md)
+          fi
+
+          if [ -n "$NOTIZ" ]; then
+            printf '%s\n\nPakete für Windows, Linux und macOS hängen unten dran.\n' "$NOTIZ" > notiz.md
+          else
+            echo "Kein Abschnitt $GITHUB_REF_NAME in CHANGELOG.md - es bleibt beim Standardtext."
+            echo "Pakete für Windows, Linux und macOS. Installationshinweise stehen in der README." > notiz.md
+          fi
+
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Bar Display $GITHUB_REF_NAME" \
+            --notes-file notiz.md
 
   linux:
     name: Linux (AppImage, deb, tar.gz)
