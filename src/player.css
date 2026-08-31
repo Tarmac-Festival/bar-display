@@ -1208,9 +1208,15 @@ body.spar .lichtBalken { background: rgba(255, 255, 255, 0.16); }
 }
 .lichtKopf p { line-height: 1.35; max-width: 40ch; font-weight: 700; }
 .lichtKopf b { color: var(--accent); }
-/* Das Zeichen wird nicht mit dem Text mitgezogen: es sitzt in einem Kasten mit
-   fester Groesse, und der richtet sich nach der Schrift daneben. */
-.lichtKopf .lichtZeichen.gross img { height: 2.6em; }
+/* Das Zeichen ist so hoch wie der Text daneben - aber mit fester Groesse, nicht
+   ueber die Hoehe des Absatzes gedehnt. Gedehnt schaukelt es sich auf: die
+   Plakette nimmt Breite, der Text bricht dadurch oefter um, wird hoeher, und
+   die Plakette wird mit ihm groesser. Am Ende fuellte das Zeichen den halben
+   Schirm und der Text stand in schmalen Fetzen daneben.
+
+   Vier Zeilenhoehen: genau die drei Zeilen, die der Text bei dieser Breite
+   braucht, plus das Polster der Plakette. */
+.lichtKopf .lichtZeichen.gross img { height: 4em; }
 
 .lichtTage { display: flex; flex-wrap: wrap; gap: 1.6em; align-items: flex-start; }
 .lichtTag { flex: 1 1 18em; min-width: 14em; }

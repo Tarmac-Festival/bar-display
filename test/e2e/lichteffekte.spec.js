@@ -767,19 +767,29 @@ test.describe('Eigene Seite fuers Wochenende', () => {
       const m = await page.evaluate(() => {
         const p = document.querySelector('.lichtKopf p');
         const zeit = document.querySelector('.lichtSpanne .lz');
-        const bild = document.querySelector('.lichtKopf img');
+        const plakette = document.querySelector('.lichtKopf .lichtZeichen');
         return {
           fett: getComputedStyle(p).fontWeight,
-          text: parseFloat(getComputedStyle(p).fontSize),
-          zeit: zeit ? parseFloat(getComputedStyle(zeit).fontSize) : 0,
-          bild: Math.round(bild.getBoundingClientRect().height)
+          schrift: parseFloat(getComputedStyle(p).fontSize),
+          zeitSchrift: zeit ? parseFloat(getComputedStyle(zeit).fontSize) : 0,
+          absatz: Math.round(p.getBoundingClientRect().height),
+          plakette: Math.round(plakette.getBoundingClientRect().height),
+          plaketteBreit: Math.round(plakette.getBoundingClientRect().width),
+          zeilen: Math.round(p.getBoundingClientRect().width)
         };
       });
       expect(Number(m.fett), 'fett').toBeGreaterThanOrEqual(700);
-      expect(m.text, 'groesser als die Uhrzeiten darunter')
-        .toBeGreaterThan(m.zeit);
-      expect(m.bild, 'und das Zeichen daneben entsprechend gross')
-        .toBeGreaterThan(m.text * 2);
+      expect(m.schrift, 'groesser als die Uhrzeiten darunter')
+        .toBeGreaterThan(m.zeitSchrift);
+
+      // Das Zeichen ist mindestens so hoch wie der Text daneben.
+      expect(m.plakette, 'so hoch wie das Geschriebene')
+        .toBeGreaterThanOrEqual(m.absatz);
+      // Aber es verdraengt den Text nicht: gedehnt schaukelt sich das auf -
+      // die Plakette nimmt Breite, der Text bricht oefter um, wird hoeher, und
+      // die Plakette waechst mit. Der Text muss der breitere bleiben.
+      expect(m.zeilen, 'der Text hat mehr Platz als das Zeichen')
+        .toBeGreaterThan(m.plaketteBreit);
     });
 
   test('ohne Zeiten sagt die Seite das auch', async ({ page, bar }) => {
